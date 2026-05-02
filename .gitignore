@@ -3,7 +3,7 @@ dist/
 build/
 .env
 .env.local
-.env.production
+.env.*.local
 .DS_Store
 *.log
 .vscode/
@@ -12,3 +12,5 @@ build/
 *.swo
 package-lock.json
 yarn.lock
+firebase.js
+firebase.config.js

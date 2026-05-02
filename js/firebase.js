@@ -1,9 +1,9 @@
-// Firebase Configuration
+// Firebase Configuration - Replace with your own project credentials
 const firebaseConfig = {
-  apiKey: "AIzaSyD2kYXi_VerDxZv1wKsLwEf7lf4BHRH0IM",
-  authDomain: "rk-choice-id.firebaseapp.com",
-  projectId: "rk-choice-id",
-  storageBucket: "rk-choice-id.firebasestorage.app",
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
   messagingSenderId: "YOUR_SENDER_ID",
   appId: "YOUR_APP_ID"
 };
