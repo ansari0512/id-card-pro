@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Students - RK Choice</title>
+  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--bg-card); border-radius: 16px; padding: 2rem; width: 100%; max-width: 500px; border: 1px solid var(--border); max-height: 90vh; overflow-y: auto; }
+    .modal h3 { margin-top: 0; }
+  </style>
+</head>
+<body>
+
+  <header class="topbar no-print">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <a href="dashboard.html" style="font-size: 1.5rem; text-decoration:none;">🎓</a>
+      <h2 style="margin: 0;">Manage Students</h2>
+    </div>
+    <a href="dashboard.html"><button class="secondary">← Back</button></a>
+  </header>
+
+  <button class="theme-toggle no-print" id="themeToggle">🌙</button>
+
+  <main class="container" style="padding-top: 2rem;">
+
+    <div class="card">
+      <div class="filters">
+        <input type="text" id="searchInput" placeholder="Search by name or ID">
+        <select id="classFilter">
+          <option value="">All Classes</option>
+          <option value="Nursery">Nursery</option>
+          <option value="LKG">LKG</option>
+          <option value="UKG">UKG</option>
+          <option value="KG">KG</option>
+          <option value="1">Class 1</option>
+          <option value="2">Class 2</option>
+          <option value="3">Class 3</option>
+          <option value="4">Class 4</option>
+          <option value="5">Class 5</option>
+          <option value="6">Class 6</option>
+          <option value="7">Class 7</option>
+          <option value="8">Class 8</option>
+          <option value="9">Class 9</option>
+          <option value="10">Class 10</option>
+        </select>
+        <select id="sectionFilter">
+          <option value="">All Sections</option>
+          <option value="A">A</option>
+          <option value="B">B</option>
+          <option value="C">C</option>
+          <option value="D">D</option>
+          <option value="E">E</option>
+          <option value="F">F</option>
+          <option value="G">G</option>
+          <option value="H">H</option>
+        </select>
+        <button onclick="loadStudents()">🔍 Filter</button>
+        <button class="secondary" onclick="clearFilters()">Clear</button>
+      </div>
+
+      <div class="flex gap-2 mt-2" style="flex-wrap: wrap; align-items: center;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer;padding:8px 12px;border:1px solid var(--border);border-radius:10px;">
+          <input type="checkbox" id="selectAllCheckbox" style="width:16px;height:16px;margin:0;cursor:pointer;"> Select All
+        </label>
+        <span id="selectedCount" style="font-size:13px;color:var(--text-muted);">0 selected</span>
+        <button class="secondary" onclick="bulkPrint()">🖨️ Print Selected</button>
+        <button class="secondary" onclick="bulkDownload()">📦 Download ZIP</button>
+        <button class="secondary" onclick="exportCSV()">📥 Export CSV</button>
+        <button class="danger" onclick="bulkDelete()">🗑️ Delete Selected</button>
+      </div>
+    </div>
+
+    <div id="loading" class="text-center mt-3">
+      <div class="spinner" style="width: 40px; height: 40px;"></div>
+      <p class="text-muted mt-1">Loading students...</p>
+    </div>
+
+    <div id="studentsGrid" class="grid mt-3" style="display: none;"></div>
+
+    <div id="emptyState" class="empty-state" style="display: none;">
+      <div style="font-size: 4rem; margin-bottom: 1rem;">📭</div>
+      <h3>No Students Found</h3>
+      <p>Get started by creating your first student ID card.</p>
+      <a href="id-form.html"><button style="margin-top: 1rem;">➕ Create Student</button></a>
+    </div>
+
+  </main>
+
+  <!-- Edit Student Modal -->
+   <div class="modal-overlay" id="editModal">
+     <div class="modal" style="max-width: 95vw;">
+      <h3>✏️ Edit Student</h3>
+      <form id="editForm">
+        <input type="hidden" id="editDocId">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Student Name *</label>
+            <input type="text" id="editName" required maxlength="50">
+          </div>
+          <div class="form-group">
+            <label>Father's Name *</label>
+            <input type="text" id="editFather" required maxlength="50">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Class *</label>
+            <select id="editClass" required>
+              <option value="">Select Class</option>
+              <option value="Nursery">Nursery</option>
+              <option value="LKG">LKG</option>
+              <option value="UKG">UKG</option>
+              <option value="KG">KG</option>
+              <option value="1">Class 1</option>
+              <option value="2">Class 2</option>
+              <option value="3">Class 3</option>
+              <option value="4">Class 4</option>
+              <option value="5">Class 5</option>
+              <option value="6">Class 6</option>
+              <option value="7">Class 7</option>
+              <option value="8">Class 8</option>
+              <option value="9">Class 9</option>
+              <option value="10">Class 10</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Section *</label>
+            <select id="editSection" required>
+              <option value="">Select Section</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+              <option value="D">D</option>
+              <option value="E">E</option>
+              <option value="F">F</option>
+              <option value="G">G</option>
+              <option value="H">H</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Mobile Number *</label>
+            <input type="tel" id="editMobile" required maxlength="10" inputmode="numeric"
+              oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,10)">
+          </div>
+          <div class="form-group">
+            <label>Address</label>
+            <input type="text" id="editAddress" maxlength="200">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Photo</label>
+          <div style="display:flex;align-items:center;gap:1rem;margin-bottom:8px;">
+             <img id="editPhotoPreview" src="assets/placeholder.png"
+               style="width:70px;height:70px;border-radius:50%;object-fit:contain;object-position:center;border:2px solid var(--primary);flex-shrink:0;background:#f0f0f0;">
+            <div style="flex:1;">
+              <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">Current photo. Click below to change.</div>
+              <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:8px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;font-size:13px;">
+                📷 Choose New Photo
+                <input type="file" id="editPhoto" accept="image/*" style="display:none;">
+              </label>
+              <div id="editPhotoName" style="font-size:11px;color:var(--text-muted);margin-top:4px;">No new photo selected</div>
+            </div>
+          </div>
+        </div>
+        <div id="editError" style="color: #ef4444; font-size: 13px; display: none; margin-bottom: 0.5rem;"></div>
+        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+          <button type="submit" class="success" id="editSaveBtn" style="flex: 1;">
+            <span class="btn-text">✅ Save Changes</span>
+          </button>
+          <button type="button" class="secondary" onclick="closeEditModal()" style="flex: 1;">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+   <!-- Firebase SDK -->
+   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+
+   <!-- Mock Firebase -->
+   <script src="js/mock-firebase.js"></script>
+
+   <!-- JSZip for bulk download -->
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+   <!-- Utils -->
+   <script src="js/helpers.js"></script>
+
+   <!-- Student Controller -->
+   <script src="js/controllers/student.controller.js"></script>
+
+   <!-- Theme -->
+   <script>
+     document.getElementById('themeToggle')?.addEventListener('click', window.toggleTheme);
+     window.loadTheme();
+   </script>
+
+</body>
+</html>

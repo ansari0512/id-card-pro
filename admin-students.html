@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>School Students - RK Choice Admin</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <header class="topbar no-print">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <a href="admin-panel.html" style="font-size: 1.5rem; text-decoration:none;">🎓</a>
+      <h2 style="margin: 0;" id="pageTitle">School Students</h2>
+    </div>
+    <a href="admin-panel.html"><button class="secondary">← Back</button></a>
+  </header>
+
+  <button class="theme-toggle no-print" id="themeToggle">🌙</button>
+
+   <main class="container" style="padding-top: 2rem;">
+
+     <!-- Filter Controls -->
+     <div class="card">
+       <div class="filters" style="margin-bottom: 0;">
+         <select id="classFilter" onchange="loadStudents()">
+           <option value="">All Classes</option>
+           <option value="Nursery">Nursery</option>
+           <option value="LKG">LKG</option>
+           <option value="UKG">UKG</option>
+           <option value="KG">KG</option>
+           <option value="1">Class 1</option>
+           <option value="2">Class 2</option>
+           <option value="3">Class 3</option>
+           <option value="4">Class 4</option>
+           <option value="5">Class 5</option>
+           <option value="6">Class 6</option>
+           <option value="7">Class 7</option>
+           <option value="8">Class 8</option>
+           <option value="9">Class 9</option>
+           <option value="10">Class 10</option>
+         </select>
+         <button onclick="clearFilters()" class="secondary">Clear Filter</button>
+       </div>
+     </div>
+
+     <div id="loading" class="text-center mt-3">
+      <div class="spinner" style="width:40px;height:40px;"></div>
+      <p class="text-muted mt-1">Loading students...</p>
+    </div>
+
+    <div id="studentsGrid" class="grid mt-3" style="display:none;"></div>
+
+    <div id="emptyState" class="empty-state" style="display:none;">
+      <div style="font-size:4rem;margin-bottom:1rem;">📭</div>
+      <h3>No Students Found</h3>
+      <p>This school has not added any students yet.</p>
+    </div>
+
+  </main>
+
+  <!-- Scripts at bottom -->
+   <!-- Firebase SDK -->
+   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+   <!-- Mock Firebase -->
+   <script src="js/mock-firebase.js"></script>
+
+   <!-- Utils -->
+   <script src="js/helpers.js"></script>
+
+   <!-- Admin Students Controller -->
+   <script src="js/controllers/admin-students.controller.js"></script>
+
+   <!-- Theme -->
+   <script>
+     document.getElementById('themeToggle')?.addEventListener('click', window.toggleTheme);
+     window.loadTheme();
+   </script>
+
+</body>
+</html>

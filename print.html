@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Print ID Cards - RK Choice</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+   <style>
+     body { font-family: 'Poppins', sans-serif; background: #f5f5f5; margin: 0; padding: 20px; color: #333; }
+     .toolbar { background: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; gap: 10px; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+     .toolbar h2 { margin: 0; color: #f59e0b; flex: 1; }
+     button { padding: 8px 16px; background: #f59e0b; border: none; border-radius: 8px; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 14px; min-height: 44px; }
+     button.secondary { background: #e5e7eb; color: #333; }
+     .a4-page { width: 210mm; min-height: 297mm; background: white; margin: 0 auto; padding: 10mm; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+     .cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+     .id-card { width: 3.37in; height: 2.13in; background: white; border: 1px solid #e5e7eb; border-radius: 10px; padding: 0.1in; position: relative; overflow: hidden; page-break-inside: avoid; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+     .id-card .header { background: #f59e0b; color: #000; padding: 4px 8px; text-align: center; font-weight: 700; font-size: 12px; border-radius: 6px 6px 0 0; margin: -0.1in -0.1in 8px -0.1in; }
+     .id-card .body { display: flex; gap: 10px; align-items: flex-start; }
+     .id-card .photo { width: 60px; height: 60px; border-radius: 50%; border: 2px solid #f59e0b; object-fit: contain; object-position: center; flex-shrink: 0; background: #f0f0f0; }
+     .id-card .details { flex: 1; font-size: 10px; line-height: 1.4; }
+     .id-card .details p { margin: 2px 0; display: flex; justify-content: space-between; }
+     .id-card .details strong { color: #666; }
+     .id-card .id-number { font-size: 9px; text-align: center; margin-top: 8px; color: #888; font-weight: 600; }
+     .id-card .qr { position: absolute; bottom: 8px; right: 8px; width: 45px; height: 45px; }
+     .loading-state { text-align: center; padding: 3rem; color: #666; }
+     .spinner { border: 3px solid #f3f3f3; border-top: 3px solid #f59e0b; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 1rem; }
+     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+     /* Mobile responsive print layout */
+     @media (max-width: 768px) {
+       .a4-page { width: 100%; padding: 3mm; }
+       .cards-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+     }
+     @media (max-width: 480px) {
+       .cards-grid { grid-template-columns: 1fr; gap: 5px; }
+     }
+
+     @media print {
+       body { background: white; padding: 0; }
+       .toolbar { display: none !important; }
+       .a4-page { box-shadow: none; margin: 0; padding: 0; width: 100%; }
+       .id-card { border: 1px solid #ddd; box-shadow: none; }
+       @page { size: A4; margin: 0; }
+     }
+   </style>
+</head>
+<body>
+
+  <div class="toolbar no-print">
+    <h2>🖨️ Print ID Cards</h2>
+    <button onclick="window.print()">🖨️ Print</button>
+    <button class="secondary" onclick="showToast('Use browser print (Ctrl+P) and select Save as PDF', 'info')">📄 Save as PDF</button>
+    <button class="secondary" onclick="history.length > 1 ? history.back() : window.close()">✕ Close</button>
+  </div>
+
+  <div class="a4-page">
+    <div id="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading student data...</p>
+    </div>
+    <div id="cardsContainer" class="cards-grid" style="display: none;"></div>
+  </div>
+
+   <!-- Firebase SDK -->
+   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+   <!-- Mock Firebase -->
+   <script src="js/mock-firebase.js"></script>
+
+   <!-- Utils -->
+   <script src="js/helpers.js"></script>
+
+   <!-- Print Controller -->
+   <script src="js/controllers/print.controller.js"></script>
+
+</body>
+</html>

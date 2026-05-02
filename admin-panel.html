@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - RK Choice</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .school-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    .school-table th, .school-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
+    .school-table th { background: var(--bg-dark); color: var(--text-muted); font-weight: 600; }
+    .school-table tr:hover td { background: var(--bg-dark); }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-active { background: #22c55e22; color: #22c55e; }
+    .badge-inactive { background: #ef444422; color: #ef4444; }
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; text-align: center; }
+    .stat-card .num { font-size: 2rem; font-weight: 700; color: var(--primary); }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--bg-card); border-radius: 16px; padding: 2rem; width: 100%; max-width: 460px; border: 1px solid var(--border); }
+    .modal h3 { margin-top: 0; }
+  </style>
+</head>
+<body>
+
+  <!-- Topbar -->
+  <header class="topbar no-print">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <a href="admin-panel.html" style="display:flex;align-items:center;gap:0.5rem;text-decoration:none;color:inherit;">
+        <div style="font-size: 1.5rem;">🎓</div>
+        <h2 style="margin: 0;">RK Choice <span style="font-size: 13px; color: var(--primary); background: var(--primary)22; padding: 2px 10px; border-radius: 20px; margin-left: 6px;">ADMIN</span></h2>
+      </a>
+    </div>
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <span id="adminEmail" style="font-size: 13px; color: var(--text-muted);"></span>
+      <button class="secondary" onclick="doLogout()">Logout</button>
+    </div>
+  </header>
+
+  <button class="theme-toggle no-print" id="themeToggle">🌙</button>
+
+  <main class="container" style="padding-top: 2rem;">
+
+    <div style="margin-bottom: 2rem;">
+      <h1 style="margin: 0;">Admin Dashboard</h1>
+      <p style="color: var(--text-muted); margin-top: 0.25rem;">Manage all schools</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="num" id="totalSchools">0</div>
+        <div style="color: var(--text-muted); font-size: 14px;">Total Schools</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" id="activeSchools">0</div>
+        <div style="color: var(--text-muted); font-size: 14px;">Active Schools</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" id="totalStudentsAll">0</div>
+        <div style="color: var(--text-muted); font-size: 14px;">Total Students</div>
+      </div>
+    </div>
+
+    <!-- Schools Table -->
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <h3 style="margin: 0;">Schools List</h3>
+        <button onclick="openAddModal()">➕ Add New School</button>
+      </div>
+
+      <div id="loadingSchools" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+        Loading schools...
+      </div>
+
+       <div class="school-table-wrapper">
+         <table class="school-table" id="schoolsTable" style="display: none;">
+           <thead>
+             <tr>
+               <th>School Name</th>
+               <th>Email</th>
+               <th>Students</th>
+               <th>Added On</th>
+               <th>Status</th>
+               <th>Actions</th>
+             </tr>
+           </thead>
+           <tbody id="schoolsBody"></tbody>
+         </table>
+       </div>
+
+      <div id="emptySchools" style="display: none; text-align: center; padding: 3rem; color: var(--text-muted);">
+        <div style="font-size: 3rem;">🏫</div>
+        <p>No schools found. Add your first school!</p>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Add School Modal -->
+   <div class="modal-overlay" id="addModal">
+     <div class="modal" style="max-width: 90vw;">
+      <h3>🏫 Add New School</h3>
+      <form id="addSchoolForm">
+        <div class="form-group">
+          <label>School Name *</label>
+          <input type="text" id="newSchoolName" placeholder="e.g. Delhi Public School" required maxlength="100"
+            oninput="const p=this.selectionStart;this.value=this.value.replace(/\w\S*/g,w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase());this.setSelectionRange(p,p)">
+        </div>
+        <div class="form-group">
+          <label>Login Email *</label>
+          <input type="email" id="newSchoolEmail" placeholder="school@example.com" required>
+          <small style="color: var(--text-muted); font-size: 11px;">This will be the school's login email</small>
+        </div>
+        <div class="form-group">
+          <label>Password *</label>
+          <input type="password" id="newSchoolPassword" placeholder="Min. 6 characters" required minlength="6">
+        </div>
+        <div class="form-group">
+          <label>City / Location</label>
+          <input type="text" id="newSchoolCity" placeholder="e.g. New Delhi" maxlength="50"
+            oninput="const p=this.selectionStart;this.value=this.value.replace(/\w\S*/g,w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase());this.setSelectionRange(p,p)">
+        </div>
+        <div id="addError" style="color: #ef4444; font-size: 13px; display: none; margin-bottom: 0.5rem;"></div>
+        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+          <button type="submit" class="success" id="addBtn" style="flex: 1;">
+            <span class="btn-text">✅ Create Account</span>
+          </button>
+          <button type="button" class="secondary" onclick="closeAddModal()" style="flex: 1;">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+   <!-- Firebase SDK -->
+   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+   <!-- Mock Firebase -->
+   <script src="js/mock-firebase.js"></script>
+
+   <!-- Utils -->
+   <script src="js/helpers.js"></script>
+
+   <!-- Admin Controller -->
+   <script src="js/controllers/admin.controller.js"></script>
+
+   <!-- Theme -->
+   <script>
+     document.getElementById('themeToggle')?.addEventListener('click', window.toggleTheme);
+     window.loadTheme();
+   </script>
+
+</body>
+</html>

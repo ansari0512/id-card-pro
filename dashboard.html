@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - RK Choice</title>
+  
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Topbar -->
+  <header class="topbar no-print">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <a href="dashboard.html" style="display:flex;align-items:center;gap:0.5rem;text-decoration:none;color:inherit;">
+        <div style="font-size: 1.5rem;">🎓</div>
+        <h2 style="margin: 0;">RK Choice</h2>
+      </a>
+    </div>
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <span id="userEmail" style="font-size: 13px; color: var(--text-muted); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+      <button class="secondary" onclick="logout()">Logout</button>
+    </div>
+  </header>
+
+  <!-- Theme Toggle -->
+  <button class="theme-toggle no-print" id="themeToggle">🌙</button>
+
+  <!-- Main Content -->
+  <main class="container" style="padding-top: 2rem;">
+    
+    <!-- Welcome Message -->
+    <div style="text-align: center; margin-bottom: 3rem;">
+      <h1 style="font-size: 2.5rem;">Welcome back! 👋</h1>
+      <p style="color: var(--text-muted); font-size: 1.1rem;">
+        Manage student ID cards with ease
+      </p>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 3rem;">
+      <div class="card text-center">
+        <div style="font-size: 2.5rem; color: var(--primary);">📇</div>
+        <h3 id="totalStudents">0</h3>
+        <p class="text-muted">Total Students</p>
+      </div>
+      
+      <div class="card text-center">
+        <div style="font-size: 2.5rem; color: var(--success);">🎨</div>
+        <h3>Quick Actions</h3>
+        <p class="text-muted">Get started</p>
+      </div>
+      
+      <div class="card text-center">
+        <div style="font-size: 2.5rem; color: var(--success);">📊</div>
+        <h3>Analytics</h3>
+        <p class="text-muted">View reports</p>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="menu" style="justify-content: center;">
+      <a href="id-form.html"><button style="flex: 1; min-width: 120px; padding: 1.5rem;">
+        <div style="font-size: 2rem;">➕</div>
+        <div>Create New ID</div>
+      </button></a>
+      
+      <a href="students.html"><button class="secondary" style="flex: 1; min-width: 120px; padding: 1.5rem;">
+        <div style="font-size: 2rem;">👥</div>
+        <div>View Students</div>
+      </button></a>
+      
+      <a href="print.html"><button class="secondary" style="flex: 1; min-width: 120px; padding: 1.5rem;">
+        <div style="font-size: 2rem;">🖨️</div>
+        <div>Print IDs</div>
+      </button></a>
+    </div>
+
+    <!-- Bulk Actions -->
+    <div class="card mt-3">
+      <h3>Bulk Operations</h3>
+      <div class="flex gap-2" style="flex-wrap: wrap;">
+        <button onclick="exportStudents()">📥 Export CSV</button>
+        <button class="danger" onclick="openDeleteClassModal()">🗑️ Delete by Class</button>
+        <button class="danger" onclick="confirmBulkDelete()">🗑️ Delete All Students</button>
+      </div>
+    </div>
+
+    <!-- Delete by Class Modal -->
+     <div id="deleteClassModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center;">
+       <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:2rem;width:100%;max-width:90vw;margin:1rem;">
+        <h3 style="margin-top:0;">🗑️ Delete by Class</h3>
+        <div class="form-group">
+          <label>Select Class</label>
+          <select id="deleteClassSelect">
+            <option value="">-- Select Class --</option>
+            <option value="Nursery">Nursery</option>
+            <option value="LKG">LKG</option>
+            <option value="UKG">UKG</option>
+            <option value="KG">KG</option>
+            <option value="1">Class 1</option>
+            <option value="2">Class 2</option>
+            <option value="3">Class 3</option>
+            <option value="4">Class 4</option>
+            <option value="5">Class 5</option>
+            <option value="6">Class 6</option>
+            <option value="7">Class 7</option>
+            <option value="8">Class 8</option>
+            <option value="9">Class 9</option>
+            <option value="10">Class 10</option>
+          </select>
+        </div>
+        <div id="deleteClassCount" style="font-size:13px;color:var(--text-muted);margin-bottom:1rem;"></div>
+        <div style="display:flex;gap:1rem;">
+          <button class="danger" id="confirmDeleteClassBtn" style="flex:1;" onclick="confirmDeleteByClass()">
+            <span id="deleteClassBtnText">🗑️ Delete</span>
+          </button>
+          <button class="secondary" style="flex:1;" onclick="closeDeleteClassModal()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+   <!-- Firebase SDK -->
+   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+   <!-- Mock Firebase -->
+   <script src="js/mock-firebase.js"></script>
+
+   <!-- Utils -->
+   <script src="js/helpers.js"></script>
+
+   <!-- Dashboard Controller -->
+   <script src="js/controllers/dashboard.controller.js"></script>
+
+   <!-- Theme -->
+   <script>
+     document.getElementById('themeToggle')?.addEventListener('click', window.toggleTheme);
+     window.loadTheme();
+   </script>
+</body>
+</html>
