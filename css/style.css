@@ -276,12 +276,24 @@ button.full, .btn-full {
   overflow: hidden;
 }
 
+.topbar > div:first-child a {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+}
+
 .topbar .logo-text {
   font-size: 1.25rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 200px;
+  display: inline-block;
+  vertical-align: bottom;
 }
 
 .topbar .logo-badge {
@@ -292,6 +304,7 @@ button.full, .btn-full {
   background: var(--primary)22;
   color: var(--primary);
   margin-left: 6px;
+  display: inline-block;
 }
 
 .topbar-right {
