@@ -12,16 +12,16 @@
   <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'dark');</script>
 <body>
 
-  <!-- Topbar -->
-  <header class="topbar no-print">
-    <div style="display: flex; align-items: center; gap: 1rem;">
-      <a href="dashboard.html" style="display:flex;align-items:center;gap:0.5rem;text-decoration:none;color:inherit;">
-        <div style="font-size: 1.5rem;">🎓</div>
-        <h2 style="margin: 0;">RK Choice</h2>
-      </a>
+   <!-- Topbar -->
+   <header class="topbar no-print">
+     <div>
+       <a href="dashboard.html" style="display:flex;align-items:center;gap:0.5rem;text-decoration:none;color:inherit;">
+         <div style="font-size: 1.5rem;">🎓</div>
+         <span class="logo-text">RK Choice</span>
+       </a>
      </div>
      <div class="topbar-right">
-       <span id="userEmail" class="user-email" style="font-size: 13px; color: var(--text-muted); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+       <span id="userEmail" class="user-email" style="font-size: 13px; color: var(--text-muted); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
        <button class="secondary" onclick="window.logout()">Logout</button>
      </div>
    </header>
