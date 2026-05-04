@@ -39,9 +39,10 @@ window.loadSchools = async function() {
 
     const schools = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 
-    document.getElementById('totalSchools').textContent = schools.length;
-    document.getElementById('activeSchools').textContent = schools.filter(s => s.active !== false).length;
-    document.getElementById('totalStudentsAll').textContent = '-';
+     document.getElementById('totalSchools').textContent = schools.length;
+     document.getElementById('activeSchools').textContent = schools.filter(s => s.active !== false).length;
+     document.getElementById('inactiveSchools').textContent = schools.filter(s => s.active === false).length;
+     document.getElementById('totalStudentsAll').textContent = '-';
 
     const tbody = document.getElementById('schoolsBody');
     tbody.innerHTML = '';
