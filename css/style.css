@@ -872,14 +872,26 @@ button.full, .btn-full {
   text-align: left;
   border-bottom: 1px solid var(--border);
   font-size: 14px;
+  vertical-align: middle;
+}
+
+.school-table td:last-child {
+  text-align: center;
+}
+
+.school-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 1rem;
 }
 
 .school-table button {
   min-height: 32px;
   min-width: unset;
-  padding: 4px 8px;
+  padding: 6px 10px;
   font-size: 11px;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 @media (max-width: 768px) {
@@ -889,8 +901,12 @@ button.full, .btn-full {
   }
   
   .school-table button {
-    padding: 3px 6px;
+    padding: 5px 8px;
     font-size: 10px;
+  }
+  
+  .school-table td:last-child {
+    min-width: 160px;
   }
 }
 

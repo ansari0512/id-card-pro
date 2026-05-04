@@ -79,19 +79,19 @@ window.loadSchools = async function() {
       td5.innerHTML = `<span class="badge ${active ? 'badge-active' : 'badge-inactive'}">${active ? 'Active' : 'Inactive'}</span>`;
 
        const td6 = document.createElement('td');
-       td6.style.cssText = 'display: flex; flex-wrap: wrap; gap: 4px; align-items: center;';
+       td6.style.cssText = 'display: flex; gap: 4px; align-items: center; min-width: 180px;';
        const btnView = document.createElement('button');
-       btnView.className = 'secondary'; btnView.style.cssText = 'padding:4px 8px;font-size:11px; flex-shrink: 0;';
+       btnView.className = 'secondary'; btnView.style.cssText = 'padding:4px 8px;font-size:11px; white-space: nowrap;';
        btnView.textContent = '👁️ View';
        btnView.addEventListener('click', () => window.viewStudents(school.id, school.schoolName || ''));
 
        const btnToggle = document.createElement('button');
-       btnToggle.className = 'secondary'; btnToggle.style.cssText = 'padding:4px 8px;font-size:11px; flex-shrink: 0;';
+       btnToggle.className = 'secondary'; btnToggle.style.cssText = 'padding:4px 8px;font-size:11px; white-space: nowrap;';
        btnToggle.textContent = active ? '🔒 Disable' : '✅ Enable';
        btnToggle.addEventListener('click', () => window.toggleStatus(school.id, active));
 
        const btnDel = document.createElement('button');
-       btnDel.className = 'danger'; btnDel.style.cssText = 'padding:4px 8px;font-size:11px; flex-shrink: 0;';
+       btnDel.className = 'danger'; btnDel.style.cssText = 'padding:4px 8px;font-size:11px; white-space: nowrap;';
        btnDel.textContent = '🗑️ Delete';
        btnDel.addEventListener('click', () => window.deleteSchool(school.id, school.schoolName || ''));
 
