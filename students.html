@@ -7,8 +7,8 @@
   <meta http-equiv="X-Frame-Options" content="DENY">
   <meta name="referrer" content="no-referrer">
   <title>Students - RK Choice</title>
-  <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'dark');</script>
-  <link rel="stylesheet" href="css/style.css">
+   <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'dark');</script>
+   <link rel="stylesheet" href="css/style.css?v=a94822a">
 
    <style>
      .modal-overlay { display: none; position: fixed; inset: 0; background: var(--overlay-bg); z-index: 1000; align-items: center; justify-content: center; padding: 1rem; }
@@ -183,25 +183,22 @@
     </div>
   </div>
 
-   <!-- Firebase SDK -->
-   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-   <script src="js/firebase-config.js"></script>
+    <!-- Firebase Initialization -->
+    <script src="js/firebase-config.js?v=a94822a"></script>
 
-   <!-- JSZip for bulk download -->
-   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- Utils -->
+    <script src="js/helpers.js?v=a94822a"></script>
 
-   <!-- Utils -->
-   <script src="js/helpers.js"></script>
-
-   <!-- Auth Controller -->
-   <script src="js/controllers/auth.controller.js"></script>
+    <!-- Auth Controller -->
+    <script src="js/controllers/auth.controller.js?v=a94822a"></script>
 
    <!-- Student Controller -->
-   <script src="js/controllers/student.controller.js"></script>
+    <script src="js/controllers/student.controller.js?v=a94822a"></script>
 
    <!-- Theme -->
    <script>
