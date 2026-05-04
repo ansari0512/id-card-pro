@@ -18,6 +18,7 @@
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   --radius: 16px;
   --modal-bg: #1e293b;
+  --overlay-bg: rgba(0, 0, 0, 0.75);
 }
 
 /* Light theme */
@@ -30,6 +31,7 @@
   --border: rgba(0, 0, 0, 0.1);
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
   --modal-bg: #ffffff;
+  --overlay-bg: rgba(0, 0, 0, 0.5);
 }
 
 /* Reset & Base */
