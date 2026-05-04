@@ -281,7 +281,7 @@ button.full, .btn-full {
   align-items: center;
   gap: 0.5rem;
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
   text-decoration: none;
   color: inherit;
 }
@@ -289,9 +289,9 @@ button.full, .btn-full {
 .topbar .logo-text {
   font-size: 1.25rem;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 200px;
+  overflow: visible;
+  text-overflow: clip;
+  max-width: 300px;
   display: inline-block;
   vertical-align: bottom;
 }
@@ -318,9 +318,9 @@ button.full, .btn-full {
 .topbar .user-email {
   font-size: 13px;
   color: var(--text-muted);
-  max-width: 180px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  max-width: 250px;
+  overflow: visible;
+  text-overflow: clip;
   white-space: nowrap;
 }
 
