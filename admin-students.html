@@ -3,7 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <meta name="referrer" content="no-referrer">
   <title>School Students - RK Choice Admin</title>
+  <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'dark');</script>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -59,25 +63,38 @@
 
   </main>
 
-  <!-- Scripts at bottom -->
    <!-- Firebase SDK -->
    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-   <!-- Mock Firebase -->
-   <script src="js/mock-firebase.js"></script>
+   <script src="js/firebase-config.js"></script>
 
    <!-- Utils -->
    <script src="js/helpers.js"></script>
+
+   <!-- Auth Controller -->
+   <script src="js/controllers/auth.controller.js"></script>
 
    <!-- Admin Students Controller -->
    <script src="js/controllers/admin-students.controller.js"></script>
 
    <!-- Theme -->
    <script>
-     document.getElementById('themeToggle')?.addEventListener('click', window.toggleTheme);
-     window.loadTheme();
+     (function() {
+       const t = localStorage.getItem('theme') || 'dark';
+       document.documentElement.setAttribute('data-theme', t);
+       const btn = document.getElementById('themeToggle');
+       if (btn) btn.textContent = t === 'light' ? '☀️' : '🌙';
+     })();
+     document.getElementById('themeToggle')?.addEventListener('click', function() {
+       const current = document.documentElement.getAttribute('data-theme');
+       const next = current === 'light' ? 'dark' : 'light';
+       document.documentElement.setAttribute('data-theme', next);
+       localStorage.setItem('theme', next);
+       this.textContent = next === 'light' ? '☀️' : '🌙';
+     });
+     window.initAdminStudents();
    </script>
 
 </body>

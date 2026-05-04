@@ -9,27 +9,26 @@ window.adminAllStudents = [];
 /**
  * Initialize admin students page
  */
-window.initAdminStudents = async function() {
+window.initAdminStudents = function() {
   const params = new URLSearchParams(window.location.search);
   window.adminSchoolId = params.get('schoolId');
   const schoolName = params.get('schoolName') || 'School';
 
   document.getElementById('pageTitle').textContent = decodeURIComponent(schoolName) + ' — Students';
 
-  // Auth check
-  const user = firebase.auth().currentUser;
-  if (!user) {
-    window.location.href = 'login.html';
-    return;
-  }
+  window.initAuth(async (user, role) => {
+    if (!user) {
+      window.location.href = 'index.html';
+      return;
+    }
 
-  const userDoc = await firebase.firestore().collection('users').doc(user.uid).get();
-  if (!userDoc.exists || userDoc.data().role !== 'admin') {
-    window.location.href = 'dashboard.html';
-    return;
-  }
+    if (role !== 'admin') {
+      window.location.href = 'dashboard.html';
+      return;
+    }
 
-  window.loadAdminStudents();
+    window.loadAdminStudents();
+  });
 };
 
 /**

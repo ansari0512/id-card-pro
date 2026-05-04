@@ -15,10 +15,20 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == schoolId;
     }
 
+    function validStudentData() {
+      return request.resource.data.name is string &&
+             request.resource.data.name.size() > 0 &&
+             request.resource.data.name.size() <= 100 &&
+             request.resource.data.section is string &&
+             request.resource.data.mobile is string &&
+             request.resource.data.mobile.size() == 10;
+    }
+
     // ── Users ──────────────────────────────────────────────
     match /users/{uid} {
-      allow read:  if isLoggedIn() && (isAdmin() || request.auth.uid == uid);
-      allow write: if isAdmin();
+      allow read:  if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
     // ── Schools ────────────────────────────────────────────
@@ -37,12 +47,14 @@ service cloud.firestore {
 
           allow create: if isLoggedIn() &&
             isSchoolOwner(schoolId) &&
-            request.resource.data.name is string &&
+            validStudentData() &&
             request.resource.data.class == className &&
-            request.resource.data.section is string &&
-            request.resource.data.mobile is string;
+            request.resource.data.schoolId == schoolId;
 
-          allow update: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
+          allow update: if isLoggedIn() &&
+            (isAdmin() || isSchoolOwner(schoolId)) &&
+            validStudentData();
+
           allow delete: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
         }
       }

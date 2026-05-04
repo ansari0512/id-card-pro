@@ -3,23 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login - RK Choice</title>
-  
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <meta name="referrer" content="no-referrer">
+  <title>RK Choice - ID Card Management System</title>
+   
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'dark');</script>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-
+ 
    <div class="center">
      <div class="glass-card" style="width: 100%; max-width: 350px;">
-      
-      <div style="text-align: center; margin-bottom: 2rem;">
-        <div style="font-size: 3.5rem; margin-bottom: 0.5rem;">🎓</div>
-        <h1 style="margin: 0; color: var(--primary);">RK Choice</h1>
-        <p style="color: var(--text-muted); font-size: 14px; margin-top: 0.5rem;">
-          ID Card Management System
-        </p>
-      </div>
+       
+       <div style="text-align: center; margin-bottom: 2rem; position: relative;">
+         <div style="font-size: 3.5rem; margin-bottom: 0.5rem;">🎓</div>
+         <h1 style="margin: 0; color: var(--primary);">RK Choice</h1>
+         <p style="color: var(--text-muted); font-size: 14px; margin-top: 0.5rem;">
+           ID Card Management System
+         </p>
+         <!-- Theme toggle -->
+         <button id="themeToggle" style="position: absolute; top: 0; right: 0; font-size: 1.5rem; background: none; border: none; cursor: pointer;">🌙</button>
+       </div>
 
       <form id="loginForm">
         <div class="form-group">
@@ -50,8 +56,8 @@
    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-   <!-- Mock Firebase (Development) -->
-   <script src="js/mock-firebase.js"></script>
+   <!-- Firebase Initialization -->
+   <script src="js/firebase-config.js"></script>
 
     <!-- Utils (showToast, sanitize, etc.) -->
     <script src="js/helpers.js"></script>
@@ -60,7 +66,7 @@
    <script src="js/controllers/auth.controller.js"></script>
 
    <!-- App Entry -->
-   <script src="js/app-new.js"></script>
+   <!-- app-new.js removed -->
 
    <!-- Page-specific script -->
    <script>
@@ -112,8 +118,19 @@
      });
 
      // Theme toggle
-     document.getElementById('themeToggle').addEventListener('click', window.toggleTheme);
-     window.loadTheme();
+     (function() {
+       const t = localStorage.getItem('theme') || 'dark';
+       document.documentElement.setAttribute('data-theme', t);
+       const btn = document.getElementById('themeToggle');
+       if (btn) btn.textContent = t === 'light' ? '☀️' : '🌙';
+     })();
+     document.getElementById('themeToggle')?.addEventListener('click', function() {
+       const current = document.documentElement.getAttribute('data-theme');
+       const next = current === 'light' ? 'dark' : 'light';
+       document.documentElement.setAttribute('data-theme', next);
+       localStorage.setItem('theme', next);
+       this.textContent = next === 'light' ? '☀️' : '🌙';
+     });
      </script>
 
 </body>

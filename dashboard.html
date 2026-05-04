@@ -3,10 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <meta name="referrer" content="no-referrer">
   <title>Dashboard - RK Choice</title>
   
   <link rel="stylesheet" href="css/style.css">
-</head>
+  <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'dark');</script>
 <body>
 
   <!-- Topbar -->
@@ -19,7 +22,7 @@
     </div>
     <div style="display: flex; align-items: center; gap: 1rem;">
       <span id="userEmail" style="font-size: 13px; color: var(--text-muted); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
-      <button class="secondary" onclick="logout()">Logout</button>
+      <button class="secondary" onclick="window.logout()">Logout</button>
     </div>
   </header>
 
@@ -127,19 +130,33 @@
    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-   <!-- Mock Firebase -->
-   <script src="js/mock-firebase.js"></script>
+   <!-- Firebase Initialization -->
+   <script src="js/firebase-config.js"></script>
 
    <!-- Utils -->
    <script src="js/helpers.js"></script>
+
+   <!-- Auth Controller -->
+   <script src="js/controllers/auth.controller.js"></script>
 
    <!-- Dashboard Controller -->
    <script src="js/controllers/dashboard.controller.js"></script>
 
    <!-- Theme -->
    <script>
-     document.getElementById('themeToggle')?.addEventListener('click', window.toggleTheme);
-     window.loadTheme();
+     (function() {
+       const t = localStorage.getItem('theme') || 'dark';
+       document.documentElement.setAttribute('data-theme', t);
+       const btn = document.getElementById('themeToggle');
+       if (btn) btn.textContent = t === 'light' ? '☀️' : '🌙';
+     })();
+     document.getElementById('themeToggle')?.addEventListener('click', function() {
+       const current = document.documentElement.getAttribute('data-theme');
+       const next = current === 'light' ? 'dark' : 'light';
+       document.documentElement.setAttribute('data-theme', next);
+       localStorage.setItem('theme', next);
+       this.textContent = next === 'light' ? '☀️' : '🌙';
+     });
    </script>
 </body>
 </html>

@@ -8,19 +8,25 @@ window.dashboardUser = null;
 /**
  * Initialize dashboard
  */
-window.initDashboard = async function() {
-  const user = firebase.auth().currentUser;
-  if (!user) {
-    window.location.href = 'login.html';
-    return;
-  }
+window.initDashboard = function() {
+  window.initAuth(async (user, role) => {
+     if (!user) {
+       window.location.href = 'index.html';
+       return;
+     }
 
-  window.dashboardUser = user;
-  document.getElementById('userEmail').textContent = user.email;
-  await window.loadStats(user);
+    if (role === 'admin') {
+      window.location.href = 'admin-panel.html';
+      return;
+    }
 
-  // Setup event listeners
-  window.setupDashboardListeners();
+    window.dashboardUser = user;
+    document.getElementById('userEmail').textContent = user.email;
+    await window.loadStats(user);
+
+    // Setup event listeners
+    window.setupDashboardListeners();
+  });
 };
 
 /**
@@ -38,23 +44,7 @@ window.loadStats = async function(user) {
 /**
  * Setup dashboard event listeners
  */
-window.setupDashboardListeners = function() {
-  // Export students
-  document.querySelector('a[href="id-form.html"]')?.addEventListener('click', () => {
-    // Just navigation, no action needed
-  });
-
-  // Bulk delete
-  document.querySelector('button[onclick="confirmBulkDelete()"]')?.addEventListener('click', () => {
-    if (!confirm('Delete ALL students? This cannot be undone!')) return;
-    window.confirmBulkDelete();
-  });
-
-  // Delete class modal
-  document.querySelector('button[onclick="openDeleteClassModal()"]')?.addEventListener('click', () => {
-    window.openDeleteClassModal();
-  });
-};
+window.setupDashboardListeners = function() {};
 
 /**
  * Export students CSV
@@ -104,6 +94,7 @@ window.exportStudents = async function() {
  * Bulk delete all students
  */
 window.confirmBulkDelete = async function() {
+  if (!confirm('Delete ALL students? This cannot be undone!')) return;
   try {
     const user = firebase.auth().currentUser;
     const students = await window.dbGetAllStudents(user.uid);
@@ -111,11 +102,9 @@ window.confirmBulkDelete = async function() {
       window.showToast('No students to delete', 'error');
       return;
     }
-
     await Promise.all(students.map(s =>
       window.dbStudents(user.uid, s.class).doc(s.docId || s.id).delete()
     ));
-
     window.showToast(`Deleted ${students.length} students`, 'success');
     window.loadStats(user);
   } catch (e) {
@@ -140,27 +129,25 @@ window.closeDeleteClassModal = function() {
 };
 
 /**
- * Class selection change handler
+ * Class selection change handler — DOMContentLoaded ke baad attach karo
  */
-document.getElementById('deleteClassSelect')?.addEventListener('change', async function() {
-  const cls = this.value;
-  const countEl = document.getElementById('deleteClassCount');
-  if (!cls) {
-    countEl.textContent = '';
-    return;
-  }
-
-  try {
-    const user = firebase.auth().currentUser;
-    const students = await window.dbGetAllStudents(user.uid, { class: cls });
-    countEl.textContent = students.length > 0
-      ? `⚠️ ${students.length} student(s) will be deleted from Class ${cls}`
-      : `No students found in Class ${cls}`;
-    countEl.style.color = students.length > 0 ? '#ef4444' : 'var(--text-muted)';
-  } catch (e) {
-    countEl.textContent = 'Error loading count';
-  }
-});
+function attachDeleteClassListener() {
+  document.getElementById('deleteClassSelect')?.addEventListener('change', async function() {
+    const cls = this.value;
+    const countEl = document.getElementById('deleteClassCount');
+    if (!cls) { countEl.textContent = ''; return; }
+    try {
+      const user = firebase.auth().currentUser;
+      const students = await window.dbGetAllStudents(user.uid, { class: cls });
+      countEl.textContent = students.length > 0
+        ? `⚠️ ${students.length} student(s) will be deleted from Class ${cls}`
+        : `No students found in Class ${cls}`;
+      countEl.style.color = students.length > 0 ? '#ef4444' : 'var(--text-muted)';
+    } catch (e) {
+      countEl.textContent = 'Error loading count';
+    }
+  });
+}
 
 /**
  * Confirm delete by class
@@ -207,12 +194,15 @@ window.confirmDeleteByClass = async function() {
  */
 window.logout = async function() {
   try {
-    await firebase.auth().signOut();
-    window.location.href = 'login.html';
+   await firebase.auth().signOut();
+   window.location.href = 'index.html';
   } catch (e) {
     window.showToast('Logout failed: ' + e.message, 'error');
   }
 };
 
 // Auto-init on page load
-document.addEventListener('DOMContentLoaded', window.initDashboard);
+document.addEventListener('DOMContentLoaded', function() {
+  window.initDashboard();
+  attachDeleteClassListener();
+});

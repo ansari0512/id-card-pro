@@ -3,8 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Panel - RK Choice</title>
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <meta name="referrer" content="no-referrer">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'dark');</script>
   <link rel="stylesheet" href="css/style.css">
   <style>
     .school-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
@@ -17,10 +20,10 @@
     .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
     .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; text-align: center; }
     .stat-card .num { font-size: 2rem; font-weight: 700; color: var(--primary); }
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; padding: 1rem; }
     .modal-overlay.open { display: flex; }
-    .modal { background: var(--bg-card); border-radius: 16px; padding: 2rem; width: 100%; max-width: 460px; border: 1px solid var(--border); }
-    .modal h3 { margin-top: 0; }
+    .modal { background: var(--modal-bg); border-radius: 16px; padding: 1.5rem; width: 100%; max-width: 460px; border: 1px solid var(--border); max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+    .modal h3 { margin-top: 0; color: var(--text); }
   </style>
 </head>
 <body>
@@ -139,19 +142,50 @@
    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-   <!-- Mock Firebase -->
-   <script src="js/mock-firebase.js"></script>
+   <!-- Firebase Initialization -->
+   <script src="js/firebase-config.js"></script>
 
    <!-- Utils -->
    <script src="js/helpers.js"></script>
 
+   <!-- Auth Controller -->
+   <script src="js/controllers/auth.controller.js"></script>
+
    <!-- Admin Controller -->
    <script src="js/controllers/admin.controller.js"></script>
 
-   <!-- Theme -->
+   <!-- Theme + Init -->
    <script>
-     document.getElementById('themeToggle')?.addEventListener('click', window.toggleTheme);
-     window.loadTheme();
+     // Theme pehle apply karo
+     (function() {
+       const t = localStorage.getItem('theme') || 'dark';
+       document.documentElement.setAttribute('data-theme', t);
+       const btn = document.getElementById('themeToggle');
+       if (btn) btn.textContent = t === 'light' ? '☀️' : '🌙';
+     })();
+
+     document.getElementById('themeToggle').addEventListener('click', function() {
+       const current = document.documentElement.getAttribute('data-theme');
+       const next = current === 'light' ? 'dark' : 'light';
+       document.documentElement.setAttribute('data-theme', next);
+       localStorage.setItem('theme', next);
+       this.textContent = next === 'light' ? '☀️' : '🌙';
+     });
+
+     document.getElementById('addSchoolForm').addEventListener('submit', window.createSchool);
+     function doLogout() { window.adminLogout(); }
+
+     // Auth ready hone ke baad init karo
+     firebase.auth().onAuthStateChanged(async function(user) {
+       if (!user) { window.location.href = 'index.html'; return; }
+       const role = await window.fetchUserRole(user);
+       if (role !== 'admin') { window.location.href = 'dashboard.html'; return; }
+       window.adminUser = user;
+       window.currentUser = user;
+       window.currentRole = role;
+       document.getElementById('adminEmail').textContent = user.email;
+       window.loadSchools();
+     });
    </script>
 
 </body>

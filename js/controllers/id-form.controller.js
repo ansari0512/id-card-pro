@@ -11,44 +11,25 @@ window.isMockMode = function() {
 };
 
 /**
- * Upload photo (mock or real)
+ * Upload photo — path: students/{schoolName}/{className}/{studentName}_{studentId}.ext
  */
-window.uploadPhoto = async function(userId, studentId, file) {
-  if (window.isMockMode()) {
-    return new Promise(resolve => {
-      const reader = new FileReader();
-      reader.onload = e => resolve(e.target.result);
-      reader.readAsDataURL(file);
-    });
-  }
+window.uploadPhoto = async function(userId, studentId, file, className, studentName) {
+  // School name Firestore se fetch karo
+  let schoolName = 'School';
+  try {
+    const schoolDoc = await firebase.firestore().collection('schools').doc(userId).get();
+    if (schoolDoc.exists) schoolName = schoolDoc.data().schoolName || 'School';
+  } catch(e) {}
 
-  const storageRef = firebase.storage().ref(`students/${userId}/${studentId}_${Date.now()}`);
+  const cls   = (className   || 'Unknown').replace(/[^a-zA-Z0-9 _-]/g, '');
+  const sName = (studentName || studentId).replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
+  const ext   = file.type.includes('png') ? 'png' : 'jpg';
+  const safeSch = schoolName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
+
+  const path = `students/${safeSch}/${cls}/${sName}_${studentId}.${ext}`;
+  const storageRef = firebase.storage().ref(path);
   const snapshot = await storageRef.put(file);
   return await snapshot.ref.getDownloadURL();
-};
-
-/**
- * Generate student ID
- */
-window.generateStudentId = function() {
-  return 'RK' + Date.now();
-};
-
-/**
- * Sanitize input
- */
-window.sanitize = function(str) {
-  if (typeof str !== 'string') return str;
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-};
-
-/**
- * To proper case
- */
-window.toProperCase = function(str) {
-  return str.replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
 };
 
 /**
@@ -58,48 +39,6 @@ window.applyProperCase = function(input) {
   const pos = input.selectionStart;
   input.value = window.toProperCase(input.value);
   input.setSelectionRange(pos, pos);
-};
-
-/**
- * Load theme
- */
-window.loadTheme = function() {
-  const savedTheme = localStorage.getItem('theme') || 'dark';
-  document.documentElement.setAttribute('data-theme', savedTheme);
-  const themeToggle = document.getElementById('themeToggle');
-  if (themeToggle) {
-    themeToggle.textContent = savedTheme === 'light' ? '☀️' : '🌙';
-  }
-};
-
-/**
- * Toggle theme
- */
-window.toggleTheme = function() {
-  const current = document.documentElement.getAttribute('data-theme');
-  const next = current === 'light' ? 'dark' : 'light';
-  document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('theme', next);
-  const themeToggle = document.getElementById('themeToggle');
-  if (themeToggle) {
-    themeToggle.textContent = next === 'light' ? '☀️' : '🌙';
-  }
-};
-
-/**
- * Show toast
- */
-window.showToast = function(msg, type = 'info') {
-  const existing = document.querySelector('.toast');
-  if (existing) existing.remove();
-
-  const toast = document.createElement('div');
-  toast.textContent = msg;
-  toast.style.cssText = `
-    position:fixed;top:20px;right:20px;padding:12px 24px;background:${type==='error'?'#ef4444':type==='success'?'#22c55e':'#3b82f6'};color:white;border-radius:8px;z-index:99999;font-family:Poppins,sans-serif;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,0.3);
-  `;
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
 };
 
 /**
@@ -143,10 +82,10 @@ window.submitStudentForm = async function(e) {
     if (!photoFile.type.startsWith('image/')) throw new Error('Only image files allowed');
     if (photoFile.size > 5 * 1024 * 1024) throw new Error('Photo must be less than 5MB');
 
-    const studentId = window.generateStudentId();
+    const studentId = await window.generateStudentId(user.uid);
 
     // Upload photo
-    const photoUrl = await window.uploadPhoto(user.uid, studentId, photoFile);
+    const photoUrl = await window.uploadPhoto(user.uid, studentId, photoFile, cls, name);
 
     // Save to database
     const student = {
@@ -170,7 +109,7 @@ window.submitStudentForm = async function(e) {
 
     // Show success
     document.getElementById('cardId').textContent = studentId;
-    window.showToast('✅ Student ID created successfully!', 'success');
+    window.showToast('✅ Student ID created successfully! Click Print IDs to print.', 'success');
 
     // Reset form
     document.getElementById('studentForm').reset();
@@ -178,13 +117,6 @@ window.submitStudentForm = async function(e) {
     document.getElementById('cardPhoto').src = 'assets/placeholder.png';
     document.getElementById('cardId').textContent = '-';
     window.updateIdPreview();
-
-    // Print option
-    setTimeout(() => {
-      if (confirm('Student saved! Would you like to print the ID card now?')) {
-        window.open('print.html?id=' + studentId, '_blank');
-      }
-    }, 500);
 
   } catch (error) {
     window.showToast('❌ ' + error.message, 'error');
@@ -200,7 +132,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Auth check
   firebase.auth().onAuthStateChanged(user => {
     if (!user) {
-      window.location.href = 'login.html';
+      window.location.href = 'index.html';
       return;
     }
 
@@ -240,5 +172,5 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Theme
   document.getElementById('themeToggle')?.addEventListener('click', window.toggleTheme);
-  window.loadTheme();
+  // loadTheme HTML mein handle ho raha hai
 });

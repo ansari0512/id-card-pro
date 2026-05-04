@@ -47,68 +47,35 @@ window.getStudents = async function(filters = {}) {
 /**
  * Delete student
  */
-window.deleteStudent = async function(studentId) {
+window.deleteStudent = async function(studentId, studentClass) {
   const user = firebase.auth().currentUser;
   if (!user) throw new Error('Authentication required');
-
-  if (window.isMockMode()) {
-    const students = JSON.parse(localStorage.getItem('mock_students') || '[]');
-    const newStudents = students.filter(s => (s.docId || s.id) !== studentId);
-    localStorage.setItem('mock_students', JSON.stringify(newStudents));
-    return true;
-  }
-
-  // Real Firebase - find and delete
-  const snapshot = await window.dbStudents(user.uid)
-    .where('id', '==', studentId)
-    .limit(1)
-    .get();
-
-  if (snapshot.empty) throw new Error('Student not found');
-
-  await snapshot.docs[0].ref.delete();
+  const student = window.allStudents.find(s => (s.docId || s.id) === studentId);
+  const cls = studentClass || student?.class;
+  if (!cls) throw new Error('Student class not found');
+  await window.dbStudents(user.uid, cls).doc(studentId).delete();
   return true;
 };
 
 /**
- * Upload photo
+ * Upload photo — path: students/{schoolName}/{className}/{studentName}_{studentId}.ext
  */
-window.uploadPhoto = async function(userId, studentId, file) {
-  if (window.isMockMode()) {
-    return new Promise(resolve => {
-      const reader = new FileReader();
-      reader.onload = e => resolve(e.target.result);
-      reader.readAsDataURL(file);
-    });
-  }
+window.uploadPhoto = async function(userId, studentId, file, className, studentName) {
+  let schoolName = 'School';
+  try {
+    const schoolDoc = await firebase.firestore().collection('schools').doc(userId).get();
+    if (schoolDoc.exists) schoolName = schoolDoc.data().schoolName || 'School';
+  } catch(e) {}
 
-  const storageRef = firebase.storage().ref(`students/${userId}/${studentId}_${Date.now()}`);
+  const cls     = (className   || 'Unknown').replace(/[^a-zA-Z0-9 _-]/g, '');
+  const sName   = (studentName || studentId).replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
+  const ext     = file.type.includes('png') ? 'png' : 'jpg';
+  const safeSch = schoolName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
+
+  const path = `students/${safeSch}/${cls}/${sName}_${studentId}.${ext}`;
+  const storageRef = firebase.storage().ref(path);
   const snapshot = await storageRef.put(file);
   return await snapshot.ref.getDownloadURL();
-};
-
-/**
- * Generate student ID
- */
-window.generateStudentId = function() {
-  return 'RK' + Date.now();
-};
-
-/**
- * Sanitize HTML
- */
-window.sanitize = function(str) {
-  if (typeof str !== 'string') return str;
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-};
-
-/**
- * To proper case
- */
-window.toProperCase = function(str) {
-  return str.replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
 };
 
 /**
@@ -322,14 +289,16 @@ window.saveStudentEdit = async function(e) {
       updatedAt: Date.now()
     };
 
+    const user = firebase.auth().currentUser;
+    if (!user) throw new Error('Not logged in');
+
     // Photo upload if new
     const photoFile = document.getElementById('editPhoto').files[0];
     if (photoFile) {
       if (!photoFile.type.startsWith('image/')) throw new Error('Only image files allowed');
       if (photoFile.size > 5 * 1024 * 1024) throw new Error('Photo must be less than 5MB');
 
-      const user = firebase.auth().currentUser;
-      const photoUrl = await window.uploadPhoto(user.uid, docId, photoFile);
+      const photoUrl = await window.uploadPhoto(user.uid, docId, photoFile, document.getElementById('editClass').value, document.getElementById('editName').value.trim());
       updates.photo = photoUrl;
     }
 
@@ -339,7 +308,6 @@ window.saveStudentEdit = async function(e) {
     const newClass = document.getElementById('editClass').value;
 
     if (oldClass && oldClass !== newClass) {
-      // Delete from old class, add to new class
       await window.dbStudents(user.uid, oldClass).doc(docId).delete();
       await window.dbStudents(user.uid, newClass).add({
         ...student,
@@ -347,7 +315,6 @@ window.saveStudentEdit = async function(e) {
         docId: undefined
       });
     } else {
-      // Update in same class
       await window.dbStudents(user.uid, newClass).doc(docId).update(updates);
     }
 
@@ -513,41 +480,13 @@ window.bulkDownload = async function() {
   }
 };
 
-// ── THEME ──────────────────────────────────────────────────
-
-/**
- * Load saved theme
- */
-window.loadTheme = function() {
-  const savedTheme = localStorage.getItem('theme') || 'dark';
-  document.documentElement.setAttribute('data-theme', savedTheme);
-  const themeToggle = document.getElementById('themeToggle');
-  if (themeToggle) {
-    themeToggle.textContent = savedTheme === 'light' ? '☀️' : '🌙';
-  }
-};
-
-/**
- * Toggle theme
- */
-window.toggleTheme = function() {
-  const current = document.documentElement.getAttribute('data-theme');
-  const next = current === 'light' ? 'dark' : 'light';
-  document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('theme', next);
-  const themeToggle = document.getElementById('themeToggle');
-  if (themeToggle) {
-    themeToggle.textContent = next === 'light' ? '☀️' : '🌙';
-  }
-};
-
 // ── INITIALIZATION ─────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', function() {
   // Auth listener
   firebase.auth().onAuthStateChanged(user => {
     if (!user) {
-      window.location.href = 'login.html';
+      window.location.href = 'index.html';
       return;
     }
 
@@ -584,8 +523,4 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('editModal')?.addEventListener('click', function(e) {
     if (e.target === e.currentTarget) window.closeEditModal();
   });
-
-  // Theme toggle
-  document.getElementById('themeToggle')?.addEventListener('click', window.toggleTheme);
-  window.loadTheme();
 });

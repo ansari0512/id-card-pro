@@ -9,22 +9,22 @@ window.adminUser = null;
 /**
  * Initialize admin panel
  */
-window.initAdminPanel = async function() {
-  const user = firebase.auth().currentUser;
-  if (!user) {
-    window.location.href = 'login.html';
-    return;
-  }
+window.initAdminPanel = function() {
+  window.initAuth(async (user, role) => {
+     if (!user) {
+       window.location.href = 'index.html';
+       return;
+     }
 
-  const userDoc = await firebase.firestore().collection('users').doc(user.uid).get();
-  if (!userDoc.exists || userDoc.data().role !== 'admin') {
-    window.location.href = 'dashboard.html';
-    return;
-  }
+    if (role !== 'admin') {
+      window.location.href = 'dashboard.html';
+      return;
+    }
 
-  window.adminUser = user;
-  document.getElementById('adminEmail').textContent = user.email;
-  window.loadSchools();
+    window.adminUser = user;
+    document.getElementById('adminEmail').textContent = user.email;
+    window.loadSchools();
+  });
 };
 
 /**
@@ -38,19 +38,10 @@ window.loadSchools = async function() {
       .get();
 
     const schools = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-    const totalCount = 0;
-    const studentCounts = {};
-
-    // Fetch student counts for each school
-    for (const school of schools) {
-      const students = await window.dbGetAllStudents(school.id);
-      studentCounts[school.id] = students.length;
-      totalCount += students.length;
-    }
 
     document.getElementById('totalSchools').textContent = schools.length;
     document.getElementById('activeSchools').textContent = schools.filter(s => s.active !== false).length;
-    document.getElementById('totalStudentsAll').textContent = totalCount;
+    document.getElementById('totalStudentsAll').textContent = '-';
 
     const tbody = document.getElementById('schoolsBody');
     tbody.innerHTML = '';
@@ -62,26 +53,70 @@ window.loadSchools = async function() {
     }
 
     schools.forEach(school => {
-      const count = studentCounts[school.id] || 0;
       const active = school.active !== false;
+      const safeName = window.sanitize(school.schoolName || 'N/A');
+      const safeCity = window.sanitize(school.city || '');
+      const safeEmail = window.sanitize(school.email || '-');
       const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td><strong>${school.schoolName || 'N/A'}</strong>${school.city ? `<br><small style="color:var(--text-muted)">${school.city}</small>` : ''}</td>
-        <td style="font-size:13px;">${school.email || '-'}</td>
-        <td><strong>${count}</strong></td>
-        <td style="font-size:12px;color:var(--text-muted);">${school.createdAt ? new Date(school.createdAt).toLocaleDateString('en-IN') : '-'}</td>
-        <td><span class="badge ${active ? 'badge-active' : 'badge-inactive'}">${active ? 'Active' : 'Inactive'}</span></td>
-        <td>
-          <button class="secondary" style="padding:4px 10px;font-size:12px;" onclick="window.viewStudents('${school.id}', '${(school.schoolName||'').replace(/'/g,'')}')">👁️ Students</button>
-          <button class="secondary" style="padding:4px 10px;font-size:12px;margin-left:4px;" onclick="window.toggleStatus('${school.id}', ${active})">${active ? '🔒 Disable' : '✅ Enable'}</button>
-          <button class="danger" style="padding:4px 10px;font-size:12px;margin-left:4px;" onclick="window.deleteSchool('${school.id}', '${(school.schoolName||'').replace(/'/g,'')}')">🗑️</button>
-        </td>
-      `;
+
+      // Buttons data-* attributes se attach karo — inline onclick XSS se bachao
+      const td1 = document.createElement('td');
+      td1.innerHTML = `<strong>${safeName}</strong>${safeCity ? `<br><small style="color:var(--text-muted)">${safeCity}</small>` : ''}`;
+
+      const td2 = document.createElement('td');
+      td2.style.fontSize = '13px';
+      td2.textContent = safeEmail;
+
+      const td3 = document.createElement('td');
+      td3.innerHTML = `<strong id="count_${school.id}">...</strong>`;
+
+      const td4 = document.createElement('td');
+      td4.style.cssText = 'font-size:12px;color:var(--text-muted)';
+      td4.textContent = school.createdAt ? new Date(school.createdAt).toLocaleDateString('en-IN') : '-';
+
+      const td5 = document.createElement('td');
+      td5.innerHTML = `<span class="badge ${active ? 'badge-active' : 'badge-inactive'}">${active ? 'Active' : 'Inactive'}</span>`;
+
+      const td6 = document.createElement('td');
+      const btnView = document.createElement('button');
+      btnView.className = 'secondary'; btnView.style.cssText = 'padding:4px 10px;font-size:12px;';
+      btnView.textContent = '👁️ Students';
+      btnView.addEventListener('click', () => window.viewStudents(school.id, school.schoolName || ''));
+
+      const btnToggle = document.createElement('button');
+      btnToggle.className = 'secondary'; btnToggle.style.cssText = 'padding:4px 10px;font-size:12px;margin-left:4px;';
+      btnToggle.textContent = active ? '🔒 Disable' : '✅ Enable';
+      btnToggle.addEventListener('click', () => window.toggleStatus(school.id, active));
+
+      const btnDel = document.createElement('button');
+      btnDel.className = 'danger'; btnDel.style.cssText = 'padding:4px 10px;font-size:12px;margin-left:4px;';
+      btnDel.textContent = '🗑️';
+      btnDel.addEventListener('click', () => window.deleteSchool(school.id, school.schoolName || ''));
+
+      td6.append(btnView, btnToggle, btnDel);
+      tr.append(td1, td2, td3, td4, td5, td6);
       tbody.appendChild(tr);
     });
 
     document.getElementById('loadingSchools').style.display = 'none';
     document.getElementById('schoolsTable').style.display = 'table';
+
+    // Student counts fetch karo background mein
+    let total = 0;
+    for (const school of schools) {
+      try {
+        const students = await window.dbGetAllStudents(school.id);
+        const count = students.length;
+        total += count;
+        const el = document.getElementById('count_' + school.id);
+        if (el) el.textContent = count;
+      } catch(e) {
+        const el = document.getElementById('count_' + school.id);
+        if (el) el.textContent = '0';
+      }
+    }
+    document.getElementById('totalStudentsAll').textContent = total;
+
   } catch (err) {
     window.showToast('Schools load failed: ' + err.message, 'error');
     document.getElementById('loadingSchools').textContent = 'Failed to load. Please refresh.';
@@ -171,7 +206,7 @@ window.deleteSchool = async function(schoolId, schoolName) {
   try {
     const students = await window.dbGetAllStudents(schoolId);
     await Promise.all(students.map(s =>
-      window.dbStudents(schoolId, s.class).doc(s.docId).delete()
+      window.dbStudents(schoolId, s.class).doc(s.docId || s.id).delete()
     ));
 
     await firebase.firestore().collection('schools').doc(schoolId).delete();
@@ -194,6 +229,6 @@ window.viewStudents = function(schoolId, schoolName) {
  * Admin logout
  */
 window.adminLogout = async function() {
-  await firebase.auth().signOut();
-  window.location.href = 'login.html';
+   await firebase.auth().signOut();
+   window.location.href = 'index.html';
 };

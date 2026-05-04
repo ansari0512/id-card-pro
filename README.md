@@ -12,7 +12,7 @@
 
 ## 3. Get Firebase Config
 Project Settings → "Your apps" → Add a Web app
-Copy the config values and update `js/firebase.js`:
+Copy the config values and update `js/firebase-config.js`:
 - `apiKey`, `authDomain`, `projectId`, `storageBucket`, `messagingSenderId`, `appId`
 
 ## 4. Deploy Security Rules

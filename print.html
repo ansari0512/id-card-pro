@@ -3,11 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <meta name="referrer" content="no-referrer">
   <title>Print ID Cards - RK Choice</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'dark');</script>
 
    <style>
-     body { font-family: 'Poppins', sans-serif; background: #f5f5f5; margin: 0; padding: 20px; color: #333; }
+     body { font-family: 'Poppins', sans-serif; background: #f5f5f5; margin: 0; padding: 20px; color: #333; transition: background 0.3s, color 0.3s; }
+     [data-theme="dark"] { background: #0f172a; color: #fff; }
+     [data-theme="dark"] .toolbar { background: #1e293b; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+     [data-theme="dark"] .a4-page { background: #1e293b; box-shadow: 0 0 20px rgba(0,0,0,0.4); }
+     [data-theme="dark"] .id-card { background: #fff; }
      .toolbar { background: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; gap: 10px; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
      .toolbar h2 { margin: 0; color: #f59e0b; flex: 1; }
      button { padding: 8px 16px; background: #f59e0b; border: none; border-radius: 8px; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 14px; min-height: 44px; }
@@ -51,6 +59,7 @@
     <h2>🖨️ Print ID Cards</h2>
     <button onclick="window.print()">🖨️ Print</button>
     <button class="secondary" onclick="showToast('Use browser print (Ctrl+P) and select Save as PDF', 'info')">📄 Save as PDF</button>
+    <button id="themeToggle" class="secondary" onclick="toggleTheme()" style="font-size:1.2rem;padding:8px 14px;">🌙</button>
     <button class="secondary" onclick="history.length > 1 ? history.back() : window.close()">✕ Close</button>
   </div>
 
@@ -67,14 +76,33 @@
    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-   <!-- Mock Firebase -->
-   <script src="js/mock-firebase.js"></script>
+   <script src="js/firebase-config.js"></script>
 
    <!-- Utils -->
    <script src="js/helpers.js"></script>
 
+   <!-- Auth Controller -->
+   <script src="js/controllers/auth.controller.js"></script>
+
    <!-- Print Controller -->
    <script src="js/controllers/print.controller.js"></script>
+
+   <!-- Theme -->
+   <script>
+     (function() {
+       const t = localStorage.getItem('theme') || 'dark';
+       document.documentElement.setAttribute('data-theme', t);
+       const btn = document.getElementById('themeToggle');
+       if (btn) btn.textContent = t === 'light' ? '☀️' : '🌙';
+     })();
+     document.getElementById('themeToggle')?.addEventListener('click', function() {
+       const current = document.documentElement.getAttribute('data-theme');
+       const next = current === 'light' ? 'dark' : 'light';
+       document.documentElement.setAttribute('data-theme', next);
+       localStorage.setItem('theme', next);
+       this.textContent = next === 'light' ? '☀️' : '🌙';
+     });
+   </script>
 
 </body>
 </html>

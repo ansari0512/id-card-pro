@@ -3,14 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <meta name="referrer" content="no-referrer">
   <title>Students - RK Choice</title>
+  <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'dark');</script>
   <link rel="stylesheet" href="css/style.css">
 
   <style>
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; padding: 1rem; }
     .modal-overlay.open { display: flex; }
-    .modal { background: var(--bg-card); border-radius: 16px; padding: 2rem; width: 100%; max-width: 500px; border: 1px solid var(--border); max-height: 90vh; overflow-y: auto; }
-    .modal h3 { margin-top: 0; }
+    .modal { background: var(--modal-bg); border-radius: 16px; padding: 1.5rem; width: 100%; max-width: 500px; border: 1px solid var(--border); max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+    .modal h3 { margin-top: 0; color: var(--text); }
   </style>
 </head>
 <body>
@@ -185,8 +189,7 @@
    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
-   <!-- Mock Firebase -->
-   <script src="js/mock-firebase.js"></script>
+   <script src="js/firebase-config.js"></script>
 
    <!-- JSZip for bulk download -->
    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -194,13 +197,27 @@
    <!-- Utils -->
    <script src="js/helpers.js"></script>
 
+   <!-- Auth Controller -->
+   <script src="js/controllers/auth.controller.js"></script>
+
    <!-- Student Controller -->
    <script src="js/controllers/student.controller.js"></script>
 
    <!-- Theme -->
    <script>
-     document.getElementById('themeToggle')?.addEventListener('click', window.toggleTheme);
-     window.loadTheme();
+     (function() {
+       const t = localStorage.getItem('theme') || 'dark';
+       document.documentElement.setAttribute('data-theme', t);
+       const btn = document.getElementById('themeToggle');
+       if (btn) btn.textContent = t === 'light' ? '☀️' : '🌙';
+     })();
+     document.getElementById('themeToggle')?.addEventListener('click', function() {
+       const current = document.documentElement.getAttribute('data-theme');
+       const next = current === 'light' ? 'dark' : 'light';
+       document.documentElement.setAttribute('data-theme', next);
+       localStorage.setItem('theme', next);
+       this.textContent = next === 'light' ? '☀️' : '🌙';
+     });
    </script>
 
 </body>

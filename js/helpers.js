@@ -3,14 +3,37 @@
  * Common utility functions for the ID Card System
  */
 
-// Debug: confirm helpers loaded
-console.log('✅ helpers.js loaded');
-
 /**
- * Generate unique student ID (RK + timestamp)
+ * Generate unique student ID: {SCHOOLCODE}-{YEAR}-{0001}
  */
-window.generateStudentId = function() {
-  return 'RK' + Date.now();
+window.generateStudentId = async function(schoolId) {
+  const year = new Date().getFullYear();
+
+  // School name fetch karo
+  let schoolCode = 'SCH';
+  try {
+    const schoolDoc = await firebase.firestore().collection('schools').doc(schoolId).get();
+    if (schoolDoc.exists) {
+      const schoolName = schoolDoc.data().schoolName || '';
+      // Har word ka pehla letter lo, max 4 letters, uppercase
+      schoolCode = schoolName
+        .split(/\s+/)
+        .filter(w => w.length > 0)
+        .map(w => w[0].toUpperCase())
+        .join('')
+        .slice(0, 4) || 'SCH';
+    }
+  } catch(e) {}
+
+  // Is school ke is saal ke students count karo
+  const allStudents = await window.dbGetAllStudents(schoolId);
+  const thisYearCount = allStudents.filter(s => {
+    const d = new Date(s.createdAt);
+    return d.getFullYear() === year;
+  }).length;
+
+  const serial = String(thisYearCount + 1).padStart(4, '0');
+  return `${schoolCode}-${year}-${serial}`;
 };
 
 /**
@@ -105,43 +128,36 @@ window.debounce = function(func, wait) {
   };
 };
 
-/**
- * Check if app is in mock mode
- */
-window.isMockMode = function() {
-  // Mock mode is active when window.MOCK_MODE flag is set (by mock-firebase.js)
-  return window.MOCK_MODE === true;
-};
+window.ALL_CLASSES = ['Nursery','LKG','UKG','KG','1','2','3','4','5','6','7','8','9','10'];
 
-/**
- * DB helpers (mock mode compatible)
- */
 window.dbStudents = function(schoolId, className) {
-  return window.firebase.firestore()
+  return firebase.firestore()
     .collection('schools').doc(schoolId)
     .collection('classes').doc(className)
     .collection('students');
 };
 
 window.dbGetAllStudents = async function(schoolId, filters = {}) {
-  if (window.isMockMode()) {
-    const students = JSON.parse(localStorage.getItem('mock_students') || '[]');
-    let results = students.filter(s => s.schoolId === schoolId);
+  const targetClasses = filters.class ? [filters.class] : window.ALL_CLASSES;
 
-    if (filters.class) results = results.filter(s => s.class === filters.class);
-    if (filters.section) results = results.filter(s => s.section === filters.section);
-    if (filters.search) {
-      const q = filters.search.toLowerCase();
-      results = results.filter(s =>
-        s.name?.toLowerCase().includes(q) || s.id?.toLowerCase().includes(q)
-      );
-    }
+  const snapshots = await Promise.all(
+    targetClasses.map(cls => {
+      let q = window.dbStudents(schoolId, cls);
+      if (filters.section) q = q.where('section', '==', filters.section);
+      return q.get().then(snap =>
+        snap.docs.map(d => ({ docId: d.id, ...d.data() }))
+      ).catch(() => []);
+    })
+  );
 
-    return results
-      .map(s => ({ ...s, docId: s.docId || s.id }))
-      .sort((a, b) => b.createdAt - a.createdAt);
+  let results = snapshots.flat().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+  if (filters.search) {
+    const q = filters.search.toLowerCase();
+    results = results.filter(s =>
+      s.name?.toLowerCase().includes(q) || s.id?.toLowerCase().includes(q)
+    );
   }
 
-  // Real Firebase - not implemented in mock mode
-  return [];
+  return results;
 };

@@ -7,24 +7,29 @@
   --primary: #fbbf24;
   --primary-dark: #d97706;
   --bg-dark: #0f172a;
-  --bg-card: rgba(255, 255, 255, 0.08);
+  --bg-card: #1e293b;
+  --bg-card-hover: #263548;
   --text: #ffffff;
   --text-muted: #94a3b8;
-  --border: rgba(255, 255, 255, 0.15);
+  --border: rgba(255, 255, 255, 0.12);
   --success: #22c55e;
   --error: #ef4444;
   --font: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   --radius: 16px;
+  --modal-bg: #1e293b;
 }
 
 /* Light theme */
 [data-theme="light"] {
-  --bg-dark: #f8fafc;
-  --bg-card: rgba(255, 255, 255, 0.9);
+  --bg-dark: #f1f5f9;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f8fafc;
   --text: #1e293b;
   --text-muted: #64748b;
   --border: rgba(0, 0, 0, 0.1);
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  --modal-bg: #ffffff;
 }
 
 /* Reset & Base */
@@ -40,7 +45,6 @@ body {
   color: var(--text);
   line-height: 1.6;
   min-height: 100vh;
-  transition: background 0.3s ease;
 }
 
 /* Typography */
@@ -95,11 +99,9 @@ a:hover {
   }
 }
 
-/* Glass Card (Glassmorphism) */
+/* Glass Card */
 .glass-card {
   background: var(--bg-card);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 2rem;
@@ -653,8 +655,9 @@ button.full, .btn-full {
 
 /* Responsive utilities */
 @media (max-width: 768px) {
-  h1 { font-size: 1.5rem; }
-  h2 { font-size: 1.25rem; }
+  h1 { font-size: 1.4rem; }
+  h2 { font-size: 1.2rem; }
+  h3 { font-size: 1.1rem; }
 
   .topbar {
     padding: 0.75rem 1rem;
@@ -679,7 +682,7 @@ button.full, .btn-full {
 
   .theme-toggle {
     top: auto;
-    bottom: 80px;
+    bottom: 20px;
     right: 16px;
     width: 44px;
     height: 44px;
@@ -698,25 +701,27 @@ button.full, .btn-full {
 
   .menu {
     flex-direction: column;
+    gap: 0.75rem;
   }
 
-  .menu button {
-    width: 100%;
-  }
+  .menu a { width: 100%; }
+  .menu button { width: 100%; }
 
   .grid {
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 1rem;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
   }
 
   .student-card .actions {
     flex-wrap: wrap;
+    gap: 0.4rem;
   }
 
   .student-card .actions button {
-    min-width: calc(50% - 0.25rem);
-    font-size: 11px;
-    padding: 7px 4px;
+    flex: 1;
+    min-width: calc(50% - 0.2rem);
+    font-size: 12px;
+    padding: 8px 4px;
   }
 
   .layout {
@@ -733,59 +738,56 @@ button.full, .btn-full {
     grid-template-columns: repeat(2, 1fr);
   }
 
-   /* Admin table scroll */
-   .school-table th, .school-table td {
-     padding: 8px 10px;
-     font-size: 12px;
-   }
+  /* Admin table scroll */
+  .school-table th, .school-table td {
+    padding: 8px 8px;
+    font-size: 11px;
+  }
 
-   /* Admin table responsive - horizontal scroll on mobile */
-   .school-table-wrapper {
-     overflow-x: auto;
-     -webkit-overflow-scrolling: touch;
-     margin: 0;
-     padding: 0;
-   }
+  .school-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 
-   /* Admin table buttons - touch friendly */
-   .school-table button {
-     min-height: 36px;
-     min-width: 36px;
-     padding: 6px 10px;
-     font-size: 11px;
-   }
+  .school-table button {
+    min-height: 32px;
+    min-width: unset;
+    padding: 4px 6px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
 
-   /* Stat grid */
-   .stat-grid {
-     grid-template-columns: repeat(3, 1fr) !important;
-     gap: 0.5rem;
-   }
+  .school-table td:last-child {
+    white-space: nowrap;
+  }
 
-   .stat-card {
-     padding: 0.75rem !important;
-   }
+  .stat-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.5rem;
+  }
 
-   .stat-card .num {
-     font-size: 1.5rem !important;
-   }
+  .stat-card {
+    padding: 0.75rem !important;
+  }
 
-   /* Extra small screens */
-   @media (max-width: 360px) {
-     .topbar > div:first-child h2 { font-size: 0.8rem; }
-     button, .btn { padding: 10px 16px; font-size: 13px; }
-     .filters { gap: 0.4rem; }
-     .form-group { margin-bottom: 1.2rem; }
-     .glass-card { padding: 1.2rem; }
-   }
- }
+  .stat-card .num {
+    font-size: 1.5rem !important;
+  }
+}
 
 @media (max-width: 480px) {
+  h1 { font-size: 1.2rem; }
+
   .topbar {
     padding: 0.6rem 0.75rem;
   }
 
   .topbar > div:first-child h2 {
     font-size: 0.9rem;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
   }
 
   .a4 .grid {
@@ -800,30 +802,10 @@ button.full, .btn-full {
     grid-template-columns: 1fr 1fr !important;
   }
 
-   /* Bulk action buttons wrap nicely */
-   .flex.gap-2 {
-     gap: 0.5rem;
-   }
-
-   .flex.gap-2 button {
-     flex: 1;
-     min-width: calc(50% - 0.25rem);
-     padding: 10px 8px;
-     font-size: 12px;
-   }
-
-   /* Student card checkbox label flex wrap */
-   .student-card .actions label {
-     display: flex;
-     align-items: center;
-     gap: 4px;
-     font-size: 12px;
-     cursor: pointer;
-     padding: 8px 12px;
-     border: 1px solid var(--border);
-     border-radius: 10px;
-     flex-wrap: wrap;
-   }
+  .flex.gap-2 {
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
 
   .flex.gap-2 button {
     flex: 1;
@@ -832,15 +814,22 @@ button.full, .btn-full {
     font-size: 12px;
   }
 
-  /* Login card full width */
   .center .glass-card {
     max-width: 100% !important;
   }
 
-  /* ID card preview smaller */
   .id-card-preview {
     width: 100%;
     max-width: 300px;
+  }
+
+  button, .btn {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
   }
 }
 

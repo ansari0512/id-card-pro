@@ -8,15 +8,16 @@ window.printUser = null;
 /**
  * Initialize print page
  */
-window.initPrint = async function() {
-  const user = firebase.auth().currentUser;
-  if (!user) {
-    window.location.href = 'login.html';
-    return;
-  }
+window.initPrint = function() {
+  window.initAuth(async (user, role) => {
+    if (!user) {
+      window.location.href = 'index.html';
+      return;
+    }
 
-  window.printUser = user;
-  await window.loadPrintStudents(user);
+    window.printUser = user;
+    await window.loadPrintStudents(user);
+  });
 };
 
 /**

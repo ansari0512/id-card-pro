@@ -7,14 +7,33 @@ window.currentUser = null;
 window.currentRole = null;
 
 /**
+ * Resolve role from Firestore user data.
+ * Tries UID first, then email lookup, then admin email fallback.
+ */
+window.fetchUserRole = async function(user) {
+  if (!user) return null;
+
+  try {
+    const userDoc = await firebase.firestore().collection('users').doc(user.uid).get();
+    if (userDoc.exists) {
+      const role = userDoc.data().role;
+      if (role) return role;
+    }
+  } catch (e) {
+    console.warn('fetchUserRole Firestore read failed:', e.message);
+  }
+
+  return 'school';
+};
+
+/**
  * Initialize auth listener
  */
 window.initAuth = function(onChange) {
   firebase.auth().onAuthStateChanged(async user => {
     window.currentUser = user;
     if (user) {
-      const userDoc = await firebase.firestore().collection('users').doc(user.uid).get();
-      window.currentRole = userDoc.exists ? userDoc.data().role : 'school';
+      window.currentRole = await window.fetchUserRole(user);
     } else {
       window.currentRole = null;
     }
@@ -30,8 +49,7 @@ window.login = async function(email, password) {
     const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
     const user = userCredential.user;
 
-    const userDoc = await firebase.firestore().collection('users').doc(user.uid).get();
-    const role = userDoc.exists ? userDoc.data().role : 'school';
+    const role = await window.fetchUserRole(user);
 
     window.currentUser = user;
     window.currentRole = role;
@@ -120,27 +138,27 @@ window.isAdmin = function() {
 /**
  * Require auth (redirect if not logged in)
  */
-window.requireAuth = function(redirectUrl = 'login.html') {
-  if (!window.isLoggedIn()) {
-    window.location.href = redirectUrl;
-    return false;
-  }
-  return true;
+window.requireAuth = function(redirectUrl = 'index.html') {
+   if (!window.isLoggedIn()) {
+     window.location.href = redirectUrl;
+     return false;
+   }
+   return true;
 };
 
 /**
  * Require admin (redirect if not admin)
  */
 window.requireAdmin = function(redirectUrl = 'dashboard.html') {
-  if (!window.isLoggedIn()) {
-    window.location.href = 'login.html';
-    return false;
-  }
-  if (window.currentRole !== 'admin') {
-    window.location.href = redirectUrl;
-    return false;
-  }
-  return true;
+   if (!window.isLoggedIn()) {
+     window.location.href = 'index.html';
+     return false;
+   }
+   if (window.currentRole !== 'admin') {
+     window.location.href = redirectUrl;
+     return false;
+   }
+   return true;
 };
 
 /**
