@@ -78,21 +78,22 @@ window.loadSchools = async function() {
       const td5 = document.createElement('td');
       td5.innerHTML = `<span class="badge ${active ? 'badge-active' : 'badge-inactive'}">${active ? 'Active' : 'Inactive'}</span>`;
 
-      const td6 = document.createElement('td');
-      const btnView = document.createElement('button');
-      btnView.className = 'secondary'; btnView.style.cssText = 'padding:4px 10px;font-size:12px;';
-      btnView.textContent = '👁️ Students';
-      btnView.addEventListener('click', () => window.viewStudents(school.id, school.schoolName || ''));
+       const td6 = document.createElement('td');
+       td6.style.cssText = 'display: flex; flex-wrap: wrap; gap: 4px; align-items: center;';
+       const btnView = document.createElement('button');
+       btnView.className = 'secondary'; btnView.style.cssText = 'padding:4px 8px;font-size:11px; flex-shrink: 0;';
+       btnView.textContent = '👁️ View';
+       btnView.addEventListener('click', () => window.viewStudents(school.id, school.schoolName || ''));
 
-      const btnToggle = document.createElement('button');
-      btnToggle.className = 'secondary'; btnToggle.style.cssText = 'padding:4px 10px;font-size:12px;margin-left:4px;';
-      btnToggle.textContent = active ? '🔒 Disable' : '✅ Enable';
-      btnToggle.addEventListener('click', () => window.toggleStatus(school.id, active));
+       const btnToggle = document.createElement('button');
+       btnToggle.className = 'secondary'; btnToggle.style.cssText = 'padding:4px 8px;font-size:11px; flex-shrink: 0;';
+       btnToggle.textContent = active ? '🔒 Disable' : '✅ Enable';
+       btnToggle.addEventListener('click', () => window.toggleStatus(school.id, active));
 
-      const btnDel = document.createElement('button');
-      btnDel.className = 'danger'; btnDel.style.cssText = 'padding:4px 10px;font-size:12px;margin-left:4px;';
-      btnDel.textContent = '🗑️';
-      btnDel.addEventListener('click', () => window.deleteSchool(school.id, school.schoolName || ''));
+       const btnDel = document.createElement('button');
+       btnDel.className = 'danger'; btnDel.style.cssText = 'padding:4px 8px;font-size:11px; flex-shrink: 0;';
+       btnDel.textContent = '🗑️ Delete';
+       btnDel.addEventListener('click', () => window.deleteSchool(school.id, school.schoolName || ''));
 
       td6.append(btnView, btnToggle, btnDel);
       tr.append(td1, td2, td3, td4, td5, td6);
