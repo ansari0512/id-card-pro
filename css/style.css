@@ -861,54 +861,95 @@ button.full, .btn-full {
     padding: 8px 8px;
     font-size: 11px;
   }
-
-.school-table-wrapper {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.school-table th, .school-table td {
-  padding: 12px 16px;
-  text-align: left;
-  border-bottom: 1px solid var(--border);
-  font-size: 14px;
-  vertical-align: middle;
-}
-
-.school-table td:last-child {
-  text-align: center;
-}
-
-.school-table-wrapper {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  margin-bottom: 1rem;
-}
-
-.school-table button {
-  min-height: 32px;
-  min-width: unset;
-  padding: 6px 10px;
-  font-size: 11px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-@media (max-width: 768px) {
-  .school-table th, .school-table td {
-    padding: 8px 10px;
-    font-size: 12px;
+  
+  .school-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
   
-  .school-table button {
-    padding: 5px 8px;
-    font-size: 10px;
+  .school-table th, .school-table td {
+    padding: 14px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+    vertical-align: middle;
+  }
+  
+  .school-table th {
+    background: var(--bg-dark);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .school-table tr:hover td {
+    background: var(--bg-card-hover);
   }
   
   .school-table td:last-child {
-    min-width: 160px;
+    text-align: center;
+    min-width: 200px;
   }
-}
+  
+  .school-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 1rem;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+  }
+  
+  .school-table button {
+    min-height: 38px;
+    min-width: unset;
+    padding: 8px 14px;
+    font-size: 12px;
+    white-space: nowrap;
+    margin: 0 3px;
+    border-radius: 8px;
+  }
+  
+  .school-table .secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  
+  .school-table .secondary:hover {
+    background: var(--bg-dark);
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+  
+  .school-table .danger {
+    background: var(--error);
+    color: white;
+    border: none;
+  }
+  
+  .school-table .danger:hover {
+    background: #dc2626;
+  }
+  
+  @media (max-width: 768px) {
+    .school-table th, .school-table td {
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+    
+    .school-table button {
+      padding: 6px 10px;
+      font-size: 11px;
+      min-height: 34px;
+      margin: 2px;
+    }
+    
+    .school-table td:last-child {
+      min-width: 180px;
+    }
+  }
 
   .school-table button {
     min-height: 32px;
