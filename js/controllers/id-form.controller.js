@@ -14,19 +14,11 @@ window.isMockMode = function() {
  * Upload photo — path: students/{schoolName}/{className}/{studentName}_{studentId}.ext
  */
 window.uploadPhoto = async function(userId, studentId, file, className, studentName) {
-  // School name Firestore se fetch karo
-  let schoolName = 'School';
-  try {
-    const schoolDoc = await firebase.firestore().collection('schools').doc(userId).get();
-    if (schoolDoc.exists) schoolName = schoolDoc.data().schoolName || 'School';
-  } catch(e) {}
-
   const cls   = (className   || 'Unknown').replace(/[^a-zA-Z0-9 _-]/g, '');
   const sName = (studentName || studentId).replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
   const ext   = file.type.includes('png') ? 'png' : 'jpg';
-  const safeSch = schoolName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
 
-  const path = `students/${safeSch}/${cls}/${sName}_${studentId}.${ext}`;
+  const path = `students/${userId}/${cls}/${sName}_${studentId}.${ext}`;
   const storageRef = firebase.storage().ref(path);
   const snapshot = await storageRef.put(file);
   return await snapshot.ref.getDownloadURL();
