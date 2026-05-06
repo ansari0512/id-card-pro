@@ -135,9 +135,7 @@ window.adminExportCSV = async function() {
     s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-IN') : ''
   ]);
   const csv = [
-    [`School: ${schoolName}`],
-    [`Downloaded: ${new Date().toLocaleDateString('en-IN')}`],
-    [],
+    [`School: ${schoolName} (Downloaded: ${new Date().toLocaleDateString('en-IN')})`],
     headers,
     ...rows
   ].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
@@ -174,11 +172,16 @@ window.adminBulkDownload = async function() {
       if (doc.exists) schoolName = doc.data().schoolName || 'School';
     } catch(e) {}
 
+    const short = schoolName.split(/\s+/).map(w => w[0].toUpperCase()).join('').slice(0,6);
+    const dateStr = new Date().toISOString().slice(0,10);
+
     // Photos — class wise folders
     const photosFolder = zip.folder('photos');
     await Promise.all(window.adminAllStudents.filter(s => s.photo).map(async s => {
       try {
-        const res = await fetch(s.photo);
+        const storageRef = firebase.storage().refFromURL(s.photo);
+        const freshUrl = await storageRef.getDownloadURL();
+        const res = await fetch(freshUrl);
         if (!res.ok) return;
         const blob = await res.blob();
         const ext = blob.type.includes('png') ? 'png' : 'jpg';
@@ -187,7 +190,7 @@ window.adminBulkDownload = async function() {
       } catch(e) {}
     }));
 
-    // CSV — flat, school name in header
+    // CSV
     const headers = ['Student ID', 'Name', 'Father Name', 'Class', 'Section', 'Mobile', 'Address', 'Added On'];
     const rows = window.adminAllStudents.map(s => [
       s.id||'', s.name||'', s.father||'', s.class||'',
@@ -195,20 +198,17 @@ window.adminBulkDownload = async function() {
       s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-IN') : ''
     ]);
     const csv = [
-      [`School: ${schoolName}`],
-      [`Downloaded: ${new Date().toLocaleDateString('en-IN')}`],
-      [],
+      [`School: ${schoolName} (Downloaded: ${new Date().toLocaleDateString('en-IN')})`],
       headers,
       ...rows
     ].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
-    zip.file('students.csv', csv);
+    zip.file(`${short}_students_${dateStr}.csv`, csv);
 
     const content = await zip.generateAsync({ type: 'blob' });
     const url = URL.createObjectURL(content);
     const a = document.createElement('a');
     a.href = url;
-    const short = schoolName.split(/\s+/).map(w => w[0].toUpperCase()).join('').slice(0,6);
-    a.download = `${short}_students_${new Date().toISOString().slice(0,10)}.zip`;
+    a.download = `${short}_students_${dateStr}.zip`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
