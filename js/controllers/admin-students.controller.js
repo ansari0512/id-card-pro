@@ -101,3 +101,83 @@ window.clearAdminFilters = function() {
 window.printStudent = function(studentId) {
   window.open('print.html?id=' + studentId, '_blank', 'width=800,height=600');
 };
+
+/**
+ * Print all students
+ */
+window.adminBulkPrint = function() {
+  if (window.adminAllStudents.length === 0) {
+    window.showToast('No students to print', 'error');
+    return;
+  }
+  const ids = window.adminAllStudents.map(s => s.id).join(',');
+  window.open('print.html?ids=' + ids, '_blank', 'width=800,height=600');
+};
+
+/**
+ * Export CSV
+ */
+window.adminExportCSV = function() {
+  if (window.adminAllStudents.length === 0) {
+    window.showToast('No students to export', 'error');
+    return;
+  }
+  const headers = ['Student ID', 'Name', 'Father Name', 'Class', 'Section', 'Mobile', 'Address', 'Added On'];
+  const rows = window.adminAllStudents.map(s => [
+    s.id || '', s.name || '', s.father || '', s.class || '',
+    s.section || '', s.mobile || '', s.address || '',
+    s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-IN') : ''
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `students_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  window.showToast(`Exported ${window.adminAllStudents.length} students`, 'success');
+};
+
+/**
+ * Download ZIP (photos + CSV)
+ */
+window.adminBulkDownload = async function() {
+  if (window.adminAllStudents.length === 0) {
+    window.showToast('No students to download', 'error');
+    return;
+  }
+  window.showToast(`Preparing ZIP for ${window.adminAllStudents.length} students...`, 'info');
+  try {
+    const zip = new JSZip();
+    const headers = ['Student ID', 'Name', 'Father Name', 'Class', 'Section', 'Mobile', 'Address'];
+    const rows = window.adminAllStudents.map(s => [s.id||'', s.name||'', s.father||'', s.class||'', s.section||'', s.mobile||'', s.address||'']);
+    const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+    zip.file('students.csv', csv);
+
+    const photosFolder = zip.folder('photos');
+    await Promise.all(window.adminAllStudents.filter(s => s.photo).map(async s => {
+      try {
+        const res = await fetch(s.photo);
+        const blob = await res.blob();
+        const ext = blob.type.includes('png') ? 'png' : 'jpg';
+        photosFolder.file(`${s.id}_${(s.name||'student').replace(/\s+/g,'_')}.${ext}`, blob);
+      } catch(e) {}
+    }));
+
+    const content = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(content);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `students_${new Date().toISOString().slice(0,10)}.zip`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    window.showToast('ZIP downloaded!', 'success');
+  } catch(err) {
+    window.showToast('Download failed: ' + err.message, 'error');
+  }
+};

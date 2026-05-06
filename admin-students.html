@@ -30,8 +30,8 @@
 
      <!-- Filter Controls -->
      <div class="card">
-       <div class="filters" style="margin-bottom: 0;">
-         <select id="classFilter" onchange="loadStudents()">
+       <div class="filters" style="margin-bottom: 1rem;">
+         <select id="classFilter" onchange="window.loadAdminStudents()">
            <option value="">All Classes</option>
            <option value="Nursery">Nursery</option>
            <option value="LKG">LKG</option>
@@ -48,7 +48,12 @@
            <option value="9">Class 9</option>
            <option value="10">Class 10</option>
          </select>
-         <button onclick="clearFilters()" class="secondary">Clear Filter</button>
+         <button onclick="window.clearAdminFilters()" class="secondary">Clear Filter</button>
+       </div>
+       <div class="flex gap-2" style="flex-wrap: wrap;">
+         <button onclick="window.adminExportCSV()">📥 Export CSV</button>
+         <button onclick="window.adminBulkDownload()">📦 Download ZIP</button>
+         <button onclick="window.adminBulkPrint()">🖨️ Print All</button>
        </div>
      </div>
 
@@ -66,6 +71,9 @@
     </div>
 
   </main>
+
+   <!-- JSZip -->
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
    <!-- Firebase SDK -->
    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
