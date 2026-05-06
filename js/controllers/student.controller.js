@@ -436,19 +436,27 @@ window.bulkDownload = async function() {
     const photosFolder = zip.folder('photos');
     const photoPromises = targets
       .filter(s => s.photo)
-      .map(async s => {
+      .map(s => new Promise(async (resolve) => {
         try {
-          // Fresh download URL lo aur fetch karo
           const storageRef = firebase.storage().refFromURL(s.photo);
           const freshUrl = await storageRef.getDownloadURL();
-          const res = await fetch(freshUrl);
-          if (!res.ok) return;
-          const blob = await res.blob();
+          // XMLHttpRequest use karo — fetch() CORS block karta hai Firebase Hosting pe
+          const blob = await new Promise((res, rej) => {
+            const xhr = new XMLHttpRequest();
+            xhr.responseType = 'blob';
+            xhr.onload = () => xhr.status === 200 ? res(xhr.response) : rej(new Error('HTTP ' + xhr.status));
+            xhr.onerror = () => rej(new Error('Network error'));
+            xhr.open('GET', freshUrl);
+            xhr.send();
+          });
           const ext = blob.type.includes('png') ? 'png' : 'jpg';
           const classFolder = photosFolder.folder(s.class || 'Unknown');
           classFolder.file(`${s.id}_${(s.name || 'student').replace(/\s+/g, '_')}.${ext}`, blob);
-        } catch (e) {}
-      });
+        } catch (e) {
+          console.warn('Photo download failed:', s.id, e.message);
+        }
+        resolve();
+      }));
 
     const shortCode = window.shortName(schoolName);
     const dateStr = new Date().toISOString().slice(0, 10);

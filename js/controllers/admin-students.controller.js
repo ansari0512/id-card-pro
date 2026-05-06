@@ -177,18 +177,26 @@ window.adminBulkDownload = async function() {
 
     // Photos — class wise folders
     const photosFolder = zip.folder('photos');
-    await Promise.all(window.adminAllStudents.filter(s => s.photo).map(async s => {
+    await Promise.all(window.adminAllStudents.filter(s => s.photo).map(s => new Promise(async resolve => {
       try {
         const storageRef = firebase.storage().refFromURL(s.photo);
         const freshUrl = await storageRef.getDownloadURL();
-        const res = await fetch(freshUrl);
-        if (!res.ok) return;
-        const blob = await res.blob();
+        const blob = await new Promise((res, rej) => {
+          const xhr = new XMLHttpRequest();
+          xhr.responseType = 'blob';
+          xhr.onload = () => xhr.status === 200 ? res(xhr.response) : rej(new Error('HTTP ' + xhr.status));
+          xhr.onerror = () => rej(new Error('Network error'));
+          xhr.open('GET', freshUrl);
+          xhr.send();
+        });
         const ext = blob.type.includes('png') ? 'png' : 'jpg';
         const classFolder = photosFolder.folder(s.class || 'Unknown');
         classFolder.file(`${s.id}_${(s.name||'student').replace(/\s+/g,'_')}.${ext}`, blob);
-      } catch(e) {}
-    }));
+      } catch(e) {
+        console.warn('Photo download failed:', s.id, e.message);
+      }
+      resolve();
+    })));
 
     // CSV
     const headers = ['Student ID', 'Name', 'Father Name', 'Class', 'Section', 'Mobile', 'Address', 'Added On'];
