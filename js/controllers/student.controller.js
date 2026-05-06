@@ -796,6 +796,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load students
     window.loadStudents();
     window.updatePendingBadge();
+
+    // Auto open import modal if ?tab=import
+    if (new URLSearchParams(window.location.search).get('tab') === 'import') {
+      window.openImportModal();
+    }
   });
 
   // Debounced search
