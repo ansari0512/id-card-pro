@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Photo Migration - RK Choice</title>
+  <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'dark');</script>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .log { font-family: monospace; font-size: 13px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; max-height: 400px; overflow-y: auto; margin-top: 1rem; }
+    .log p { margin: 4px 0; }
+    .ok  { color: #22c55e; }
+    .err { color: #ef4444; }
+    .inf { color: #3b82f6; }
+  </style>
+</head>
+<body>
+<main class="container" style="padding-top:2rem; max-width:700px;">
+  <div class="card">
+    <h2>🔄 Photo Migration Tool</h2>
+    <p style="color:var(--text-muted);">Yeh tool purane students ki photos ko naye path pe move karega aur Firestore URLs update karega.</p>
+    <p><strong>Old path:</strong> students/School/{class}/{file}</p>
+    <p><strong>New path:</strong> students/{userId}/{class}/{file}</p>
+    <div style="margin-top:1rem;">
+      <button id="startBtn" onclick="startMigration()">▶️ Start Migration</button>
+      <button class="secondary" onclick="window.location.href='dashboard.html'" style="margin-left:8px;">← Back</button>
+    </div>
+    <div id="progress" style="display:none; margin-top:1rem;">
+      <p id="progressText" style="color:var(--text-muted);">Starting...</p>
+      <div style="background:var(--border);border-radius:4px;height:8px;margin-top:8px;">
+        <div id="progressBar" style="background:var(--primary);height:8px;border-radius:4px;width:0%;transition:width 0.3s;"></div>
+      </div>
+    </div>
+    <div id="logBox" class="log" style="display:none;"></div>
+  </div>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/helpers.js"></script>
+
+<script>
+function log(msg, type = 'inf') {
+  const box = document.getElementById('logBox');
+  box.style.display = 'block';
+  const p = document.createElement('p');
+  p.className = type;
+  p.textContent = msg;
+  box.appendChild(p);
+  box.scrollTop = box.scrollHeight;
+}
+
+async function startMigration() {
+  const btn = document.getElementById('startBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Running...';
+  document.getElementById('progress').style.display = 'block';
+  document.getElementById('logBox').innerHTML = '';
+
+  const user = firebase.auth().currentUser;
+  if (!user) { alert('Please login first'); return; }
+
+  log(`Logged in as: ${user.email}`, 'inf');
+  log('Fetching all students...', 'inf');
+
+  try {
+    const allStudents = await window.dbGetAllStudents(user.uid);
+    // Only students with old-style photo URLs (not containing user.uid)
+    const toMigrate = allStudents.filter(s =>
+      s.photo && s.photo.includes('firebase') && !s.photo.includes(user.uid)
+    );
+
+    log(`Total students: ${allStudents.length}`, 'inf');
+    log(`Need migration: ${toMigrate.length}`, 'inf');
+
+    if (toMigrate.length === 0) {
+      log('✅ No migration needed! All photos are already on correct path.', 'ok');
+      btn.textContent = '✅ Done';
+      return;
+    }
+
+    let done = 0, failed = 0;
+
+    for (const student of toMigrate) {
+      try {
+        log(`Processing: ${student.name} (${student.id})...`, 'inf');
+
+        // Fetch old photo as blob
+        const response = await fetch(student.photo);
+        if (!response.ok) throw new Error('Fetch failed: ' + response.status);
+        const blob = await response.blob();
+
+        // Build new path
+        const cls   = (student.class || 'Unknown').replace(/[^a-zA-Z0-9 _-]/g, '');
+        const sName = (student.name || student.id).replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
+        const ext   = blob.type.includes('png') ? 'png' : 'jpg';
+        const newPath = `students/${user.uid}/${cls}/${sName}_${student.id}.${ext}`;
+
+        // Upload to new path
+        const ref = firebase.storage().ref(newPath);
+        const snapshot = await ref.put(blob, { contentType: blob.type });
+        const newUrl = await snapshot.ref.getDownloadURL();
+
+        // Update Firestore
+        await window.dbStudents(user.uid, student.class).doc(student.docId || student.id).update({
+          photo: newUrl,
+          updatedAt: Date.now()
+        });
+
+        done++;
+        log(`✅ ${student.name} → ${newPath}`, 'ok');
+      } catch (err) {
+        failed++;
+        log(`❌ ${student.name}: ${err.message}`, 'err');
+      }
+
+      // Update progress bar
+      const pct = Math.round(((done + failed) / toMigrate.length) * 100);
+      document.getElementById('progressBar').style.width = pct + '%';
+      document.getElementById('progressText').textContent = `${done + failed} / ${toMigrate.length} processed`;
+    }
+
+    log(`\n--- Migration Complete ---`, 'inf');
+    log(`✅ Success: ${done}`, 'ok');
+    if (failed > 0) log(`❌ Failed: ${failed}`, 'err');
+    btn.textContent = '✅ Done — Refresh Students Page';
+    btn.onclick = () => window.location.href = 'students.html';
+    btn.disabled = false;
+
+  } catch (err) {
+    log('Fatal error: ' + err.message, 'err');
+    btn.disabled = false;
+    btn.textContent = '▶️ Retry';
+  }
+}
+
+firebase.auth().onAuthStateChanged(user => {
+  if (!user) window.location.href = 'index.html';
+});
+</script>
+</body>
+</html>
