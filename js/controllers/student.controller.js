@@ -461,9 +461,9 @@ window.bulkDownload = async function() {
       .filter(s => s.photo)
       .map(async s => {
         try {
-          const res = await fetch(s.photo);
-          if (!res.ok) return;
-          const blob = await res.blob();
+          // Firebase Storage ref se directly blob lo (CORS issue nahi hoga)
+          const storageRef = firebase.storage().refFromURL(s.photo);
+          const blob = await storageRef.getBlob();
           const ext = blob.type.includes('png') ? 'png' : 'jpg';
           const classFolder = photosFolder.folder(s.class || 'Unknown');
           classFolder.file(`${s.id}_${(s.name || 'student').replace(/\s+/g, '_')}.${ext}`, blob);
