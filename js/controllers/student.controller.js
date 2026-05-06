@@ -465,7 +465,8 @@ window.bulkDownload = async function() {
           if (!res.ok) return;
           const blob = await res.blob();
           const ext = blob.type.includes('png') ? 'png' : 'jpg';
-          photosFolder.file(`${s.id}_${(s.name || 'student').replace(/\s+/g, '_')}.${ext}`, blob);
+          const classFolder = photosFolder.folder(s.class || 'Unknown');
+          classFolder.file(`${s.id}_${(s.name || 'student').replace(/\s+/g, '_')}.${ext}`, blob);
         } catch (e) {}
       });
 

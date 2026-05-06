@@ -174,7 +174,7 @@ window.adminBulkDownload = async function() {
       if (doc.exists) schoolName = doc.data().schoolName || 'School';
     } catch(e) {}
 
-    // Photos — flat folder (no class grouping)
+    // Photos — class wise folders
     const photosFolder = zip.folder('photos');
     await Promise.all(window.adminAllStudents.filter(s => s.photo).map(async s => {
       try {
@@ -182,7 +182,8 @@ window.adminBulkDownload = async function() {
         if (!res.ok) return;
         const blob = await res.blob();
         const ext = blob.type.includes('png') ? 'png' : 'jpg';
-        photosFolder.file(`${s.id}_${(s.name||'student').replace(/\s+/g,'_')}.${ext}`, blob);
+        const classFolder = photosFolder.folder(s.class || 'Unknown');
+        classFolder.file(`${s.id}_${(s.name||'student').replace(/\s+/g,'_')}.${ext}`, blob);
       } catch(e) {}
     }));
 
