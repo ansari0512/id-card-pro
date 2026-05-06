@@ -502,6 +502,279 @@ window.bulkDownload = async function() {
   }
 };
 
+// ── IMPORT & PENDING ─────────────────────────────────────
+
+window.currentTab = 'complete';
+
+window.switchTab = function(tab) {
+  window.currentTab = tab;
+  const isComplete = tab === 'complete';
+  document.getElementById('tabComplete').className = isComplete ? '' : 'secondary';
+  document.getElementById('tabPending').className = isComplete ? 'secondary' : '';
+  document.getElementById('completeControls').style.display = isComplete ? '' : 'none';
+  document.getElementById('pendingControls').style.display = isComplete ? 'none' : '';
+  document.getElementById('studentsGrid').style.display = 'none';
+  document.getElementById('pendingGrid').style.display = 'none';
+  document.getElementById('emptyState').style.display = 'none';
+  if (isComplete) window.loadStudents();
+  else window.loadPendingStudents();
+};
+
+// Pending students collection
+window.dbPending = function(schoolId) {
+  return firebase.firestore().collection('schools').doc(schoolId).collection('pending_students');
+};
+
+// Load pending students
+window.loadPendingStudents = async function() {
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('pendingGrid').style.display = 'none';
+  try {
+    const user = firebase.auth().currentUser;
+    const snap = await window.dbPending(user.uid).orderBy('createdAt', 'desc').get();
+    const students = snap.docs.map(d => ({ docId: d.id, ...d.data() }));
+    document.getElementById('loading').style.display = 'none';
+    if (students.length === 0) {
+      document.getElementById('emptyState').style.display = 'block';
+      document.getElementById('emptyState').querySelector('h3').textContent = 'No Pending Students';
+      document.getElementById('emptyState').querySelector('p').textContent = 'Sab students complete hain!';
+    } else {
+      window.renderPendingStudents(students);
+      document.getElementById('pendingGrid').style.display = 'grid';
+    }
+  } catch(e) {
+    document.getElementById('loading').style.display = 'none';
+    window.showToast('Failed to load: ' + e.message, 'error');
+  }
+};
+
+// Render pending student cards
+window.renderPendingStudents = function(students) {
+  const grid = document.getElementById('pendingGrid');
+  grid.innerHTML = '';
+  students.forEach(s => {
+    const card = document.createElement('div');
+    card.className = 'student-card';
+    card.innerHTML = `
+      <div class="header" style="background:#f59e0b;">⏳ Pending: ${s.id || 'N/A'}</div>
+      <div class="body">
+        <img class="photo" src="assets/placeholder.png" alt="No Photo" style="opacity:0.4;">
+        <h4 style="margin:5px 0;">${s.name || 'Unknown'}</h4>
+        <p style="font-size:13px;color:var(--text-muted);">${s.class || ''} - ${s.section || ''}</p>
+        <div class="details">
+          <p><strong>Father:</strong> <span>${s.father || '-'}</span></p>
+          <p><strong>Mobile:</strong> <span>${s.mobile || '-'}</span></p>
+        </div>
+        <div class="actions">
+          <button onclick="window.openPhotoUploadModal('${s.docId}', '${s.name}', '${s.class}', '${s.section}')">📷 Upload Photo</button>
+          <button class="danger" onclick="window.deletePending('${s.docId}')">🗑️ Delete</button>
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+};
+
+// Update pending badge count
+window.updatePendingBadge = async function() {
+  try {
+    const user = firebase.auth().currentUser;
+    if (!user) return;
+    const snap = await window.dbPending(user.uid).get();
+    const count = snap.size;
+    const badge = document.getElementById('pendingBadge');
+    if (badge) {
+      badge.textContent = count;
+      badge.style.display = count > 0 ? 'inline' : 'none';
+    }
+  } catch(e) {}
+};
+
+// Delete pending student
+window.deletePending = async function(docId) {
+  if (!confirm('Delete this pending student?')) return;
+  const user = firebase.auth().currentUser;
+  await window.dbPending(user.uid).doc(docId).delete();
+  window.showToast('Deleted', 'success');
+  window.loadPendingStudents();
+  window.updatePendingBadge();
+};
+
+// Open import modal
+window.openImportModal = function() {
+  document.getElementById('importFile').value = '';
+  document.getElementById('importPreview').style.display = 'none';
+  document.getElementById('importError').style.display = 'none';
+  document.getElementById('importModal').classList.add('open');
+};
+
+window.closeImportModal = function() {
+  document.getElementById('importModal').classList.remove('open');
+};
+
+// Parse CSV
+window.parseCSV = function(text) {
+  const lines = text.trim().split('\n').filter(l => l.trim());
+  if (lines.length < 2) return [];
+  return lines.slice(1).map(line => {
+    const cols = line.split(',').map(c => c.replace(/^"|"$/g, '').trim());
+    return {
+      name: cols[0] || '',
+      father: cols[1] || '',
+      class: cols[2] || '',
+      section: cols[3] || '',
+      mobile: cols[4] || '',
+      address: cols[5] || ''
+    };
+  }).filter(s => s.name && s.class);
+};
+
+// Preview CSV on file select
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('importFile')?.addEventListener('change', function() {
+    const file = this.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const students = window.parseCSV(e.target.result);
+      document.getElementById('importCount').textContent = students.length;
+      document.getElementById('importPreview').style.display = 'block';
+    };
+    reader.readAsText(file);
+  });
+
+  document.getElementById('pendingPhotoFile')?.addEventListener('change', function() {
+    const file = this.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => document.getElementById('pendingPhotoPreview').src = e.target.result;
+    reader.readAsDataURL(file);
+  });
+});
+
+// Import CSV
+window.importCSV = async function() {
+  const file = document.getElementById('importFile').files[0];
+  const errEl = document.getElementById('importError');
+  const btn = document.getElementById('importBtn');
+  const btnText = document.getElementById('importBtnText');
+
+  if (!file) { errEl.textContent = 'Please select a CSV file'; errEl.style.display = 'block'; return; }
+
+  btn.disabled = true;
+  btnText.textContent = '⏳ Importing...';
+  errEl.style.display = 'none';
+
+  try {
+    const user = firebase.auth().currentUser;
+    const text = await file.text();
+    const students = window.parseCSV(text);
+
+    if (students.length === 0) throw new Error('No valid students found in CSV');
+
+    // Get school code for ID generation
+    let schoolCode = 'SCH';
+    try {
+      const doc = await firebase.firestore().collection('schools').doc(user.uid).get();
+      if (doc.exists) schoolCode = (doc.data().schoolName || '').split(/\s+/).filter(w=>w).map(w=>w[0].toUpperCase()).join('').slice(0,4) || 'SCH';
+    } catch(e) {}
+
+    const year = new Date().getFullYear();
+    const existing = await window.dbGetAllStudents(user.uid);
+    const pending = await window.dbPending(user.uid).get();
+    let serial = existing.length + pending.size;
+
+    const batch = firebase.firestore().batch();
+    students.forEach(s => {
+      serial++;
+      const id = `${schoolCode}-${year}-${String(serial).padStart(4,'0')}`;
+      const ref = window.dbPending(user.uid).doc();
+      batch.set(ref, {
+        id, name: s.name, father: s.father,
+        class: s.class, section: s.section,
+        mobile: s.mobile, address: s.address,
+        schoolId: user.uid, status: 'pending',
+        createdAt: Date.now()
+      });
+    });
+    await batch.commit();
+
+    window.showToast(`✅ ${students.length} students imported! Ab photo upload karein.`, 'success');
+    window.closeImportModal();
+    window.updatePendingBadge();
+    window.switchTab('pending');
+  } catch(e) {
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btnText.textContent = '✅ Import';
+  }
+};
+
+// Open photo upload modal for pending student
+window.openPhotoUploadModal = function(docId, name, cls, section) {
+  document.getElementById('pendingDocId').value = docId;
+  document.getElementById('pendingStudentInfo').textContent = `${name} | ${cls} - ${section}`;
+  document.getElementById('pendingPhotoPreview').src = 'assets/placeholder.png';
+  document.getElementById('pendingPhotoFile').value = '';
+  document.getElementById('photoUploadError').style.display = 'none';
+  document.getElementById('photoUploadModal').classList.add('open');
+};
+
+window.closePhotoUploadModal = function() {
+  document.getElementById('photoUploadModal').classList.remove('open');
+};
+
+// Upload photo and move pending → complete
+window.uploadPendingPhoto = async function() {
+  const docId = document.getElementById('pendingDocId').value;
+  const file = document.getElementById('pendingPhotoFile').files[0];
+  const errEl = document.getElementById('photoUploadError');
+  const btn = document.getElementById('photoUploadBtn');
+  const btnText = document.getElementById('photoUploadBtnText');
+
+  if (!file) { errEl.textContent = 'Photo select karein'; errEl.style.display = 'block'; return; }
+  if (!file.type.startsWith('image/')) { errEl.textContent = 'Only image files allowed'; errEl.style.display = 'block'; return; }
+  if (file.size > 5 * 1024 * 1024) { errEl.textContent = 'Photo must be less than 5MB'; errEl.style.display = 'block'; return; }
+
+  btn.disabled = true;
+  btnText.textContent = '⏳ Uploading...';
+  errEl.style.display = 'none';
+
+  try {
+    const user = firebase.auth().currentUser;
+    const pendingDoc = await window.dbPending(user.uid).doc(docId).get();
+    if (!pendingDoc.exists) throw new Error('Student not found');
+    const s = pendingDoc.data();
+
+    // Upload photo
+    const photoUrl = await window.uploadPhoto(user.uid, s.id, file, s.class, s.name);
+
+    // Add to complete students
+    await window.dbStudents(user.uid, s.class).add({
+      id: s.id, uid: user.uid, schoolId: user.uid,
+      name: s.name, father: s.father, class: s.class,
+      section: s.section, mobile: s.mobile, address: s.address,
+      photo: photoUrl, createdAt: s.createdAt, updatedAt: Date.now()
+    });
+
+    // Delete from pending
+    await window.dbPending(user.uid).doc(docId).delete();
+
+    window.showToast('✅ Student complete ho gaya!', 'success');
+    window.closePhotoUploadModal();
+    window.updatePendingBadge();
+    window.loadPendingStudents();
+  } catch(e) {
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btnText.textContent = '✅ Upload & Complete';
+  }
+};
+
 // ── INITIALIZATION ─────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -522,6 +795,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Load students
     window.loadStudents();
+    window.updatePendingBadge();
   });
 
   // Debounced search
@@ -544,5 +818,11 @@ document.addEventListener('DOMContentLoaded', function() {
   // Modal close on overlay click
   document.getElementById('editModal')?.addEventListener('click', function(e) {
     if (e.target === e.currentTarget) window.closeEditModal();
+  });
+  document.getElementById('importModal')?.addEventListener('click', function(e) {
+    if (e.target === e.currentTarget) window.closeImportModal();
+  });
+  document.getElementById('photoUploadModal')?.addEventListener('click', function(e) {
+    if (e.target === e.currentTarget) window.closePhotoUploadModal();
   });
 });

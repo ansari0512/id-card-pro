@@ -35,50 +35,64 @@
 
   <main class="container" style="padding-top: 2rem;">
 
-    <div class="card">
-      <div class="filters">
-        <input type="text" id="searchInput" placeholder="Search by name or ID">
-        <select id="classFilter">
-          <option value="">All Classes</option>
-          <option value="Nursery">Nursery</option>
-          <option value="LKG">LKG</option>
-          <option value="UKG">UKG</option>
-          <option value="KG">KG</option>
-          <option value="1">Class 1</option>
-          <option value="2">Class 2</option>
-          <option value="3">Class 3</option>
-          <option value="4">Class 4</option>
-          <option value="5">Class 5</option>
-          <option value="6">Class 6</option>
-          <option value="7">Class 7</option>
-          <option value="8">Class 8</option>
-          <option value="9">Class 9</option>
-          <option value="10">Class 10</option>
-        </select>
-        <select id="sectionFilter">
-          <option value="">All Sections</option>
-          <option value="A">A</option>
-          <option value="B">B</option>
-          <option value="C">C</option>
-          <option value="D">D</option>
-          <option value="E">E</option>
-          <option value="F">F</option>
-          <option value="G">G</option>
-          <option value="H">H</option>
-        </select>
-        <button onclick="loadStudents()">🔍 Filter</button>
-        <button class="secondary" onclick="clearFilters()">Clear</button>
+    <!-- Tabs -->
+    <div class="card" style="margin-bottom:0;border-bottom-left-radius:0;border-bottom-right-radius:0;">
+      <div style="display:flex;gap:8px;margin-bottom:1rem;">
+        <button id="tabComplete" onclick="window.switchTab('complete')" style="flex:1;">✅ Complete Students</button>
+        <button id="tabPending" onclick="window.switchTab('pending')" class="secondary" style="flex:1;">⏳ Pending Photo <span id="pendingBadge" style="background:#ef4444;color:#fff;border-radius:999px;padding:1px 7px;font-size:11px;margin-left:4px;display:none;">0</span></button>
       </div>
 
-      <div class="flex gap-2 mt-2" style="flex-wrap: wrap; align-items: center;">
-        <label style="display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer;padding:8px 12px;border:1px solid var(--border);border-radius:10px;">
-          <input type="checkbox" id="selectAllCheckbox" style="width:16px;height:16px;margin:0;cursor:pointer;"> Select All
-        </label>
-        <span id="selectedCount" style="font-size:13px;color:var(--text-muted);">0 selected</span>
-        <button class="secondary" onclick="bulkPrint()">🖨️ Print Selected</button>
-        <button class="secondary" onclick="bulkDownload()">📦 Download ZIP</button>
-        <button class="secondary" onclick="exportCSV()">📥 Export CSV</button>
-        <button class="danger" onclick="bulkDelete()">🗑️ Delete Selected</button>
+      <!-- Complete tab controls -->
+      <div id="completeControls">
+        <div class="filters">
+          <input type="text" id="searchInput" placeholder="Search by name or ID">
+          <select id="classFilter">
+            <option value="">All Classes</option>
+            <option value="Nursery">Nursery</option>
+            <option value="LKG">LKG</option>
+            <option value="UKG">UKG</option>
+            <option value="KG">KG</option>
+            <option value="1">Class 1</option>
+            <option value="2">Class 2</option>
+            <option value="3">Class 3</option>
+            <option value="4">Class 4</option>
+            <option value="5">Class 5</option>
+            <option value="6">Class 6</option>
+            <option value="7">Class 7</option>
+            <option value="8">Class 8</option>
+            <option value="9">Class 9</option>
+            <option value="10">Class 10</option>
+          </select>
+          <select id="sectionFilter">
+            <option value="">All Sections</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+            <option value="E">E</option>
+            <option value="F">F</option>
+            <option value="G">G</option>
+            <option value="H">H</option>
+          </select>
+          <button onclick="loadStudents()">🔍 Filter</button>
+          <button class="secondary" onclick="clearFilters()">Clear</button>
+        </div>
+        <div class="flex gap-2 mt-2" style="flex-wrap: wrap; align-items: center;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer;padding:8px 12px;border:1px solid var(--border);border-radius:10px;">
+            <input type="checkbox" id="selectAllCheckbox" style="width:16px;height:16px;margin:0;cursor:pointer;"> Select All
+          </label>
+          <span id="selectedCount" style="font-size:13px;color:var(--text-muted);">0 selected</span>
+          <button class="secondary" onclick="bulkPrint()">🖨️ Print Selected</button>
+          <button class="secondary" onclick="bulkDownload()">📦 Download ZIP</button>
+          <button class="secondary" onclick="exportCSV()">📥 Export CSV</button>
+          <button onclick="window.openImportModal()">📂 Import CSV</button>
+          <button class="danger" onclick="bulkDelete()">🗑️ Delete Selected</button>
+        </div>
+      </div>
+
+      <!-- Pending tab controls -->
+      <div id="pendingControls" style="display:none;">
+        <p style="color:var(--text-muted);font-size:13px;margin:0;">Ye students CSV se import hue hain. Photo upload karo inhe complete karne ke liye.</p>
       </div>
     </div>
 
@@ -88,6 +102,7 @@
     </div>
 
     <div id="studentsGrid" class="grid mt-3" style="display: none;"></div>
+    <div id="pendingGrid" class="grid mt-3" style="display: none;"></div>
 
     <div id="emptyState" class="empty-state" style="display: none;">
       <div style="font-size: 4rem; margin-bottom: 1rem;">📭</div>
@@ -97,6 +112,54 @@
     </div>
 
   </main>
+
+  <!-- Import CSV Modal -->
+  <div class="modal-overlay" id="importModal">
+    <div class="modal">
+      <h3>📂 Import Students from CSV</h3>
+      <p style="color:var(--text-muted);font-size:13px;">CSV format: Name, Father Name, Class, Section, Mobile, Address</p>
+      <p style="color:var(--text-muted);font-size:12px;">First row = header (skip hoga). Photo baad mein upload karein.</p>
+      <div class="form-group" style="margin-top:1rem;">
+        <label>CSV File *</label>
+        <input type="file" id="importFile" accept=".csv">
+      </div>
+      <div id="importPreview" style="display:none;margin-top:1rem;">
+        <p style="font-size:13px;color:var(--text-muted);">Preview: <strong id="importCount">0</strong> students found</p>
+      </div>
+      <div id="importError" style="color:#ef4444;font-size:13px;display:none;margin-top:8px;"></div>
+      <div style="display:flex;gap:1rem;margin-top:1rem;">
+        <button id="importBtn" onclick="window.importCSV()" style="flex:1;">
+          <span id="importBtnText">✅ Import</span>
+        </button>
+        <button class="secondary" onclick="window.closeImportModal()" style="flex:1;">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pending Photo Upload Modal -->
+  <div class="modal-overlay" id="photoUploadModal">
+    <div class="modal">
+      <h3>📷 Upload Photo</h3>
+      <input type="hidden" id="pendingDocId">
+      <div style="text-align:center;margin-bottom:1rem;">
+        <img id="pendingPhotoPreview" src="assets/placeholder.png" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:2px solid var(--primary);">
+      </div>
+      <div id="pendingStudentInfo" style="font-size:13px;color:var(--text-muted);margin-bottom:1rem;text-align:center;"></div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:10px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;justify-content:center;">
+          📷 Choose Photo
+          <input type="file" id="pendingPhotoFile" accept="image/*" style="display:none;">
+        </label>
+      </div>
+      <div id="photoUploadError" style="color:#ef4444;font-size:13px;display:none;"></div>
+      <div style="display:flex;gap:1rem;margin-top:1rem;">
+        <button id="photoUploadBtn" onclick="window.uploadPendingPhoto()" style="flex:1;">
+          <span id="photoUploadBtnText">✅ Upload & Complete</span>
+        </button>
+        <button class="secondary" onclick="window.closePhotoUploadModal()" style="flex:1;">Cancel</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Edit Student Modal -->
    <div class="modal-overlay" id="editModal">

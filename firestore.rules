@@ -36,6 +36,14 @@ service cloud.firestore {
       allow read:  if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
       allow write: if isAdmin();
 
+      // ── Pending Students subcollection ────────────────
+      match /pending_students/{studentId} {
+        allow read:  if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
+        allow create: if isLoggedIn() && isSchoolOwner(schoolId);
+        allow update: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
+        allow delete: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
+      }
+
       // ── Classes subcollection ──────────────────────────
       match /classes/{className} {
         allow read:  if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
