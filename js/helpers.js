@@ -4,39 +4,6 @@
  */
 
 /**
- * Generate unique student ID: {SCHOOLCODE}-{YEAR}-{0001}
- */
-window.generateStudentId = async function(schoolId) {
-  const year = new Date().getFullYear();
-
-  // School name fetch karo
-  let schoolCode = 'SCH';
-  try {
-    const schoolDoc = await firebase.firestore().collection('schools').doc(schoolId).get();
-    if (schoolDoc.exists) {
-      const schoolName = schoolDoc.data().schoolName || '';
-      // Har word ka pehla letter lo, max 4 letters, uppercase
-      schoolCode = schoolName
-        .split(/\s+/)
-        .filter(w => w.length > 0)
-        .map(w => w[0].toUpperCase())
-        .join('')
-        .slice(0, 4) || 'SCH';
-    }
-  } catch(e) {}
-
-  // Is school ke is saal ke students count karo
-  const allStudents = await window.dbGetAllStudents(schoolId);
-  const thisYearCount = allStudents.filter(s => {
-    const d = new Date(s.createdAt);
-    return d.getFullYear() === year;
-  }).length;
-
-  const serial = String(thisYearCount + 1).padStart(4, '0');
-  return `${schoolCode}-${year}-${serial}`;
-};
-
-/**
  * Format date to Indian format
  */
 window.formatDateIndian = function(timestamp) {
@@ -129,6 +96,60 @@ window.debounce = function(func, wait) {
 };
 
 window.ALL_CLASSES = ['Nursery','LKG','UKG','KG','1','2','3','4','5','6','7','8','9','10'];
+
+/**
+ * Upload photo — shared by id-form aur student controller
+ * path: student_photos/{schoolName}/{className}/{studentName}_{studentId}.ext
+ */
+window.uploadPhoto = async function(userId, studentId, file, className, studentName) {
+  let schoolName = 'School';
+  try {
+    const schoolDoc = await firebase.firestore().collection('schools').doc(userId).get();
+    if (schoolDoc.exists) schoolName = schoolDoc.data().schoolName || 'School';
+  } catch(e) {}
+
+  const cls     = (className   || 'Unknown').replace(/[^a-zA-Z0-9 _-]/g, '');
+  const sName   = (studentName || studentId).replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
+  const ext     = file.type.includes('png') ? 'png' : 'jpg';
+  const safeSch = schoolName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
+
+  const path = `student_photos/${safeSch}/${cls}/${sName}_${studentId}.${ext}`;
+  const storageRef = firebase.storage().ref(path);
+  const snapshot = await storageRef.put(file);
+  return await snapshot.ref.getDownloadURL();
+};
+
+/**
+ * Generate unique student ID using Firestore transaction (race condition safe)
+ * Format: {SCHOOLCODE}-{YEAR}-{0001}
+ */
+window.generateStudentId = async function(schoolId) {
+  const year = new Date().getFullYear();
+  const db = firebase.firestore();
+
+  let schoolCode = 'SCH';
+  try {
+    const schoolDoc = await db.collection('schools').doc(schoolId).get();
+    if (schoolDoc.exists) {
+      schoolCode = (schoolDoc.data().schoolName || '')
+        .split(/\s+/).filter(w => w.length > 0)
+        .map(w => w[0].toUpperCase()).join('').slice(0, 4) || 'SCH';
+    }
+  } catch(e) {}
+
+  // Counter document use karo — race condition safe
+  const counterRef = db.collection('schools').doc(schoolId)
+    .collection('counters').doc(String(year));
+
+  const newSerial = await db.runTransaction(async tx => {
+    const doc = await tx.get(counterRef);
+    const next = doc.exists ? doc.data().count + 1 : 1;
+    tx.set(counterRef, { count: next });
+    return next;
+  });
+
+  return `${schoolCode}-${year}-${String(newSerial).padStart(4, '0')}`;
+};
 
 window.dbStudents = function(schoolId, className) {
   return firebase.firestore()
