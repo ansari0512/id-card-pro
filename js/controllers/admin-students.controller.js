@@ -152,39 +152,47 @@ window.adminBulkDownload = async function() {
   window.showToast(`Preparing ZIP for ${window.adminAllStudents.length} students...`, 'info');
   try {
     const zip = new JSZip();
-    const headers = ['Student ID', 'Name', 'Father Name', 'Class', 'Section', 'Mobile', 'Address'];
-    const rows = window.adminAllStudents.map(s => [s.id||'', s.name||'', s.father||'', s.class||'', s.section||'', s.mobile||'', s.address||'']);
-    const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+
+    // School name fetch karo
+    let schoolName = 'School';
+    try {
+      const doc = await firebase.firestore().collection('schools').doc(window.adminSchoolId).get();
+      if (doc.exists) schoolName = doc.data().schoolName || 'School';
+    } catch(e) {}
+
+    // CSV with school name header
+    const headers = ['Student ID', 'Name', 'Father Name', 'Class', 'Section', 'Mobile', 'Address', 'Added On'];
+    const rows = window.adminAllStudents.map(s => [
+      s.id||'', s.name||'', s.father||'', s.class||'',
+      s.section||'', s.mobile||'', s.address||'',
+      s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-IN') : ''
+    ]);
+    const csv = [
+      [`School: ${schoolName}`],
+      [`Downloaded: ${new Date().toLocaleDateString('en-IN')}`],
+      [],
+      headers,
+      ...rows
+    ].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
     zip.file('students.csv', csv);
 
+    // Photos via fetch (Firebase Storage CORS allow karta hai)
     const photosFolder = zip.folder('photos');
-    await Promise.all(window.adminAllStudents.filter(s => s.photo).map(s => {
-      return new Promise(resolve => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = function() {
-          const canvas = document.createElement('canvas');
-          canvas.width = img.naturalWidth;
-          canvas.height = img.naturalHeight;
-          canvas.getContext('2d').drawImage(img, 0, 0);
-          canvas.toBlob(blob => {
-            if (blob) {
-              const ext = blob.type.includes('png') ? 'png' : 'jpg';
-              photosFolder.file(`${s.id}_${(s.name||'student').replace(/\s+/g,'_')}.${ext}`, blob);
-            }
-            resolve();
-          }, 'image/jpeg', 0.9);
-        };
-        img.onerror = () => resolve();
-        img.src = s.photo + (s.photo.includes('?') ? '&' : '?') + 't=' + Date.now();
-      });
+    await Promise.all(window.adminAllStudents.filter(s => s.photo).map(async s => {
+      try {
+        const res = await fetch(s.photo);
+        if (!res.ok) return;
+        const blob = await res.blob();
+        const ext = blob.type.includes('png') ? 'png' : 'jpg';
+        photosFolder.file(`${s.id}_${(s.name||'student').replace(/\s+/g,'_')}.${ext}`, blob);
+      } catch(e) {}
     }));
 
     const content = await zip.generateAsync({ type: 'blob' });
     const url = URL.createObjectURL(content);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `students_${new Date().toISOString().slice(0,10)}.zip`;
+    a.download = `${schoolName.replace(/\s+/g,'_')}_students_${new Date().toISOString().slice(0,10)}.zip`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
