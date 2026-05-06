@@ -434,12 +434,6 @@ window.bulkDownload = async function() {
   try {
     const zip = new JSZip();
 
-    // CSV
-    const headers = ['Student ID', 'Name', 'Father Name', 'Class', 'Section', 'Mobile', 'Address'];
-    const rows = targets.map(s => [s.id||'', s.name||'', s.father||'', s.class||'', s.section||'', s.mobile||'', s.address||'']);
-    const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
-    zip.file('students.csv', csv);
-
     // Photos
     const photosFolder = zip.folder('photos');
     const photoPromises = targets
@@ -450,10 +444,27 @@ window.bulkDownload = async function() {
           if (!res.ok) return;
           const blob = await res.blob();
           const ext = blob.type.includes('png') ? 'png' : 'jpg';
-          const filename = `${s.id}_${(s.name || 'student').replace(/\s+/g, '_')}.${ext}`;
-          photosFolder.file(filename, blob);
+          const classFolder = photosFolder.folder(s.class || 'Unknown');
+          classFolder.file(`${s.id}_${(s.name || 'student').replace(/\s+/g, '_')}.${ext}`, blob);
         } catch (e) {}
       });
+
+    // CSV — class wise grouped
+    const classes = [...new Set(targets.map(s => s.class || 'Unknown'))].sort();
+    const csvRows = [
+      [`Downloaded: ${new Date().toLocaleDateString('en-IN')}`],
+      []
+    ];
+    const headers = ['Student ID', 'Name', 'Father Name', 'Class', 'Section', 'Mobile', 'Address'];
+    classes.forEach(cls => {
+      const classStudents = targets.filter(s => (s.class || 'Unknown') === cls);
+      csvRows.push([`Class: ${cls} (${classStudents.length} students)`]);
+      csvRows.push(headers);
+      classStudents.forEach(s => csvRows.push([s.id||'', s.name||'', s.father||'', s.class||'', s.section||'', s.mobile||'', s.address||'']));
+      csvRows.push([]);
+    });
+    const csv = csvRows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    zip.file('students.csv', csv);
 
     await Promise.all(photoPromises);
 

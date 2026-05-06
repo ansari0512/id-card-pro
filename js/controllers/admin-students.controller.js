@@ -160,23 +160,7 @@ window.adminBulkDownload = async function() {
       if (doc.exists) schoolName = doc.data().schoolName || 'School';
     } catch(e) {}
 
-    // CSV with school name header
-    const headers = ['Student ID', 'Name', 'Father Name', 'Class', 'Section', 'Mobile', 'Address', 'Added On'];
-    const rows = window.adminAllStudents.map(s => [
-      s.id||'', s.name||'', s.father||'', s.class||'',
-      s.section||'', s.mobile||'', s.address||'',
-      s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-IN') : ''
-    ]);
-    const csv = [
-      [`School: ${schoolName}`],
-      [`Downloaded: ${new Date().toLocaleDateString('en-IN')}`],
-      [],
-      headers,
-      ...rows
-    ].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
-    zip.file('students.csv', csv);
-
-    // Photos via fetch (Firebase Storage CORS allow karta hai)
+    // Photos — class wise folders
     const photosFolder = zip.folder('photos');
     await Promise.all(window.adminAllStudents.filter(s => s.photo).map(async s => {
       try {
@@ -184,9 +168,32 @@ window.adminBulkDownload = async function() {
         if (!res.ok) return;
         const blob = await res.blob();
         const ext = blob.type.includes('png') ? 'png' : 'jpg';
-        photosFolder.file(`${s.id}_${(s.name||'student').replace(/\s+/g,'_')}.${ext}`, blob);
+        const classFolder = photosFolder.folder(s.class || 'Unknown');
+        classFolder.file(`${s.id}_${(s.name||'student').replace(/\s+/g,'_')}.${ext}`, blob);
       } catch(e) {}
     }));
+
+    // CSV — class wise grouped
+    const headers = ['Student ID', 'Name', 'Father Name', 'Class', 'Section', 'Mobile', 'Address', 'Added On'];
+    const classes = [...new Set(window.adminAllStudents.map(s => s.class || 'Unknown'))].sort();
+    const csvRows = [
+      [`School: ${schoolName}`],
+      [`Downloaded: ${new Date().toLocaleDateString('en-IN')}`],
+      []
+    ];
+    classes.forEach(cls => {
+      const classStudents = window.adminAllStudents.filter(s => (s.class || 'Unknown') === cls);
+      csvRows.push([`Class: ${cls} (${classStudents.length} students)`]);
+      csvRows.push(headers);
+      classStudents.forEach(s => csvRows.push([
+        s.id||'', s.name||'', s.father||'', s.class||'',
+        s.section||'', s.mobile||'', s.address||'',
+        s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-IN') : ''
+      ]));
+      csvRows.push([]);
+    });
+    const csv = csvRows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    zip.file('students.csv', csv);
 
     const content = await zip.generateAsync({ type: 'blob' });
     const url = URL.createObjectURL(content);
