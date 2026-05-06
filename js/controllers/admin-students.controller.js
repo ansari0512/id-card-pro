@@ -158,13 +158,26 @@ window.adminBulkDownload = async function() {
     zip.file('students.csv', csv);
 
     const photosFolder = zip.folder('photos');
-    await Promise.all(window.adminAllStudents.filter(s => s.photo).map(async s => {
-      try {
-        const res = await fetch(s.photo);
-        const blob = await res.blob();
-        const ext = blob.type.includes('png') ? 'png' : 'jpg';
-        photosFolder.file(`${s.id}_${(s.name||'student').replace(/\s+/g,'_')}.${ext}`, blob);
-      } catch(e) {}
+    await Promise.all(window.adminAllStudents.filter(s => s.photo).map(s => {
+      return new Promise(resolve => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          canvas.getContext('2d').drawImage(img, 0, 0);
+          canvas.toBlob(blob => {
+            if (blob) {
+              const ext = blob.type.includes('png') ? 'png' : 'jpg';
+              photosFolder.file(`${s.id}_${(s.name||'student').replace(/\s+/g,'_')}.${ext}`, blob);
+            }
+            resolve();
+          }, 'image/jpeg', 0.9);
+        };
+        img.onerror = () => resolve();
+        img.src = s.photo + (s.photo.includes('?') ? '&' : '?') + 't=' + Date.now();
+      });
     }));
 
     const content = await zip.generateAsync({ type: 'blob' });

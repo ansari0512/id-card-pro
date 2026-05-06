@@ -444,17 +444,26 @@ window.bulkDownload = async function() {
     const photosFolder = zip.folder('photos');
     const photoPromises = targets
       .filter(s => s.photo)
-      .map(async s => {
-        try {
-          const response = await fetch(s.photo);
-          const blob = await response.blob();
-          const ext = blob.type.includes('png') ? 'png' : 'jpg';
-          const filename = `${s.id}_${(s.name || 'student').replace(/\s+/g, '_')}.${ext}`;
-          photosFolder.file(filename, blob);
-        } catch (e) {
-          // Skip failed
-        }
-      });
+      .map(s => new Promise(resolve => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          canvas.getContext('2d').drawImage(img, 0, 0);
+          canvas.toBlob(blob => {
+            if (blob) {
+              const ext = blob.type.includes('png') ? 'png' : 'jpg';
+              const filename = `${s.id}_${(s.name || 'student').replace(/\s+/g, '_')}.${ext}`;
+              photosFolder.file(filename, blob);
+            }
+            resolve();
+          }, 'image/jpeg', 0.9);
+        };
+        img.onerror = () => resolve();
+        img.src = s.photo + (s.photo.includes('?') ? '&' : '?') + 't=' + Date.now();
+      }));
 
     await Promise.all(photoPromises);
 
