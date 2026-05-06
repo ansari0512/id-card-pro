@@ -13,5 +13,10 @@ service firebase.storage {
         (request.auth.uid == schoolId ||
          firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin');
     }
+
+    // Legacy path support (purane uploads)
+    match /students/{allPaths=**} {
+      allow read: if true;
+    }
   }
 }
