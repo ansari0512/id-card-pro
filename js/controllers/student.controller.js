@@ -413,9 +413,7 @@ window.exportCSV = async function() {
     s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-IN') : ''
   ]);
   const csv = [
-    [`School: ${schoolName}`],
-    [`Downloaded: ${new Date().toLocaleDateString('en-IN')}`],
-    [],
+    [`School: ${schoolName} (Downloaded: ${new Date().toLocaleDateString('en-IN')})`],
     headers,
     ...rows
   ].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
@@ -461,15 +459,20 @@ window.bulkDownload = async function() {
       .filter(s => s.photo)
       .map(async s => {
         try {
-          // Firebase Storage ref se directly blob lo (CORS issue nahi hoga)
+          // Fresh download URL lo aur fetch karo
           const storageRef = firebase.storage().refFromURL(s.photo);
-          const blob = await storageRef.getBlob();
+          const freshUrl = await storageRef.getDownloadURL();
+          const res = await fetch(freshUrl);
+          if (!res.ok) return;
+          const blob = await res.blob();
           const ext = blob.type.includes('png') ? 'png' : 'jpg';
           const classFolder = photosFolder.folder(s.class || 'Unknown');
           classFolder.file(`${s.id}_${(s.name || 'student').replace(/\s+/g, '_')}.${ext}`, blob);
         } catch (e) {}
       });
 
+    const shortCode = window.shortName(schoolName);
+    const dateStr = new Date().toISOString().slice(0, 10);
     const headers = ['Student ID', 'Name', 'Father Name', 'Class', 'Section', 'Mobile', 'Address', 'Added On'];
     const rows = targets.map(s => [
       s.id||'', s.name||'', s.father||'', s.class||'',
@@ -477,13 +480,11 @@ window.bulkDownload = async function() {
       s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-IN') : ''
     ]);
     const csv = [
-      [`School: ${schoolName}`],
-      [`Downloaded: ${new Date().toLocaleDateString('en-IN')}`],
-      [],
+      [`School: ${schoolName} (Downloaded: ${new Date().toLocaleDateString('en-IN')})`],
       headers,
       ...rows
     ].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
-    zip.file('students.csv', csv);
+    zip.file(`${shortCode}_students_${dateStr}.csv`, csv);
 
     await Promise.all(photoPromises);
 
