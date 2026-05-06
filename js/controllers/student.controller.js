@@ -386,36 +386,45 @@ window.bulkDelete = function() {
   }).catch(err => window.showToast('Bulk delete failed: ' + err.message, 'error'));
 };
 
+// Short school name helper
+window.shortName = function(name) {
+  return name.split(/\s+/).map(w => w[0].toUpperCase()).join('').slice(0, 6);
+};
+
 /**
  * Export CSV
  */
-window.exportCSV = function() {
+window.exportCSV = async function() {
   if (window.allStudents.length === 0) {
     window.showToast('No students to export', 'error');
     return;
   }
+  const user = firebase.auth().currentUser;
+  let schoolName = 'School';
+  try {
+    const doc = await firebase.firestore().collection('schools').doc(user.uid).get();
+    if (doc.exists) schoolName = doc.data().schoolName || 'School';
+  } catch(e) {}
 
   const headers = ['Student ID', 'Name', 'Father Name', 'Class', 'Section', 'Mobile', 'Address', 'Added On'];
   const rows = window.allStudents.map(s => [
-    s.id || '',
-    s.name || '',
-    s.father || '',
-    s.class || '',
-    s.section || '',
-    s.mobile || '',
-    s.address || '',
+    s.id||'', s.name||'', s.father||'', s.class||'',
+    s.section||'', s.mobile||'', s.address||'',
     s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-IN') : ''
   ]);
+  const csv = [
+    [`School: ${schoolName}`],
+    [`Downloaded: ${new Date().toLocaleDateString('en-IN')}`],
+    [],
+    headers,
+    ...rows
+  ].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
 
-  const csvContent = [headers, ...rows]
-    .map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))
-    .join('\n');
-
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `students_${new Date().toISOString().slice(0,10)}.csv`;
+  a.download = `${window.shortName(schoolName)}_students_${new Date().toISOString().slice(0,10)}.csv`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -440,8 +449,13 @@ window.bulkDownload = async function() {
 
   try {
     const zip = new JSZip();
+    const user = firebase.auth().currentUser;
+    let schoolName = 'School';
+    try {
+      const doc = await firebase.firestore().collection('schools').doc(user.uid).get();
+      if (doc.exists) schoolName = doc.data().schoolName || 'School';
+    } catch(e) {}
 
-    // Photos
     const photosFolder = zip.folder('photos');
     const photoPromises = targets
       .filter(s => s.photo)
@@ -451,26 +465,23 @@ window.bulkDownload = async function() {
           if (!res.ok) return;
           const blob = await res.blob();
           const ext = blob.type.includes('png') ? 'png' : 'jpg';
-          const classFolder = photosFolder.folder(s.class || 'Unknown');
-          classFolder.file(`${s.id}_${(s.name || 'student').replace(/\s+/g, '_')}.${ext}`, blob);
+          photosFolder.file(`${s.id}_${(s.name || 'student').replace(/\s+/g, '_')}.${ext}`, blob);
         } catch (e) {}
       });
 
-    // CSV — class wise grouped
-    const classes = [...new Set(targets.map(s => s.class || 'Unknown'))].sort();
-    const csvRows = [
+    const headers = ['Student ID', 'Name', 'Father Name', 'Class', 'Section', 'Mobile', 'Address', 'Added On'];
+    const rows = targets.map(s => [
+      s.id||'', s.name||'', s.father||'', s.class||'',
+      s.section||'', s.mobile||'', s.address||'',
+      s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-IN') : ''
+    ]);
+    const csv = [
+      [`School: ${schoolName}`],
       [`Downloaded: ${new Date().toLocaleDateString('en-IN')}`],
-      []
-    ];
-    const headers = ['Student ID', 'Name', 'Father Name', 'Class', 'Section', 'Mobile', 'Address'];
-    classes.forEach(cls => {
-      const classStudents = targets.filter(s => (s.class || 'Unknown') === cls);
-      csvRows.push([`Class: ${cls} (${classStudents.length} students)`]);
-      csvRows.push(headers);
-      classStudents.forEach(s => csvRows.push([s.id||'', s.name||'', s.father||'', s.class||'', s.section||'', s.mobile||'', s.address||'']));
-      csvRows.push([]);
-    });
-    const csv = csvRows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+      [],
+      headers,
+      ...rows
+    ].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
     zip.file('students.csv', csv);
 
     await Promise.all(photoPromises);
@@ -479,7 +490,7 @@ window.bulkDownload = async function() {
     const url = URL.createObjectURL(content);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `students_${new Date().toISOString().slice(0,10)}.zip`;
+    a.download = `${window.shortName(schoolName)}_students_${new Date().toISOString().slice(0,10)}.zip`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
