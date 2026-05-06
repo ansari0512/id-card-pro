@@ -612,21 +612,35 @@ window.closeImportModal = function() {
   document.getElementById('importModal').classList.remove('open');
 };
 
-// Parse CSV
-window.parseCSV = function(text) {
-  const lines = text.trim().split('\n').filter(l => l.trim());
-  if (lines.length < 2) return [];
-  return lines.slice(1).map(line => {
-    const cols = line.split(',').map(c => c.replace(/^"|"$/g, '').trim());
-    return {
-      name: cols[0] || '',
-      father: cols[1] || '',
-      class: cols[2] || '',
-      section: cols[3] || '',
-      mobile: cols[4] || '',
-      address: cols[5] || ''
+// Parse CSV or Excel
+window.parseImportFile = function(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        let students = [];
+        if (file.name.endsWith('.csv')) {
+          students = window.parseCSV(e.target.result);
+        } else {
+          // Excel
+          const wb = XLSX.read(e.target.result, { type: 'binary' });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+          students = rows.slice(1).map(cols => ({
+            name: String(cols[0] || '').trim(),
+            father: String(cols[1] || '').trim(),
+            class: String(cols[2] || '').trim(),
+            section: String(cols[3] || '').trim(),
+            mobile: String(cols[4] || '').trim(),
+            address: String(cols[5] || '').trim()
+          })).filter(s => s.name && s.class);
+        }
+        resolve(students);
+      } catch(e) { reject(e); }
     };
-  }).filter(s => s.name && s.class);
+    if (file.name.endsWith('.csv')) reader.readAsText(file);
+    else reader.readAsBinaryString(file);
+  });
 };
 
 // Preview CSV on file select
@@ -634,13 +648,10 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('importFile')?.addEventListener('change', function() {
     const file = this.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = e => {
-      const students = window.parseCSV(e.target.result);
+    window.parseImportFile(file).then(students => {
       document.getElementById('importCount').textContent = students.length;
       document.getElementById('importPreview').style.display = 'block';
-    };
-    reader.readAsText(file);
+    }).catch(() => {});
   });
 
   document.getElementById('pendingPhotoFile')?.addEventListener('change', function() {
@@ -667,10 +678,9 @@ window.importCSV = async function() {
 
   try {
     const user = firebase.auth().currentUser;
-    const text = await file.text();
-    const students = window.parseCSV(text);
+    const students = await window.parseImportFile(file);
 
-    if (students.length === 0) throw new Error('No valid students found in CSV');
+    if (students.length === 0) throw new Error('No valid students found in CSV/Excel');
 
     // Get school code for ID generation
     let schoolCode = 'SCH';
