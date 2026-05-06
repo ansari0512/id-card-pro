@@ -72,7 +72,7 @@ window.uploadPhoto = async function(userId, studentId, file, className, studentN
   const ext    = file.type.includes('png') ? 'png' : 'jpg';
   const safeSch = schoolName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
 
-  const path = `student photos/${safeSch}/${cls}/${sName}_${studentId}.${ext}`;
+  const path = `student_photos/${safeSch}/${cls}/${sName}_${studentId}.${ext}`;
   const storageRef = firebase.storage().ref(path);
   const snapshot = await storageRef.put(file);
   return await snapshot.ref.getDownloadURL();
