@@ -2,52 +2,268 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta http-equiv="X-Frame-Options" content="DENY">
   <meta name="referrer" content="no-referrer">
   <title>RK Choice - ID Card Management System</title>
-   
-   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-   <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'dark');</script>
-   <link rel="stylesheet" href="css/style.css?v=a94822a">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'dark');</script>
+  <link rel="stylesheet" href="css/style.css?v=a94822a">
+  
+  <style>
+    /* Login page specific styles */
+    .login-container {
+      width: 100%;
+      max-width: 380px;
+      animation: slideUp 0.5s ease-out;
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+      position: relative;
+    }
+
+    .login-header .icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      display: block;
+    }
+
+    .login-header h1 {
+      margin: 0;
+      font-size: 1.75rem;
+      background: linear-gradient(135deg, #3b82f6, #0ea5e9, #06b6d4, #10b981);
+      background-size: 300% 300%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: gradientShift 3s ease infinite;
+    }
+
+    .login-header p {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-top: 0.75rem;
+      margin-bottom: 0;
+    }
+
+    .theme-toggle-login {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 1.25rem;
+      transition: var(--transition);
+    }
+
+    .theme-toggle-login:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--primary);
+    }
+
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 0;
+    }
+
+    .form-group label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-group input {
+      padding: 13px 16px;
+      background: var(--bg-card);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 14px;
+      transition: var(--transition);
+      min-height: 44px;
+    }
+
+    .form-group input:hover {
+      border-color: var(--primary);
+      background: var(--bg-card-hover);
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      background: var(--bg-card);
+    }
+
+    .form-group input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .error-msg {
+      color: var(--error);
+      font-size: 13px;
+      padding: 10px 12px;
+      background: var(--error);
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 8px;
+      display: none;
+      animation: slideDown 0.3s ease;
+    }
+
+    .error-msg.show {
+      display: block;
+    }
+
+    .login-btn {
+      padding: 13px 24px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-family: var(--font);
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: var(--transition);
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+      margin-top: 0.5rem;
+    }
+
+    .login-btn:hover:not(:disabled) {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .login-btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .login-btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .login-footer {
+      text-align: center;
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .login-container {
+        max-width: 100%;
+        padding: 0 16px;
+      }
+
+      .login-header {
+        margin-bottom: 2rem;
+      }
+
+      .login-header h1 {
+        font-size: 1.5rem;
+      }
+
+      .login-header .icon {
+        font-size: 3.5rem;
+      }
+
+      .theme-toggle-login {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+      }
+    }
+  </style>
 </head>
 <body>
  
-   <div class="center">
-     <div class="glass-card" style="width: 100%; max-width: 350px;">
-       
-       <div style="text-align: center; margin-bottom: 2rem; position: relative;">
-         <div style="font-size: 3.5rem; margin-bottom: 0.5rem;">🎓</div>
-         <h1 style="margin: 0; color: var(--primary);">RK Choice</h1>
-         <p style="color: var(--text-muted); font-size: 14px; margin-top: 0.5rem;">
-           ID Card Management System
-         </p>
-         <!-- Theme toggle -->
-         <button id="themeToggle" style="position: absolute; top: 0; right: 0; font-size: 1.5rem; background: none; border: none; cursor: pointer;">🌙</button>
-       </div>
+  <div class="center">
+    <div class="glass-card login-container">
+      
+      <div class="login-header">
+        <span class="icon">🎓</span>
+        <h1>RK Choice</h1>
+        <p>Professional ID Card Management System</p>
+        <button id="themeToggle" class="theme-toggle-login" title="Toggle theme">🌙</button>
+      </div>
 
-      <form id="loginForm">
+      <form id="loginForm" class="login-form">
         <div class="form-group">
-          <label for="email">Email</label>
+          <label for="email">Email Address</label>
           <input type="email" id="email" placeholder="admin@school.com" required autocomplete="email">
         </div>
 
         <div class="form-group">
           <label for="password">Password</label>
-          <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
+          <input type="password" id="password" placeholder="Enter your password" required autocomplete="current-password">
         </div>
 
-        <div id="errorMsg" class="error-msg" style="display: none;"></div>
+        <div id="errorMsg" class="error-msg"></div>
 
-        <button type="submit" class="full success" id="loginBtn">
-          <span class="btn-text">🔐 Sign In</span>
+        <button type="submit" class="login-btn" id="loginBtn">
+          <span>🔐</span>
+          <span class="btn-text">Sign In</span>
         </button>
       </form>
 
-      <p style="text-align: center; margin-top: 1.5rem; font-size: 12px; color: var(--text-muted);">
+      <div class="login-footer">
         © 2026 RK Choice. All rights reserved.
-      </p>
+      </div>
     </div>
   </div>
 
@@ -56,17 +272,14 @@
    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-    <!-- Firebase Initialization -->
-    <script src="js/firebase-config.js?v=a94822a"></script>
+   <!-- Firebase Initialization -->
+   <script src="js/firebase-config.js?v=a94822a"></script>
 
-     <!-- Utils (showToast, sanitize, etc.) -->
-     <script src="js/helpers.js?v=a94822a"></script>
+   <!-- Utils (showToast, sanitize, etc.) -->
+   <script src="js/helpers.js?v=a94822a"></script>
 
-    <!-- Auth Controller -->
-    <script src="js/controllers/auth.controller.js?v=a94822a"></script>
-
-   <!-- App Entry -->
-   <!-- app-new.js removed -->
+   <!-- Auth Controller -->
+   <script src="js/controllers/auth.controller.js?v=a94822a"></script>
 
    <!-- Page-specific script -->
    <script>
@@ -84,36 +297,43 @@
 
        const btn = document.getElementById('loginBtn');
        const btnText = btn.querySelector('.btn-text');
-       const email = document.getElementById('email').value;
+       const email = document.getElementById('email').value.trim();
        const password = document.getElementById('password').value;
        const errorMsg = document.getElementById('errorMsg');
 
+       // Validation
+       if (!email || !password) {
+         errorMsg.textContent = 'Please enter email and password';
+         errorMsg.classList.add('show');
+         return;
+       }
+
        btn.disabled = true;
-       btnText.textContent = '⏳ Signing in...';
-       errorMsg.style.display = 'none';
+       btnText.textContent = 'Signing in...';
+       errorMsg.classList.remove('show');
 
        try {
          const { user, role } = await window.login(email, password);
-         window.showToast('Login successful!', 'success');
+         window.showToast('✅ Login successful!', 'success');
          setTimeout(() => {
            window.location.href = role === 'admin' ? 'admin-panel.html' : 'dashboard.html';
-         }, 300);
+         }, 400);
        } catch (error) {
          let message = error.message;
          const code = error.code || '';
 
-         if (code === 'auth/invalid-email') message = 'Invalid email address';
-         else if (code === 'auth/user-disabled') message = 'Account disabled';
-         else if (code === 'auth/user-not-found') message = 'User not found';
-         else if (code === 'auth/wrong-password') message = 'Incorrect password';
-         else if (code === 'auth/too-many-requests') message = 'Too many attempts. Try later.';
-         else if (code === 'auth/network-request-failed') message = 'Network error. Check connection.';
+         if (code === 'auth/invalid-email') message = '❌ Invalid email address';
+         else if (code === 'auth/user-disabled') message = '❌ Account disabled';
+         else if (code === 'auth/user-not-found') message = '❌ Email not registered';
+         else if (code === 'auth/wrong-password') message = '❌ Incorrect password';
+         else if (code === 'auth/too-many-requests') message = '❌ Too many attempts. Please try later.';
+         else if (code === 'auth/network-request-failed') message = '❌ Network error. Check connection.';
 
          errorMsg.textContent = message;
-         errorMsg.style.display = 'block';
+         errorMsg.classList.add('show');
        } finally {
          btn.disabled = false;
-         btnText.textContent = '🔐 Sign In';
+         btnText.textContent = 'Sign In';
        }
      });
 
@@ -124,6 +344,7 @@
        const btn = document.getElementById('themeToggle');
        if (btn) btn.textContent = t === 'light' ? '☀️' : '🌙';
      })();
+     
      document.getElementById('themeToggle')?.addEventListener('click', function() {
        const current = document.documentElement.getAttribute('data-theme');
        const next = current === 'light' ? 'dark' : 'light';
@@ -131,7 +352,14 @@
        localStorage.setItem('theme', next);
        this.textContent = next === 'light' ? '☀️' : '🌙';
      });
-     </script>
+
+     // Enter key to submit
+     document.getElementById('loginForm').addEventListener('keypress', function(e) {
+       if (e.key === 'Enter') {
+         this.dispatchEvent(new Event('submit'));
+       }
+     });
+   </script>
 
 </body>
 </html>
