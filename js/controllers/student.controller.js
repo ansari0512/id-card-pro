@@ -50,9 +50,21 @@ window.getStudents = async function(filters = {}) {
 window.deleteStudent = async function(studentId, studentClass) {
   const user = firebase.auth().currentUser;
   if (!user) throw new Error('Authentication required');
+  
   const student = window.allStudents.find(s => (s.docId || s.id) === studentId);
   const cls = studentClass || student?.class;
   if (!cls) throw new Error('Student class not found');
+  
+  try {
+    // Delete photo from storage first (non-blocking)
+    if (student?.photo) {
+      await window.deletePhoto(student.photo);
+    }
+  } catch (error) {
+    console.warn('Photo cleanup failed, continuing with student deletion:', error.message);
+  }
+  
+  // Delete student record
   await window.dbStudents(user.uid, cls).doc(studentId).delete();
   return true;
 };
@@ -290,18 +302,25 @@ window.saveStudentEdit = async function(e) {
     const user = firebase.auth().currentUser;
     if (!user) throw new Error('Not logged in');
 
+    const student = window.allStudents.find(s => (s.docId || s.id) === docId);
+    const oldPhotoUrl = student?.photo;
+
     // Photo upload if new
     const photoFile = document.getElementById('editPhoto').files[0];
     if (photoFile) {
       if (!photoFile.type.startsWith('image/')) throw new Error('Only image files allowed');
       if (photoFile.size > 5 * 1024 * 1024) throw new Error('Photo must be less than 5MB');
 
+      // Delete old photo first
+      if (oldPhotoUrl) {
+        await window.deletePhoto(oldPhotoUrl);
+      }
+
       const photoUrl = await window.uploadPhoto(user.uid, docId, photoFile, document.getElementById('editClass').value, document.getElementById('editName').value.trim());
       updates.photo = photoUrl;
     }
 
     // Handle class change (move between subcollections)
-    const student = window.allStudents.find(s => (s.docId || s.id) === docId);
     const oldClass = student?.class;
     const newClass = document.getElementById('editClass').value;
 
@@ -374,9 +393,13 @@ window.bulkDelete = function() {
   const ids = Array.from(window.selectedStudents);
   const user = firebase.auth().currentUser;
 
-  Promise.all(ids.map(id =>
-    window.dbStudents(user.uid, window.allStudents.find(s => s.id === id)?.class).doc(id).delete()
-  )).then(() => {
+  Promise.all(ids.map(async id => {
+    const student = window.allStudents.find(s => s.id === id);
+    if (student?.photo) {
+      await window.deletePhoto(student.photo);
+    }
+    return window.dbStudents(user.uid, student?.class).doc(id).delete();
+  })).then(() => {
     window.showToast(`Deleted ${ids.length} students`, 'success');
     window.selectedStudents.clear();
     window.updateSelectedCount();
@@ -453,26 +476,40 @@ window.bulkDownload = async function() {
     } catch(e) {}
 
     const photosFolder = zip.folder('photos');
+    
+    // Download photos with proper error handling
     const photoPromises = targets
       .filter(s => s.photo)
       .map(s => new Promise(async (resolve) => {
         try {
+          // Get fresh download URL from Firebase Storage
           const storageRef = firebase.storage().refFromURL(s.photo);
           const freshUrl = await storageRef.getDownloadURL();
-          // XMLHttpRequest use karo — fetch() CORS block karta hai Firebase Hosting pe
-          const blob = await new Promise((res, rej) => {
-            const xhr = new XMLHttpRequest();
-            xhr.responseType = 'blob';
-            xhr.onload = () => xhr.status === 200 ? res(xhr.response) : rej(new Error('HTTP ' + xhr.status));
-            xhr.onerror = () => rej(new Error('Network error'));
-            xhr.open('GET', freshUrl);
-            xhr.send();
+          
+          // Use fetch with proper headers
+          const response = await fetch(freshUrl, {
+            method: 'GET',
+            mode: 'cors',
+            credentials: 'omit'
           });
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          
+          const blob = await response.blob();
           const ext = blob.type.includes('png') ? 'png' : 'jpg';
           const classFolder = photosFolder.folder(s.class || 'Unknown');
-          classFolder.file(`${s.id}_${(s.name || 'student').replace(/\s+/g, '_')}.${ext}`, blob);
+          const fileName = `${s.id}_${(s.name || 'student').replace(/\s+/g, '_')}.${ext}`;
+          classFolder.file(fileName, blob);
+          
+          console.log(`Photo downloaded: ${fileName}`);
         } catch (e) {
-          console.warn('Photo download failed:', s.id, e.message);
+          console.warn('Photo download failed for student:', s.id, e.message);
+          // Add placeholder for failed photos
+          const classFolder = photosFolder.folder(s.class || 'Unknown');
+          const fileName = `${s.id}_${(s.name || 'student').replace(/\s+/g, '_')}_FAILED.txt`;
+          classFolder.file(fileName, `Photo download failed: ${e.message}`);
         }
         resolve();
       }));
@@ -492,6 +529,7 @@ window.bulkDownload = async function() {
     ].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
     zip.file(`${shortCode}_students_${dateStr}.csv`, csv);
 
+    // Wait for all photos to download
     await Promise.all(photoPromises);
 
     const content = await zip.generateAsync({ type: 'blob' });

@@ -120,6 +120,28 @@ window.uploadPhoto = async function(userId, studentId, file, className, studentN
 };
 
 /**
+ * Delete photo from Firebase Storage
+ * Extracts path from photo URL and deletes the file
+ */
+window.deletePhoto = async function(photoUrl) {
+  if (!photoUrl) return;
+  try {
+    // Check if user is logged in
+    const user = firebase.auth().currentUser;
+    if (!user) {
+      console.warn('User not logged in, skipping photo delete');
+      return;
+    }
+    
+    const storageRef = firebase.storage().refFromURL(photoUrl);
+    await storageRef.delete();
+  } catch (error) {
+    console.warn('Photo delete failed:', error.message);
+    // Don't throw error - continue with student deletion
+  }
+};
+
+/**
  * Generate unique student ID using Firestore transaction (race condition safe)
  * Format: {SCHOOLCODE}-{YEAR}-{0001}
  */
