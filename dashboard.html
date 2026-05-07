@@ -8,7 +8,7 @@
   <meta name="referrer" content="no-referrer">
   <title>Dashboard - RK Choice</title>
   
-  <link rel="stylesheet" href="css/style.css?v=a94822a">
+  <link rel="stylesheet" href="src/styles/main.css?v=2.0">
   <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'dark');</script>
   
   <style>
@@ -154,29 +154,7 @@
       text-align: center;
     }
 
-    /* Bulk Operations */
-    .bulk-ops-section {
-      margin-bottom: 2rem;
-    }
 
-    .bulk-ops-section h3 {
-      font-size: 1.1rem;
-      margin-bottom: 1.25rem;
-      color: var(--text);
-    }
-
-    .bulk-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-    }
-
-    .bulk-buttons button {
-      flex: 1;
-      min-width: 120px;
-      padding: 11px 16px;
-      font-size: 13px;
-    }
 
     /* Modal */
     .modal-overlay {
@@ -291,17 +269,6 @@
 
       .action-button .icon {
         font-size: 2rem;
-      }
-
-      .bulk-buttons {
-        gap: 0.5rem;
-      }
-
-      .bulk-buttons button {
-        flex: 1;
-        min-width: 100px;
-        padding: 10px 12px;
-        font-size: 12px;
       }
     }
 
@@ -424,58 +391,12 @@
           <span class="icon">🖨️</span>
           <span class="label">Print IDs</span>
         </a>
-
-        <a href="students.html?tab=import" class="action-button">
-          <span class="icon">📂</span>
-          <span class="label">Import CSV</span>
-        </a>
       </div>
     </div>
 
-    <!-- Bulk Operations -->
-    <div class="card bulk-ops-section">
-      <h3>Bulk Operations</h3>
-      <div class="bulk-buttons">
-        <button onclick="exportStudents()">📥 Export CSV</button>
-        <button onclick="bulkDownloadPhotos()" style="background:#10b981;border-color:#10b981;">📦 Download ZIP</button>
-        <button class="danger" onclick="openDeleteClassModal()">🗑️ Delete by Class</button>
-        <button class="danger" onclick="confirmBulkDelete()">🗑️ Delete All</button>
-      </div>
-    </div>
 
-     <!-- Delete by Class Modal -->
-     <div id="deleteClassModal" class="modal-overlay">
-       <div class="modal">
-        <h3>🗑️ Delete by Class</h3>
-        <div class="form-group">
-          <label for="deleteClassSelect">Select Class</label>
-          <select id="deleteClassSelect">
-            <option value="">-- Select Class --</option>
-            <option value="Nursery">Nursery</option>
-            <option value="LKG">LKG</option>
-            <option value="UKG">UKG</option>
-            <option value="KG">KG</option>
-            <option value="1">Class 1</option>
-            <option value="2">Class 2</option>
-            <option value="3">Class 3</option>
-            <option value="4">Class 4</option>
-            <option value="5">Class 5</option>
-            <option value="6">Class 6</option>
-            <option value="7">Class 7</option>
-            <option value="8">Class 8</option>
-            <option value="9">Class 9</option>
-            <option value="10">Class 10</option>
-          </select>
-        </div>
-        <div id="deleteClassCount" class="info-text"></div>
-        <div class="modal-buttons">
-          <button class="danger" id="confirmDeleteClassBtn" onclick="confirmDeleteByClass()">
-            <span id="deleteClassBtnText">🗑️ Delete</span>
-          </button>
-          <button class="secondary" onclick="closeDeleteClassModal()">Cancel</button>
-        </div>
-      </div>
-    </div>
+
+
 
   </main>
 
@@ -513,21 +434,7 @@
        this.textContent = next === 'light' ? '☀️' : '🌙';
      });
 
-     // Modal handlers
-     window.openDeleteClassModal = function() {
-       document.getElementById('deleteClassModal').classList.add('open');
-     };
-
-     window.closeDeleteClassModal = function() {
-       document.getElementById('deleteClassModal').classList.remove('open');
-     };
-
-     // Close modal on outside click
-     document.getElementById('deleteClassModal')?.addEventListener('click', function(e) {
-       if (e.target === this) {
-         this.classList.remove('open');
-       }
-     });
+     // Modal handlers - removed delete class modal functions
    </script>
 </body>
 </html>

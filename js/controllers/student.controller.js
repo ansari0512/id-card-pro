@@ -113,7 +113,7 @@ window.loadStudents = async function() {
 };
 
 /**
- * Render student cards
+ * Render student cards with professional design
  */
 window.renderStudents = function(students) {
   const grid = document.getElementById('studentsGrid');
@@ -125,25 +125,44 @@ window.renderStudents = function(students) {
     const card = document.createElement('div');
     card.className = 'student-card';
     card.innerHTML = `
-      <div class="header">Student ID: ${student.id || 'N/A'}</div>
-      <div class="body">
-        <img class="photo" src="${student.photo || 'assets/placeholder.png'}" alt="Photo" onerror="this.src='assets/placeholder.png'">
-        <h4 style="margin:5px 0;">${student.name || 'Unknown'}</h4>
-        <p style="font-size:13px;color:var(--text-muted);">${student.class || ''} - ${student.section || ''}</p>
-        <div class="details">
-          <p><strong>Father:</strong> <span>${student.father || '-'}</span></p>
-          <p><strong>Mobile:</strong> <span>${student.mobile || '-'}</span></p>
-          <p><strong>Added:</strong> <span>${new Date(student.createdAt).toLocaleDateString('en-IN')}</span></p>
+      <div class="student-id-header">
+        <div class="student-id-text">Student ID: ${student.id || 'N/A'}</div>
+        <input type="checkbox" class="header-checkbox student-checkbox" data-id="${student.id}" id="student-${student.id}">
+      </div>
+      <div class="student-content">
+        <img class="student-photo" src="${student.photo || 'assets/placeholder.png'}" alt="${student.name}" onerror="this.src='assets/placeholder.png'">
+        <h3 class="student-name">${student.name || 'Unknown'}</h3>
+        <div class="student-class">${student.class || '-'} - ${student.section || '-'}</div>
+        
+        <div class="student-info-grid">
+          <div class="info-row">
+            <span class="info-label">Father:</span>
+            <span class="info-value">${student.father || 'Not provided'}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Mobile:</span>
+            <span class="info-value">${student.mobile || 'Not provided'}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Address:</span>
+            <span class="info-value">${student.address || 'Not provided'}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Added:</span>
+            <span class="info-value">${new Date(student.createdAt).toLocaleDateString('en-IN')}</span>
+          </div>
         </div>
-        <div class="actions">
-          <button onclick="window.openEditModal('${student.docId || student.id}')">✏️ Edit</button>
-          <button onclick="window.printSingle('${student.id}')">🖨️ Print</button>
-          <button class="danger" onclick="window.deleteSingle('${student.docId || student.id}')">🗑️ Delete</button>
-        </div>
-        <div style="margin-top:8px;">
-          <label style="font-size:12px;display:flex;align-items:center;gap:4px;">
-            <input type="checkbox" class="student-checkbox" data-id="${student.id}"> Select
-          </label>
+        
+        <div class="student-actions">
+          <button class="btn-edit" onclick="window.openEditModal('${student.docId || student.id}')" title="Edit Student">
+            ✏️ Edit
+          </button>
+          <button class="btn-print" onclick="window.printSingle('${student.id}')" title="Print ID Card">
+            🖨️ Print
+          </button>
+          <button class="btn-delete" onclick="window.deleteSingle('${student.docId || student.id}')" title="Delete Student">
+            🗑️ Delete
+          </button>
         </div>
       </div>
     `;
@@ -536,7 +555,7 @@ window.loadPendingStudents = async function() {
   }
 };
 
-// Render pending student cards
+// Render pending student cards with new design
 window.renderPendingStudents = function(students) {
   const grid = document.getElementById('pendingGrid');
   grid.innerHTML = '';
@@ -544,18 +563,40 @@ window.renderPendingStudents = function(students) {
     const card = document.createElement('div');
     card.className = 'student-card';
     card.innerHTML = `
-      <div class="header" style="background:#f59e0b;">⏳ Pending: ${s.id || 'N/A'}</div>
-      <div class="body">
-        <img class="photo" src="assets/placeholder.png" alt="No Photo" style="opacity:0.4;">
-        <h4 style="margin:5px 0;">${s.name || 'Unknown'}</h4>
-        <p style="font-size:13px;color:var(--text-muted);">${s.class || ''} - ${s.section || ''}</p>
-        <div class="details">
-          <p><strong>Father:</strong> <span>${s.father || '-'}</span></p>
-          <p><strong>Mobile:</strong> <span>${s.mobile || '-'}</span></p>
+      <div class="student-id-header">
+        <div class="student-id-text">Student ID: ${s.id || 'N/A'}</div>
+      </div>
+      <div class="student-content">
+        <img class="student-photo" src="assets/placeholder.png" alt="No Photo" style="opacity:0.4;">
+        <h3 class="student-name">${s.name || 'Unknown'}</h3>
+        <div class="student-class">${s.class || '-'} - ${s.section || '-'}</div>
+        
+        <div class="student-info-grid">
+          <div class="info-row">
+            <span class="info-label">Father:</span>
+            <span class="info-value">${s.father || 'Not provided'}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Mobile:</span>
+            <span class="info-value">${s.mobile || 'Not provided'}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Address:</span>
+            <span class="info-value">${s.address || 'Not provided'}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Status:</span>
+            <span class="info-value" style="color: #f59e0b; font-weight: 600;">Photo Required</span>
+          </div>
         </div>
-        <div class="actions">
-          <button onclick="window.openPhotoUploadModal('${s.docId}', '${s.name}', '${s.class}', '${s.section}')">📷 Upload Photo</button>
-          <button class="danger" onclick="window.deletePending('${s.docId}')">🗑️ Delete</button>
+        
+        <div class="student-actions">
+          <button class="btn-upload" onclick="window.openPhotoUploadModal('${s.docId}', '${s.name}', '${s.class}', '${s.section}')" title="Upload Photo">
+            📷 Upload Photo
+          </button>
+          <button class="btn-delete" onclick="window.deletePending('${s.docId}')" title="Delete Student">
+            🗑️ Delete
+          </button>
         </div>
       </div>
     `;

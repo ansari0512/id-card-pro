@@ -1,0 +1,29 @@
+/* ==========================================
+   RK Choice ID Card System - Main CSS
+   Professional Modular Architecture
+   ========================================== */
+
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+/* Core Styles */
+@import 'variables.css';
+@import 'base.css';
+
+/* Component Styles */
+@import 'buttons.css';
+@import 'forms.css';
+@import 'components.css';
+@import 'navigation.css';
+@import 'components/modal.css';
+
+/* Utilities */
+@import 'utilities.css';
+@import 'performance.css';
+
+/* Page-specific imports */
+@import 'pages/dashboard.css';
+@import 'pages/login.css';
+@import 'pages/print.css';
+@import 'pages/admin.css';
+@import 'pages/students.css';

@@ -63,11 +63,44 @@
       }
 
       @media print {
-        body { background: white; padding: 0; }
+        body { background: white !important; padding: 0 !important; margin: 0 !important; }
         .toolbar { display: none !important; }
-        .a4-page { box-shadow: none; margin: 0; padding: 0; width: 100%; }
-        .id-card { border: 1px solid #ddd; box-shadow: none; }
-        @page { size: A4; margin: 0; }
+        .a4-page { 
+          box-shadow: none !important; 
+          margin: 0 !important; 
+          padding: 10mm !important; 
+          width: 100% !important;
+          min-height: auto !important;
+        }
+        .cards-grid {
+          display: grid !important;
+          grid-template-columns: repeat(3, 1fr) !important;
+          gap: 8mm !important;
+          page-break-inside: avoid;
+        }
+        .id-card { 
+          border: 1px solid #ddd !important; 
+          box-shadow: none !important;
+          page-break-inside: avoid !important;
+          width: 85.6mm !important;
+          height: 54mm !important;
+          background: white !important;
+        }
+        .id-card .header {
+          background: #f59e0b !important;
+          color: #000 !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        .id-card .photo {
+          border: 2px solid #f59e0b !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        @page { 
+          size: A4 portrait !important; 
+          margin: 10mm !important;
+        }
       }
     </style>
 </head>
@@ -76,7 +109,7 @@
    <div class="toolbar no-print">
      <h2 style="cursor: pointer; margin: 0;" onclick="window.location.href='dashboard.html'">🖨️ Print ID Cards</h2>
      <button onclick="window.print()">🖨️ Print</button>
-     <button class="secondary" onclick="showToast('Use browser print (Ctrl+P) and select Save as PDF', 'info')">📄 Save as PDF</button>
+     <button class="secondary" onclick="saveToPDF()">📄 Save as PDF</button>
      <button id="themeToggle" class="secondary" onclick="toggleTheme()" style="font-size:1.2rem;padding:8px 14px;">🌙</button>
      <button class="secondary" onclick="history.length > 1 ? history.back() : window.close()">✕ Close</button>
    </div>
@@ -105,7 +138,7 @@
     <!-- Print Controller -->
     <script src="js/controllers/print.controller.js?v=a94822a"></script>
 
-   <!-- Theme -->
+   <!-- Theme & PDF Functions -->
    <script>
      (function() {
        const t = localStorage.getItem('theme') || 'dark';
@@ -113,13 +146,39 @@
        const btn = document.getElementById('themeToggle');
        if (btn) btn.textContent = t === 'light' ? '☀️' : '🌙';
      })();
-     document.getElementById('themeToggle')?.addEventListener('click', function() {
+     
+     function toggleTheme() {
        const current = document.documentElement.getAttribute('data-theme');
        const next = current === 'light' ? 'dark' : 'light';
        document.documentElement.setAttribute('data-theme', next);
        localStorage.setItem('theme', next);
-       this.textContent = next === 'light' ? '☀️' : '🌙';
-     });
+       document.getElementById('themeToggle').textContent = next === 'light' ? '☀️' : '🌙';
+     }
+     
+     function saveToPDF() {
+       // Show instructions for better PDF output
+       const instructions = `
+📄 Save as PDF Instructions:
+
+1. Press Ctrl+P (or Cmd+P on Mac)
+2. Select "Save as PDF" as destination
+3. Set these options for best quality:
+   • Paper size: A4
+   • Margins: Default
+   • Scale: 100%
+   • Options: ✓ Background graphics
+   
+4. Click "Save" to download PDF
+
+Tip: Enable "Background graphics" for colored headers!`;
+       
+       alert(instructions);
+       
+       // Auto-trigger print dialog after 1 second
+       setTimeout(() => {
+         window.print();
+       }, 1000);
+     }
    </script>
 
 </body>

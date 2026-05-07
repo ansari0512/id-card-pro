@@ -1,0 +1,154 @@
+/* ==========================================
+   Print Page Styles
+   ========================================== */
+
+/* A4 Print Area */
+.a4 {
+  max-width: 210mm;
+  margin: 0 auto;
+  padding: 10mm;
+  background: white;
+  min-height: 297mm;
+  color: #000;
+}
+
+.a4 .grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+/* Print Card (3.37in x 2.13in) */
+.print-card {
+  width: 3.37in;
+  height: 2.13in;
+  background: white;
+  border-radius: 10px;
+  padding: 0.1in;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  page-break-inside: avoid;
+  overflow: hidden;
+}
+
+/* ID Card Preview */
+.id-card-preview {
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  color: #000;
+  position: relative;
+}
+
+.id-card-preview .card-header {
+  background: var(--primary);
+  color: white;
+  padding: 12px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.id-card-preview .card-body {
+  padding: 20px;
+  text-align: center;
+}
+
+.id-card-preview .photo {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 3px solid var(--primary);
+  margin: 0 auto 15px;
+  object-fit: contain;
+  object-position: center;
+  background: #f0f0f0;
+}
+
+.id-card-preview .info {
+  text-align: left;
+  margin-top: 15px;
+}
+
+.id-card-preview .info p {
+  margin: 8px 0;
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px dashed #ddd;
+  padding-bottom: 4px;
+}
+
+.id-card-preview .info strong {
+  color: #666;
+}
+
+/* Preview Area */
+.preview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+/* Print Specific Styles */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .a4, .a4 * {
+    visibility: visible;
+  }
+  .a4 {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+  }
+}
+
+/* Mobile responsive print layout */
+@media (max-width: 768px) {
+  .a4 {
+    width: 100%;
+    padding: 5mm;
+    min-height: auto;
+  }
+  
+  .a4 .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  
+  .id-card-preview {
+    width: 100%;
+    max-width: 280px;
+  }
+}
+
+@media (max-width: 480px) {
+  .a4 .grid {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+  
+  .id-card-preview {
+    max-width: 260px;
+  }
+  
+  .preview {
+    padding: 0.5rem 0;
+  }
+}
