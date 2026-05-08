@@ -36,6 +36,7 @@
   background: rgba(255, 255, 255, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.3);
   color: white;
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
 }
 
@@ -182,7 +183,6 @@
 /* School Table */
 .school-table-wrapper {
   overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
   margin-bottom: 1rem;
   border-radius: 12px;
   border: 1px solid var(--border);
@@ -497,7 +497,84 @@
   .admin-welcome h1 {
     font-size: 1.5rem;
   }
+}
 
+/* New Classes for Inline Styles */
+.logo-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.logo-emoji {
+  font-size: 1.5rem;
+}
+
+.user-email {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.admin-main-container {
+  padding-top: 2rem;
+  text-align: center;
+}
+
+.admin-loading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-muted);
+}
+
+.admin-schools-table-hidden {
+  display: none;
+}
+
+.admin-empty-state {
+  display: none;
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-muted);
+}
+
+.admin-empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.admin-add-button {
+  margin-top: 1rem;
+}
+
+.modal-wide {
+  max-width: 90vw;
+}
+
+.form-helper-text {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.form-error-message {
+  color: #ef4444;
+  font-size: 13px;
+  display: none;
+  margin-bottom: 0.5rem;
+}
+
+.form-buttons-container {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.form-button-flex {
+  flex: 1;
+}
+
+@media (max-width: 360px) {
   .admin-welcome {
     text-align: center;
   }

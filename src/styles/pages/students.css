@@ -529,6 +529,7 @@
 .checkbox-container {
   position: relative;
   cursor: pointer;
+  -webkit-user-select: none;
   user-select: none;
   padding: 4px;
 }
