@@ -91,7 +91,9 @@ window.loadStudents = async function() {
 
   loading.style.display = 'block';
   grid.style.display = 'none';
+  grid.classList.remove('hidden');
   empty.style.display = 'none';
+  empty.classList.remove('hidden');
 
   try {
     const user = firebase.auth().currentUser;
@@ -115,6 +117,7 @@ window.loadStudents = async function() {
     } else {
       window.renderStudents(students);
       grid.style.display = 'grid';
+      grid.classList.remove('hidden');
     }
   } catch (error) {
     window.showToast('Failed to load students: ' + error.message, 'error');
