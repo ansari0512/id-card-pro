@@ -46,16 +46,46 @@ window.initAuth = function(onChange) {
  */
 window.login = async function(email, password) {
   try {
+    // First check if email exists
+    let methods = [];
+    try {
+      methods = await firebase.auth().fetchSignInMethodsForEmail(email);
+    } catch (e) {
+      console.warn('fetchSignInMethodsForEmail failed:', e.message);
+      // If fetch fails, try sign in directly
+      try {
+        const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+        const user = userCredential.user;
+        const role = await window.fetchUserRole(user);
+        window.currentUser = user;
+        window.currentRole = role;
+        return { user, role };
+      } catch (signInError) {
+        if (signInError.code === 'auth/user-not-found') {
+          throw new Error('User not found in data base');
+        } else {
+          throw new Error('Invalid password');
+        }
+      }
+    }
+
+    if (methods.length === 0) {
+      throw new Error('User not found in data base');
+    }
+
+    // Email exists, try to sign in
     const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
     const user = userCredential.user;
-
     const role = await window.fetchUserRole(user);
-
     window.currentUser = user;
     window.currentRole = role;
-
     return { user, role };
   } catch (error) {
+    // If it's our custom error, throw as is
+    if (error.message === 'User not found in data base' || error.message === 'Invalid password') {
+      throw error;
+    }
+    // Otherwise map Firebase errors
     throw mapAuthError(error.code, error.message);
   }
 };
