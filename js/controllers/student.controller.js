@@ -551,20 +551,6 @@ window.bulkDownload = async function() {
 
 window.currentTab = 'complete';
 
-window.switchTab = function(tab) {
-  window.currentTab = tab;
-  const isComplete = tab === 'complete';
-  document.getElementById('tabComplete').className = isComplete ? '' : 'secondary';
-  document.getElementById('tabPending').className = isComplete ? 'secondary' : '';
-  document.getElementById('completeControls').style.display = isComplete ? '' : 'none';
-  document.getElementById('pendingControls').style.display = isComplete ? 'none' : '';
-  document.getElementById('studentsGrid').style.display = 'none';
-  document.getElementById('pendingGrid').style.display = 'none';
-  document.getElementById('emptyState').style.display = 'none';
-  if (isComplete) window.loadStudents();
-  else window.loadPendingStudents();
-};
-
 // Pending students collection
 window.dbPending = function(schoolId) {
   return firebase.firestore().collection('schools').doc(schoolId).collection('pending_students');
