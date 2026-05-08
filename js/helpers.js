@@ -98,7 +98,7 @@ window.debounce = function(func, wait) {
 window.ALL_CLASSES = ['Nursery','LKG','UKG','KG','1','2','3','4','5','6','7','8','9','10'];
 
 /**
- * Upload photo — shared by id-form aur student controller
+ * Upload photo shared by id-form and student controller.
  * path: student_photos/{schoolName}/{className}/{studentName}_{studentId}.ext
  */
 window.uploadPhoto = async function(userId, studentId, file, className, studentName) {
@@ -159,7 +159,7 @@ window.generateStudentId = async function(schoolId) {
     }
   } catch(e) {}
 
-  // Counter document use karo — race condition safe
+  // Use a counter document to keep ID generation race-condition safe.
   const counterRef = db.collection('schools').doc(schoolId)
     .collection('counters').doc(String(year));
 

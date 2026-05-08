@@ -1,7 +1,7 @@
 // ── Firebase Configuration ────────────────────────────────
-// 1. Is file ko copy karke firebase-config.js naam do
-// 2. Apne Firebase project ki values yahan fill karo
-// 3. firebase-config.js kabhi GitHub pe push mat karo (.gitignore mein hai)
+// 1. Copy this file and rename it to firebase-config.js.
+// 2. Fill in the values from your Firebase project.
+// 3. Never commit firebase-config.js to GitHub. It is listed in .gitignore.
 
 const firebaseConfig = {
   apiKey:            "YOUR_API_KEY",

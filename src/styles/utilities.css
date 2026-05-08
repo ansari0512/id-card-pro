@@ -106,23 +106,19 @@
   top: 70px;
   right: 16px;
   z-index: 1000;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--btn-color);
+  border-color: var(--btn-color);
   border-radius: 50%;
   width: 44px;
   height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
   font-size: 20px;
-  transition: var(--transition);
-  box-shadow: var(--shadow-sm);
 }
 
 .theme-toggle:hover {
+  background: var(--btn-color);
+  color: #fff;
   transform: translateY(-2px);
-  box-shadow: var(--shadow);
 }
 
 @media (max-width: 768px) {

@@ -60,7 +60,7 @@ window.loadSchools = async function() {
       const safeEmail = window.sanitize(school.email || '-');
       const tr = document.createElement('tr');
 
-      // Buttons data-* attributes se attach karo — inline onclick XSS se bachao
+      // Attach handlers programmatically to avoid inline onclick XSS risks.
       const td1 = document.createElement('td');
       td1.innerHTML = `<strong>${safeName}</strong>${safeCity ? `<br><small style="color:var(--text-muted)">${safeCity}</small>` : ''}`;
 
@@ -85,12 +85,12 @@ window.loadSchools = async function() {
        buttonGroup.className = 'button-group';
        
        const btnView = document.createElement('button');
-       btnView.className = 'secondary';
+       btnView.className = 'btn-print';
        btnView.textContent = '👁️ View';
        btnView.addEventListener('click', () => window.viewStudents(school.id, school.schoolName || ''));
 
        const btnToggle = document.createElement('button');
-       btnToggle.className = 'secondary';
+       btnToggle.className = active ? 'warning' : 'success';
        btnToggle.textContent = active ? '🔒 Disable' : '✅ Enable';
        btnToggle.addEventListener('click', () => window.toggleStatus(school.id, active));
 
@@ -109,7 +109,7 @@ window.loadSchools = async function() {
     document.getElementById('loadingSchools').style.display = 'none';
     document.getElementById('schoolsTable').style.display = 'table';
 
-    // Student counts fetch karo background mein
+    // Fetch student counts in the background.
     let total = 0;
     for (const school of schools) {
       try {

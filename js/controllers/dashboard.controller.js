@@ -34,15 +34,15 @@ window.initDashboard = function() {
  */
 window.loadStats = async function(user) {
   try {
-    // School name fetch karo
+    // Fetch the school name.
     const schoolDoc = await firebase.firestore().collection('schools').doc(user.uid).get();
     const schoolName = schoolDoc.exists ? (schoolDoc.data().schoolName || '') : '';
 
-    // Dashboard mein dikhao
+    // Show it on the dashboard.
     const nameEl = document.getElementById('schoolNameDisplay');
     if (nameEl) nameEl.textContent = schoolName ? '🏫 ' + schoolName : 'Dashboard';
 
-    // Students page topbar mein dikhao (agar woh element exist kare)
+    // Update the students page topbar if the element exists.
     const topbarEl = document.getElementById('schoolNameTopbar');
     if (topbarEl && schoolName) topbarEl.textContent = '🏫 ' + schoolName;
 
@@ -151,7 +151,7 @@ window.closeDeleteClassModal = function() {
 };
 
 /**
- * Class selection change handler — DOMContentLoaded ke baad attach karo
+ * Attach the class selection change handler after DOMContentLoaded.
  */
 function attachDeleteClassListener() {
   document.getElementById('deleteClassSelect')?.addEventListener('change', async function() {

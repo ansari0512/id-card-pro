@@ -150,5 +150,5 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Theme
   document.getElementById('themeToggle')?.addEventListener('click', window.toggleTheme);
-  // loadTheme HTML mein handle ho raha hai
+  // Theme initialization is handled in the HTML.
 });

@@ -258,7 +258,7 @@ class UtilityService {
 
     let buttonHtml = '';
     if (actionButton) {
-      buttonHtml = `<button onclick="${actionButton.onclick}" style="margin-top: 1rem;">${actionButton.text}</button>`;
+      buttonHtml = `<button class="empty-state-action" onclick="${actionButton.onclick}">${actionButton.text}</button>`;
     }
 
     element.innerHTML = `

@@ -23,7 +23,7 @@
      </div>
      <div class="topbar-right">
        <span id="adminEmail" class="user-email"></span>
-       <button class="secondary" onclick="doLogout()">Logout</button>
+       <button class="secondary logout-btn" onclick="doLogout()">Logout</button>
      </div>
    </header>
 
@@ -83,7 +83,7 @@
         </div>
         <div class="section-actions">
           <button onclick="refreshSchools()" class="secondary">🔄 Refresh</button>
-          <button onclick="exportSchoolsData()" class="secondary">📄 Export</button>
+          <button onclick="exportSchoolsData()" class="btn-csv">📄 Export</button>
         </div>
       </div>
 
@@ -171,7 +171,7 @@
 
    <!-- Theme + Init -->
    <script>
-     // Theme pehle apply karo
+     // Apply the theme before initializing the page.
      (function() {
        const t = localStorage.getItem('theme') || 'dark';
        document.documentElement.setAttribute('data-theme', t);
@@ -258,7 +258,7 @@ window.exportSchoolsData = async function() {
     const totalByClass = allClasses.map(c => schoolsData.reduce((sum, d) => sum + (d.classCount[c] || 0), 0));
     const totalRow = ['TOTAL', '', '', '', totalStudents, ...totalByClass, ''];
 
-    // --- HTML Table banao jo Excel me styling ke saath khulegi ---
+    // Build a styled HTML table that opens correctly in Excel.
     const headerCells = headers.map((h, i) => {
       const isTotalCol = i === 4;
       return `<th style="background:#D9D9D9;font-weight:bold;border:1px solid #AAAAAA;padding:6px 10px;text-align:center;font-size:12px;${isTotalCol ? 'color:#1F3864;' : ''}">${h}</th>`;
@@ -308,7 +308,7 @@ window.exportSchoolsData = async function() {
   }
 };
 
-     // Auth ready hone ke baad init karo
+     // Initialize after auth is ready.
      firebase.auth().onAuthStateChanged(async function(user) {
        if (!user) { window.location.href = 'index.html'; return; }
        const role = await window.fetchUserRole(user);

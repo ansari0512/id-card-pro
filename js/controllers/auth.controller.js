@@ -75,19 +75,19 @@ window.login = async function(email, password) {
           .get();
 
         if (usersSnap.empty) {
-          // Email Firestore me nahi mila — user exist nahi karta
+          // No matching email was found in Firestore.
           throw new Error('User not found in database');
         } else {
-          // Email mila — matlab password galat hai
+          // Email exists, so the password is incorrect.
           throw new Error('Invalid Password');
         }
       } catch (firestoreError) {
-        // Agar firestoreError hamara khud ka throw kiya hua hai to wahi throw karo
+        // Re-throw expected validation errors.
         if (firestoreError.message === 'User not found in database' ||
             firestoreError.message === 'Invalid Password') {
           throw firestoreError;
         }
-        // Firestore read fail hua to generic message
+        // If the Firestore lookup fails, return the generic user-not-found message.
         throw new Error('User not found in database');
       }
     }

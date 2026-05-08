@@ -6,8 +6,8 @@
 
 window.adminSchoolId = null;
 window.adminAllStudents = [];
-window.adminMode = 'single'; // 'single' ya 'all'
-window.adminSchoolsList = []; // View All mode me sab schools
+window.adminMode = 'single'; // 'single' or 'all'
+window.adminSchoolsList = []; // All schools used in View All mode
 
 /**
  * Initialize admin students page
@@ -41,7 +41,7 @@ window.initAdminStudents = function() {
 };
 
 /**
- * View All mode: schools dropdown populate karo
+ * Populate the schools dropdown for View All mode.
  */
 window.loadSchoolsDropdown = async function() {
   try {
@@ -69,7 +69,7 @@ window.onSchoolFilterChange = function() {
 };
 
 /**
- * Load students - school + class filter ke saath
+ * Load students with school and class filters.
  */
 window.loadAdminStudents = async function() {
   document.getElementById('loading').style.display = 'block';
@@ -116,7 +116,7 @@ window.loadAdminStudents = async function() {
     window.adminAllStudents = students;
     document.getElementById('loading').style.display = 'none';
 
-    // Class filter update karo — sirf wahi classes jo students me hain
+    // Update class filter with only classes that exist in the current result set.
     window.updateClassFilter(students, classFilter);
 
     if (students.length === 0) {
@@ -133,13 +133,13 @@ window.loadAdminStudents = async function() {
 };
 
 /**
- * Class filter dynamically update karo - sirf available classes dikhao
+ * Dynamically update the class filter with available classes only.
  */
 window.updateClassFilter = function(students, selectedClass) {
-  // Agar class filter already selected hai to update mat karo (loop avoid)
+  // Do not update while a class filter is selected to avoid loops.
   if (selectedClass) return;
 
-  // Students se unique classes nikalo
+  // Extract unique classes from the current students.
   const classOrder = ['Nursery','LKG','UKG','KG','1','2','3','4','5','6','7','8','9','10'];
   const availableClasses = [...new Set(students.map(s => s.class).filter(Boolean))]
     .sort((a, b) => {

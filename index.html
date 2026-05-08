@@ -56,20 +56,12 @@
       right: 0;
       width: 44px;
       height: 44px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: transparent;
-      border: 1px solid var(--border);
       border-radius: 10px;
-      cursor: pointer;
       font-size: 1.25rem;
-      transition: var(--transition);
     }
 
     .theme-toggle-login:hover {
-      background: var(--bg-card-hover);
-      border-color: var(--primary);
+      transform: translateY(-1px);
     }
 
     .login-form {
@@ -139,28 +131,14 @@
 
     .login-btn {
       padding: 13px 24px;
-      background: var(--primary);
-      color: white;
-      border: none;
       border-radius: 10px;
-      font-family: var(--font);
-      font-weight: 600;
       font-size: 14px;
-      cursor: pointer;
-      transition: var(--transition);
       min-height: 48px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
       margin-top: 0.5rem;
     }
 
     .login-btn:hover:not(:disabled) {
-      background: var(--primary-dark);
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
     }
 
     .login-btn:active:not(:disabled) {

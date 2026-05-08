@@ -31,7 +31,7 @@
      <!-- Filter Controls -->
      <div class="card">
        <div class="filters filters-mb">
-         <!-- School filter - sirf View All mode me dikhega -->
+         <!-- School filter - shown only in View All mode -->
          <select id="schoolFilter" title="Select School" onchange="window.onSchoolFilterChange()" style="display:none;">
            <option value="">All Schools</option>
          </select>
@@ -41,9 +41,9 @@
          <button onclick="window.clearAdminFilters()" class="secondary">Clear Filter</button>
        </div>
        <div class="flex gap-2 flex-wrap">
-         <button onclick="window.adminExportCSV()">📥 Export CSV</button>
-         <button onclick="window.adminBulkDownload()">📦 Download ZIP</button>
-         <button onclick="window.adminBulkPrint()">🖨️ Print All</button>
+         <button class="btn-csv" onclick="window.adminExportCSV()">📥 Export CSV</button>
+         <button class="btn-download" onclick="window.adminBulkDownload()">📦 Download ZIP</button>
+         <button class="btn-print" onclick="window.adminBulkPrint()">🖨️ Print All</button>
        </div>
      </div>
 

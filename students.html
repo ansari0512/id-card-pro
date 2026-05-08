@@ -48,6 +48,9 @@
         ⏳ Pending Photos
         <span id="pendingBadge" class="badge-pill hidden">0</span>
       </button>
+      <button id="tabPromote" class="tab-btn" onclick="window.switchTab('promote')">
+        🎓 Promote Students
+      </button>
     </div>
 
     <!-- Complete Tab -->
@@ -83,7 +86,7 @@
           <option value="G">G</option>
           <option value="H">H</option>
         </select>
-        <button onclick="loadStudents()">🔍 Filter</button>
+        <button class="primary" onclick="loadStudents()">🔍 Filter</button>
         <button class="secondary" onclick="clearFilters()">Clear</button>
       </div>
 
@@ -114,7 +117,7 @@
         <div class="empty-icon">📭</div>
         <h3>No Students Found</h3>
         <p>Get started by creating your first student ID card.</p>
-        <a href="id-form.html"><button class="create-btn-margin">➕ Create Student</button></a>
+        <a href="id-form.html"><button class="primary create-btn-margin">➕ Create Student</button></a>
       </div>
     </div>
 
@@ -159,10 +162,135 @@
       </div>
     </div>
 
+    <!-- Promote Tab -->
+    <div id="promoteTab" class="tab-content">
+      <div class="info-section">
+        🎓 Select students to promote to the next class/section. Use the filters below to find students.
+      </div>
+
+      <!-- Promote Filters -->
+      <div class="filters-bar">
+        <select id="promoteClassFilter" title="Select Class" onchange="window.loadPromoteStudentsTable()">
+          <option value="">All Classes</option>
+          <option value="Nursery">Nursery</option>
+          <option value="LKG">LKG</option>
+          <option value="UKG">UKG</option>
+          <option value="KG">KG</option>
+          <option value="1">Class 1</option>
+          <option value="2">Class 2</option>
+          <option value="3">Class 3</option>
+          <option value="4">Class 4</option>
+          <option value="5">Class 5</option>
+          <option value="6">Class 6</option>
+          <option value="7">Class 7</option>
+          <option value="8">Class 8</option>
+          <option value="9">Class 9</option>
+          <option value="10">Class 10</option>
+        </select>
+        <select id="promoteSectionFilter" title="Select Section" onchange="window.loadPromoteStudentsTable()">
+          <option value="">All Sections</option>
+          <option value="A">A</option>
+          <option value="B">B</option>
+          <option value="C">C</option>
+          <option value="D">D</option>
+          <option value="E">E</option>
+          <option value="F">F</option>
+          <option value="G">G</option>
+          <option value="H">H</option>
+        </select>
+        <button class="primary" onclick="window.loadPromoteStudentsTable()">🔍 Filter</button>
+        <button class="secondary" onclick="window.clearPromoteFilters()">Clear</button>
+      </div>
+
+      <div class="actions-bar" id="promoteActionsBar" style="display:none">
+        <span class="selected-count">
+          <span id="promoteSelectedCount">0</span> selected
+        </span>
+        <button class="success" id="promoteConfirmBtn" onclick="window.openPromoteTargetModal()" disabled>
+          🎓 Promote Selected
+        </button>
+      </div>
+
+      <div id="promoteLoading" class="text-center loading-padding" style="display:none">
+        <div class="spinner spinner-large"></div>
+        <p class="text-muted loading-text">Loading students...</p>
+      </div>
+
+      <div id="promoteTableContainer" style="display:none; overflow-x: auto;">
+        <table class="students-table" id="promoteTable">
+          <thead>
+            <tr>
+              <th><input type="checkbox" id="promoteTableSelectAll" onchange="window.promoteToggleAllRows(this.checked)"></th>
+              <th>Name</th>
+              <th>Father Name</th>
+              <th>Class</th>
+              <th>Section</th>
+              <th>Photo</th>
+            </tr>
+          </thead>
+          <tbody id="promoteTableBody"></tbody>
+        </table>
+      </div>
+
+      <div id="emptyPromoteState" class="empty-state" style="display:none">
+        <div class="empty-icon">📭</div>
+        <h3>No Students Found</h3>
+        <p>Select a class and section to see students for promotion.</p>
+      </div>
+    </div>
+
   </main>
 
+  <!-- Promote Target Modal -->
+  <div class="modal-overlay" id="promoteTargetModal" onclick="if(event.target === this) window.closePromoteTargetModal()">
+    <div class="modal" style="max-width:420px;">
+      <h3>🎓 Promote Selected Students</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>To Class *</label>
+          <select id="promoteTargetClass">
+            <option value="">Select Class</option>
+            <option value="Nursery">Nursery</option>
+            <option value="LKG">LKG</option>
+            <option value="UKG">UKG</option>
+            <option value="KG">KG</option>
+            <option value="1">Class 1</option>
+            <option value="2">Class 2</option>
+            <option value="3">Class 3</option>
+            <option value="4">Class 4</option>
+            <option value="5">Class 5</option>
+            <option value="6">Class 6</option>
+            <option value="7">Class 7</option>
+            <option value="8">Class 8</option>
+            <option value="9">Class 9</option>
+            <option value="10">Class 10</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>To Section</label>
+          <select id="promoteTargetSection">
+            <option value="">Same Section</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+            <option value="E">E</option>
+            <option value="F">F</option>
+            <option value="G">G</option>
+            <option value="H">H</option>
+          </select>
+        </div>
+      </div>
+      <div id="promoteTargetError" class="edit-error" style="display:none"></div>
+      <div class="modal-buttons modal-buttons-mt">
+        <button class="success" onclick="window.confirmPromotion()" id="promoteTargetConfirmBtn">✅ Confirm Promote</button>
+        <button class="secondary" onclick="window.closePromoteTargetModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Import CSV Modal -->
-  <div class="modal-overlay" id="importModal">
+  <div class="modal-overlay" id="importModal" onclick="if(event.target === this) window.closeImportModal()">
     <div class="modal">
       <h3>📂 Import Students from CSV</h3>
       <p>CSV or Excel format: Name, Father Name, Class, Section, Mobile, Address</p>
@@ -178,7 +306,7 @@
       </div>
       <div id="importError" class="import-error"></div>
       <div class="modal-buttons modal-buttons-mt">
-        <button id="importBtn" onclick="window.importCSV()">
+        <button id="importBtn" class="success" onclick="window.importCSV()">
           <span id="importBtnText">✅ Import</span>
         </button>
         <button class="secondary" onclick="window.closeImportModal()">Cancel</button>
@@ -187,7 +315,7 @@
   </div>
 
   <!-- Pending Photo Upload Modal -->
-  <div class="modal-overlay" id="photoUploadModal">
+  <div class="modal-overlay" id="photoUploadModal" onclick="if(event.target === this) window.closePhotoUploadModal()">
     <div class="modal">
       <h3>📷 Upload Photo</h3>
       <input type="hidden" id="pendingDocId">
@@ -204,7 +332,7 @@
       </div>
       <div id="photoUploadError" class="photo-upload-error"></div>
       <div class="modal-buttons modal-buttons-mt">
-        <button id="photoUploadBtn" onclick="window.uploadPendingPhoto()">
+        <button id="photoUploadBtn" class="btn-upload" onclick="window.uploadPendingPhoto()">
           <span id="photoUploadBtnText">✅ Upload & Complete</span>
         </button>
         <button class="secondary" onclick="window.closePhotoUploadModal()">Cancel</button>
@@ -213,7 +341,7 @@
   </div>
 
   <!-- Edit Student Modal -->
-  <div class="modal-overlay" id="editModal">
+  <div class="modal-overlay" id="editModal" onclick="if(event.target === this) window.closeEditModal()">
     <div class="modal">
       <h3>✏️ Edit Student</h3>
       <form id="editForm">
@@ -301,6 +429,8 @@
     </div>
   </div>
 
+  <!-- Promote Students Modal - Deprecated (now uses tab view instead) -->
+
     <!-- JSZip -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <!-- SheetJS for Excel support -->
@@ -346,10 +476,12 @@
        // Hide all tabs
        document.getElementById('completeTab').classList.remove('active');
        document.getElementById('pendingTab').classList.remove('active');
+       document.getElementById('promoteTab').classList.remove('active');
        
        // Remove active state from buttons
        document.getElementById('tabComplete').classList.remove('active');
        document.getElementById('tabPending').classList.remove('active');
+       document.getElementById('tabPromote').classList.remove('active');
        
        // Show selected tab & mark button as active
        if (tab === 'complete') {
@@ -360,6 +492,10 @@
          document.getElementById('pendingTab').classList.add('active');
          document.getElementById('tabPending').classList.add('active');
          loadPendingStudents();
+       } else if (tab === 'promote') {
+         document.getElementById('promoteTab').classList.add('active');
+         document.getElementById('tabPromote').classList.add('active');
+         window.loadPromoteStudentsTable();
        }
      };
 

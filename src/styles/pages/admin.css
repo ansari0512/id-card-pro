@@ -33,15 +33,19 @@
 }
 
 .admin-actions button {
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  --btn-color: #ffffff;
+  --btn-color-rgb: 255, 255, 255;
+  background: transparent;
   color: white;
+  border-color: rgba(255, 255, 255, 0.65);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
 }
 
 .admin-actions button:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: #ffffff;
+  color: var(--primary);
+  border-color: #ffffff;
   transform: translateY(-2px);
 }
 
@@ -256,25 +260,13 @@
 }
 
 .school-table .secondary {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text);
-}
-
-.school-table .secondary:hover {
-  background: var(--bg-dark);
-  border-color: var(--primary);
-  color: var(--primary);
+  --btn-color: var(--btn-primary);
+  --btn-color-rgb: var(--btn-primary-rgb);
 }
 
 .school-table .danger {
-  background: var(--error);
-  color: white;
-  border: none;
-}
-
-.school-table .danger:hover {
-  background: #dc2626;
+  --btn-color: var(--btn-danger);
+  --btn-color-rgb: var(--btn-danger-rgb);
 }
 
 /* Stat Grid for Admin */

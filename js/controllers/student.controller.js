@@ -214,8 +214,7 @@ window.renderStudents = function(students) {
  */
 window.updateSelectedCount = function() {
   const count = window.selectedStudents.size;
-  document.getElementById('selectedCount').textContent =
-    count === 0 ? '0 selected' : `${count} selected`;
+  document.getElementById('selectedCount').textContent = count;
   const selectAll = document.getElementById('selectAllCheckbox');
   if (selectAll) {
     selectAll.checked = window.allStudents.length > 0 && count === window.allStudents.length;
@@ -704,10 +703,10 @@ window.renderPendingStudents = function(students) {
 // Bulk delete pending students
 window.bulkDeletePending = async function() {
   if (window.selectedPending.size === 0) {
-    window.showToast('Pehle students select karein', 'error');
+    window.showToast('Please select students first.', 'error');
     return;
   }
-  if (!confirm(`${window.selectedPending.size} pending students delete karein? Yeh undo nahi hoga.`)) return;
+  if (!confirm(`Delete ${window.selectedPending.size} pending students? This cannot be undone.`)) return;
 
   const user = firebase.auth().currentUser;
   const ids = Array.from(window.selectedPending);
@@ -840,7 +839,7 @@ window.importCSV = async function() {
         .split(/\s+/).filter(w => w).map(w => w[0].toUpperCase()).join('').slice(0, 4) || 'SCH';
     } catch(e) {}
 
-    // Single transaction mein N serials reserve karo — race condition safe
+    // Reserve all serial numbers in one transaction to avoid race conditions.
     const counterRef = db.collection('schools').doc(user.uid)
       .collection('counters').doc(String(year));
 
@@ -848,10 +847,10 @@ window.importCSV = async function() {
       const doc = await tx.get(counterRef);
       const current = doc.exists ? doc.data().count : 0;
       tx.set(counterRef, { count: current + students.length });
-      return current + 1; // pehli ID ka serial
+      return current + 1; // First reserved serial number
     });
 
-    // Batch write — sab pending students ek saath
+    // Write all pending students in one batch.
     const batch = db.batch();
     students.forEach((s, i) => {
       const id = `${schoolCode}-${year}-${String(startSerial + i).padStart(4, '0')}`;
@@ -866,7 +865,7 @@ window.importCSV = async function() {
     });
     await batch.commit();
 
-    window.showToast(`✅ ${students.length} students imported! Ab photo upload karein.`, 'success');
+    window.showToast(`✅ ${students.length} students imported. Upload photos to complete them.`, 'success');
     window.closeImportModal();
     window.updatePendingBadge();
     window.switchTab('pending');
@@ -901,7 +900,7 @@ window.uploadPendingPhoto = async function() {
   const btn = document.getElementById('photoUploadBtn');
   const btnText = document.getElementById('photoUploadBtnText');
 
-  if (!file) { errEl.textContent = 'Photo select karein'; errEl.style.display = 'block'; return; }
+  if (!file) { errEl.textContent = 'Please select a photo'; errEl.style.display = 'block'; return; }
   if (!file.type.startsWith('image/')) { errEl.textContent = 'Only image files allowed'; errEl.style.display = 'block'; return; }
   if (file.size > 5 * 1024 * 1024) { errEl.textContent = 'Photo must be less than 5MB'; errEl.style.display = 'block'; return; }
 
@@ -929,7 +928,7 @@ window.uploadPendingPhoto = async function() {
     // Delete from pending
     await window.dbPending(user.uid).doc(docId).delete();
 
-    window.showToast('✅ Student complete ho gaya!', 'success');
+    window.showToast('✅ Student completed successfully!', 'success');
     window.closePhotoUploadModal();
     window.updatePendingBadge();
     window.loadPendingStudents();
@@ -939,6 +938,280 @@ window.uploadPendingPhoto = async function() {
   } finally {
     btn.disabled = false;
     btnText.textContent = '✅ Upload & Complete';
+  }
+};
+
+// ── PROMOTE STUDENTS ─────────────────────────────────────────
+
+// Global promote state
+window.allPromoteStudents = [];
+window.selectedPromoteStudents = new Set();
+
+/**
+ * Load all students for promotion table
+ */
+window.loadPromoteStudentsTable = async function() {
+  const promoteLoading = document.getElementById('promoteLoading');
+  const promoteTableContainer = document.getElementById('promoteTableContainer');
+  const emptyPromoteState = document.getElementById('emptyPromoteState');
+  const promoteActionsBar = document.getElementById('promoteActionsBar');
+
+  promoteLoading.style.display = 'block';
+  promoteTableContainer.style.display = 'none';
+  emptyPromoteState.style.display = 'none';
+  promoteActionsBar.style.display = 'none';
+
+  try {
+    const user = firebase.auth().currentUser;
+    const classFilter = document.getElementById('promoteClassFilter').value;
+    const sectionFilter = document.getElementById('promoteSectionFilter').value;
+
+    // Get all students
+    const filters = {
+      class: classFilter || '',
+      section: sectionFilter || ''
+    };
+
+    const students = await window.getStudents(filters);
+    window.allPromoteStudents = students;
+    window.selectedPromoteStudents.clear();
+
+    promoteLoading.style.display = 'none';
+
+    if (students.length === 0) {
+      emptyPromoteState.style.display = 'block';
+      promoteActionsBar.style.display = 'none';
+    } else {
+      window.renderPromoteTable(students);
+      promoteTableContainer.style.display = 'block';
+      promoteActionsBar.style.display = 'flex';
+      window.updatePromoteCounts();
+    }
+  } catch (error) {
+    promoteLoading.style.display = 'none';
+    window.showToast('Failed to load students: ' + error.message, 'error');
+  }
+};
+
+/**
+ * Render students in promote table
+ */
+window.renderPromoteTable = function(students) {
+  const tbody = document.getElementById('promoteTableBody');
+  tbody.innerHTML = '';
+  window.selectedPromoteStudents.clear();
+
+  students.forEach(student => {
+    const tr = document.createElement('tr');
+    const studentId = student.docId || student.id;
+    
+    tr.innerHTML = `
+      <td style="text-align: center;">
+        <input type="checkbox" class="promote-checkbox" data-id="${studentId}" onchange="window.updatePromoteCounts()">
+      </td>
+      <td>${student.name || 'Unknown'}</td>
+      <td>${student.father || 'Not provided'}</td>
+      <td>${student.class || '-'}</td>
+      <td>${student.section || '-'}</td>
+      <td style="text-align: center;">
+        <img src="${student.photo || 'assets/placeholder.png'}" alt="${student.name}" class="student-photo-thumb" onerror="this.src='assets/placeholder.png'">
+      </td>
+    `;
+    tbody.appendChild(tr);
+
+    tr.addEventListener('click', function(event) {
+      if (event.target.tagName.toLowerCase() === 'input') return;
+      const checkbox = tr.querySelector('.promote-checkbox');
+      if (!checkbox) return;
+      checkbox.checked = !checkbox.checked;
+      checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  });
+
+  // Setup checkbox handlers
+  document.querySelectorAll('.promote-checkbox').forEach(cb => {
+    cb.addEventListener('change', function() {
+      const row = this.closest('tr');
+      if (this.checked) {
+        window.selectedPromoteStudents.add(this.dataset.id);
+        if (row) row.classList.add('selected');
+      } else {
+        window.selectedPromoteStudents.delete(this.dataset.id);
+        if (row) row.classList.remove('selected');
+      }
+      window.updatePromoteCounts();
+    });
+  });
+
+  window.updatePromoteCounts();
+};
+
+/**
+ * Toggle selection via button
+ */
+/**
+ * Toggle all selections
+ */
+window.promoteToggleAll = function(checked) {
+  const checkboxes = document.querySelectorAll('.promote-checkbox');
+  window.selectedPromoteStudents.clear();
+  
+  checkboxes.forEach(cb => {
+    cb.checked = checked;
+    const row = cb.closest('tr');
+    if (row) row.classList.toggle('selected', checked);
+    if (checked) {
+      window.selectedPromoteStudents.add(cb.dataset.id);
+    }
+  });
+  
+  window.updatePromoteCounts();
+};
+
+/**
+ * Toggle all table rows
+ */
+window.promoteToggleAllRows = function(checked) {
+  window.promoteToggleAll(checked);
+};
+
+/**
+ * Update promotion counts and button state
+ */
+window.updatePromoteCounts = function() {
+  const selectedCount = window.selectedPromoteStudents.size;
+  const totalCount = window.allPromoteStudents.length;
+  
+  document.getElementById('promoteSelectedCount').textContent = selectedCount;
+  const promoteBtnCount = document.getElementById('promoteBtnCount');
+  if (promoteBtnCount) {
+    promoteBtnCount.textContent = selectedCount;
+  }
+  
+  const selectAllCheckbox = document.getElementById('promoteTableSelectAll');
+  if (selectAllCheckbox) {
+    selectAllCheckbox.checked = selectedCount === totalCount && totalCount > 0;
+    selectAllCheckbox.indeterminate = selectedCount > 0 && selectedCount < totalCount;
+  }
+  
+  const confirmBtn = document.getElementById('promoteConfirmBtn');
+  if (confirmBtn) {
+    confirmBtn.disabled = selectedCount === 0;
+  }
+};
+
+/**
+ * Clear promote filters
+ */
+window.clearPromoteFilters = function() {
+  document.getElementById('promoteClassFilter').value = '';
+  document.getElementById('promoteSectionFilter').value = '';
+  window.selectedPromoteStudents.clear();
+  window.loadPromoteStudentsTable();
+};
+
+window.openPromoteTargetModal = function() {
+  if (window.selectedPromoteStudents.size === 0) {
+    window.showToast('Please select at least one student before promoting', 'error');
+    return;
+  }
+  document.getElementById('promoteTargetError').style.display = 'none';
+  document.getElementById('promoteTargetClass').value = '';
+  document.getElementById('promoteTargetSection').value = '';
+  const modalBtn = document.getElementById('promoteTargetConfirmBtn');
+  if (modalBtn) {
+    modalBtn.disabled = false;
+    modalBtn.textContent = '✅ Confirm Promote';
+  }
+  document.getElementById('promoteTargetModal').classList.add('open');
+};
+
+window.closePromoteTargetModal = function() {
+  document.getElementById('promoteTargetModal').classList.remove('open');
+};
+
+/**
+ * Confirm and execute promotion with new class and section dialog
+ */
+window.confirmPromotion = async function() {
+  if (window.selectedPromoteStudents.size === 0) {
+    window.showToast('Please select at least one student', 'error');
+    return;
+  }
+
+  const toClass = document.getElementById('promoteTargetClass').value;
+  const toSection = document.getElementById('promoteTargetSection').value;
+  if (!toClass) {
+    const errorEl = document.getElementById('promoteTargetError');
+    if (errorEl) {
+      errorEl.textContent = 'Please select the target class';
+      errorEl.style.display = 'block';
+    }
+    return;
+  }
+
+  const selectedCount = window.selectedPromoteStudents.size;
+  if (!confirm(`Promote ${selectedCount} students to ${toClass}${toSection ? ' - ' + toSection : ''}?\n\nThis action cannot be undone.`)) {
+    return;
+  }
+
+  const actionBtn = document.getElementById('promoteConfirmBtn');
+  const modalBtn = document.getElementById('promoteTargetConfirmBtn');
+  if (actionBtn) {
+    actionBtn.disabled = true;
+    actionBtn.textContent = '⏳ Promoting...';
+  }
+  if (modalBtn) {
+    modalBtn.disabled = true;
+    modalBtn.textContent = '⏳ Promoting...';
+  }
+
+  try {
+    const user = firebase.auth().currentUser;
+    const selectedIds = Array.from(window.selectedPromoteStudents);
+    const studentsToPromote = window.allPromoteStudents.filter(s => selectedIds.includes(s.docId || s.id));
+
+    const batch = firebase.firestore().batch();
+
+    for (const student of studentsToPromote) {
+      const oldClass = student.class;
+      const newClass = toClass;
+      const newSection = toSection || student.section;
+
+      if (oldClass !== newClass) {
+        const oldRef = window.dbStudents(user.uid, oldClass).doc(student.docId || student.id);
+        batch.delete(oldRef);
+        const newRef = window.dbStudents(user.uid, newClass).doc();
+        batch.set(newRef, {
+          ...student,
+          class: newClass,
+          section: newSection,
+          updatedAt: Date.now()
+        });
+      } else {
+        const ref = window.dbStudents(user.uid, oldClass).doc(student.docId || student.id);
+        batch.update(ref, {
+          section: newSection,
+          updatedAt: Date.now()
+        });
+      }
+    }
+
+    await batch.commit();
+    window.showToast(`✅ Successfully promoted ${selectedCount} students to ${toClass}${toSection ? ' - ' + toSection : ''}!`, 'success');
+    window.loadPromoteStudentsTable();
+  } catch (error) {
+    window.showToast('Promotion failed: ' + error.message, 'error');
+  } finally {
+    document.getElementById('promoteTargetModal')?.classList.remove('open');
+    if (actionBtn) {
+      actionBtn.disabled = false;
+      actionBtn.textContent = `🎓 Promote Selected`;
+    }
+    if (modalBtn) {
+      modalBtn.disabled = false;
+      modalBtn.textContent = '✅ Confirm Promote';
+    }
   }
 };
 
@@ -952,7 +1225,7 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
-    // School name badge mein dikhao
+    // Show the school name badge.
     try {
       const doc = await firebase.firestore().collection('schools').doc(user.uid).get();
       const name = doc.exists ? (doc.data().schoolName || '') : '';
@@ -1008,5 +1281,8 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   document.getElementById('photoUploadModal')?.addEventListener('click', function(e) {
     if (e.target === e.currentTarget) window.closePhotoUploadModal();
+  });
+  document.getElementById('promoteTargetModal')?.addEventListener('click', function(e) {
+    if (e.target === e.currentTarget) window.closePromoteTargetModal();
   });
 });
