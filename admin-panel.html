@@ -196,9 +196,113 @@
        window.loadSchools();
      };
      
-     window.exportSchoolsData = function() {
-       window.showToast('Export feature coming soon!', 'info');
-     };
+/**
+ * Export schools data as CSV with class-wise student counts
+ */
+window.exportSchoolsData = async function() {
+  window.showToast('Preparing export... please wait', 'info');
+
+  try {
+    const snapshot = await firebase.firestore()
+      .collection('schools')
+      .orderBy('schoolName')
+      .get();
+
+    const schools = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    if (schools.length === 0) {
+      window.showToast('No schools to export', 'error');
+      return;
+    }
+
+    const classOrder = ['Nursery','LKG','UKG','KG','1','2','3','4','5','6','7','8','9','10'];
+
+    // Sab schools ke students fetch karo
+    const schoolsData = await Promise.all(schools.map(async school => {
+      try {
+        const students = await window.dbGetAllStudents(school.id);
+
+        // Class-wise count
+        const classCount = {};
+        students.forEach(s => {
+          const cls = s.class || 'Unknown';
+          classCount[cls] = (classCount[cls] || 0) + 1;
+        });
+
+        return { school, students, classCount };
+      } catch(e) {
+        return { school, students: [], classCount: {} };
+      }
+    }));
+
+    // Sab schools me jo classes hain unki unique list banao
+    const allClasses = [...new Set(
+      schoolsData.flatMap(d => Object.keys(d.classCount))
+    )].sort((a, b) => {
+      const ai = classOrder.indexOf(a), bi = classOrder.indexOf(b);
+      if (ai === -1 && bi === -1) return a.localeCompare(b);
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    });
+
+    // CSV headers
+    const classHeaders = allClasses.map(c => isNaN(c) ? c : 'Class ' + c);
+    const headers = [
+      'School Name', 'City', 'Email', 'Status',
+      'Total Students',
+      ...classHeaders,
+      'Added On'
+    ];
+
+    // CSV rows
+    const rows = schoolsData.map(({ school, students, classCount }) => [
+      school.schoolName || '',
+      school.city || '',
+      school.email || '',
+      school.active !== false ? 'Active' : 'Inactive',
+      students.length,
+      ...allClasses.map(c => classCount[c] || 0),
+      school.createdAt ? new Date(school.createdAt).toLocaleDateString('en-IN') : ''
+    ]);
+
+    // Total row
+    const totalStudents = schoolsData.reduce((sum, d) => sum + d.students.length, 0);
+    const totalByClass = allClasses.map(c =>
+      schoolsData.reduce((sum, d) => sum + (d.classCount[c] || 0), 0)
+    );
+    const totalRow = [
+      'TOTAL', '', '', '',
+      totalStudents,
+      ...totalByClass,
+      ''
+    ];
+
+    const dateStr = new Date().toLocaleDateString('en-IN');
+    const csv = [
+      [`RK Choice - Schools Export (${dateStr})`],
+      [],
+      headers,
+      ...rows,
+      [],
+      totalRow
+    ].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `schools_export_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    window.showToast(`✅ Exported ${schools.length} schools successfully!`, 'success');
+  } catch(err) {
+    window.showToast('Export failed: ' + err.message, 'error');
+  }
+};
 
      // Auth ready hone ke baad init karo
      firebase.auth().onAuthStateChanged(async function(user) {
