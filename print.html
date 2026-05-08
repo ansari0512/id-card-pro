@@ -72,8 +72,8 @@
         .a4-page {
           box-shadow: none !important;
           margin: 0 !important;
-          padding: 8mm !important;
-          width: 100% !important;
+          padding: 5mm !important;
+          width: 210mm !important;
           min-height: auto !important;
           background: white !important;
           box-sizing: border-box !important;
@@ -81,7 +81,8 @@
         .cards-grid {
           display: grid !important;
           grid-template-columns: repeat(3, 1fr) !important;
-          gap: 5mm !important;
+          gap: 4mm !important;
+          width: 100% !important;
         }
         .id-card {
           background: white !important;
@@ -92,17 +93,20 @@
           break-inside: avoid !important;
           width: 100% !important;
           height: auto !important;
-          padding: 6px !important;
+          padding: 5px !important;
           box-sizing: border-box !important;
           overflow: hidden !important;
+          font-size: 9px !important;
         }
-        .id-card .header { background: #f59e0b !important; color: #000 !important; }
-        .id-card .details { color: #333 !important; }
+        .id-card .header { background: #f59e0b !important; color: #000 !important; font-size: 10px !important; padding: 3px 6px !important; }
+        .id-card .photo { width: 50px !important; height: 50px !important; }
+        .id-card .details { color: #333 !important; font-size: 8.5px !important; }
         .id-card .details p span { color: #333 !important; }
         .id-card .details strong { color: #666 !important; }
-        .id-card .id-number { color: #888 !important; }
+        .id-card .id-number { color: #888 !important; font-size: 7px !important; }
         .id-card .photo { border-color: #f59e0b !important; }
-        @page { size: A4 portrait !important; margin: 8mm !important; }
+        .id-card .qr { width: 35px !important; height: 35px !important; }
+        @page { size: A4 portrait !important; margin: 5mm !important; }
       }
     </style>
 </head>
