@@ -829,22 +829,32 @@ window.importCSV = async function() {
 
     if (students.length === 0) throw new Error('No valid students found in CSV/Excel');
 
-    // Get school code for ID generation
+    const db = firebase.firestore();
+    const year = new Date().getFullYear();
+
+    // School code fetch
     let schoolCode = 'SCH';
     try {
-      const doc = await firebase.firestore().collection('schools').doc(user.uid).get();
-      if (doc.exists) schoolCode = (doc.data().schoolName || '').split(/\s+/).filter(w=>w).map(w=>w[0].toUpperCase()).join('').slice(0,4) || 'SCH';
+      const doc = await db.collection('schools').doc(user.uid).get();
+      if (doc.exists) schoolCode = (doc.data().schoolName || '')
+        .split(/\s+/).filter(w => w).map(w => w[0].toUpperCase()).join('').slice(0, 4) || 'SCH';
     } catch(e) {}
 
-    const year = new Date().getFullYear();
-    const existing = await window.dbGetAllStudents(user.uid);
-    const pending = await window.dbPending(user.uid).get();
-    let serial = existing.length + pending.size;
+    // Single transaction mein N serials reserve karo — race condition safe
+    const counterRef = db.collection('schools').doc(user.uid)
+      .collection('counters').doc(String(year));
 
-    const batch = firebase.firestore().batch();
-    students.forEach(s => {
-      serial++;
-      const id = `${schoolCode}-${year}-${String(serial).padStart(4,'0')}`;
+    const startSerial = await db.runTransaction(async tx => {
+      const doc = await tx.get(counterRef);
+      const current = doc.exists ? doc.data().count : 0;
+      tx.set(counterRef, { count: current + students.length });
+      return current + 1; // pehli ID ka serial
+    });
+
+    // Batch write — sab pending students ek saath
+    const batch = db.batch();
+    students.forEach((s, i) => {
+      const id = `${schoolCode}-${year}-${String(startSerial + i).padStart(4, '0')}`;
       const ref = window.dbPending(user.uid).doc();
       batch.set(ref, {
         id, name: s.name, father: s.father,
@@ -911,8 +921,8 @@ window.uploadPendingPhoto = async function() {
     // Add to complete students
     await window.dbStudents(user.uid, s.class).add({
       id: s.id, uid: user.uid, schoolId: user.uid,
-      name: s.name, father: s.father, class: s.class,
-      section: s.section, mobile: s.mobile, address: s.address,
+      name: s.name, father: s.father || '', class: s.class,
+      section: s.section || '', mobile: s.mobile || '0000000000', address: s.address || '',
       photo: photoUrl, createdAt: s.createdAt, updatedAt: Date.now()
     });
 
