@@ -327,11 +327,11 @@
          else if (code === 'auth/user-disabled') message = '❌ Account disabled';
          else if (code === 'auth/user-not-found') message = '❌ User not found in database';
          else if (code === 'auth/wrong-password') message = '❌ Invalid Password';
-         else if (code === 'auth/invalid-login-credentials') message = '❌ User not found in database';
          else if (code === 'auth/too-many-requests') message = '❌ Too many attempts. Please try later.';
          else if (code === 'auth/network-request-failed') message = '❌ Network error. Check connection.';
          else if (message.includes('User not found in database')) message = '❌ User not found in database';
          else if (message.includes('Invalid Password')) message = '❌ Invalid Password';
+         else message = '❌ ' + message; // Add ❌ to any other error
 
          errorMsg.textContent = message;
          errorMsg.classList.add('show');

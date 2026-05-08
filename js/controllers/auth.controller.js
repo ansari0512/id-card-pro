@@ -62,9 +62,19 @@ window.login = async function(email, password) {
     } else if (error.code === 'auth/wrong-password') {
       throw new Error('Invalid Password');
     } else if (error.code === 'auth/invalid-login-credentials') {
-      // Firebase v9+ returns this for security - but we need to be more specific
-      // This usually means wrong email or password combination
-      throw new Error('User not found in database');
+      // Firebase v9+ returns this for both cases - we need to check if user exists first
+      try {
+        // Try to get user by email to check if email exists
+        await firebase.auth().fetchSignInMethodsForEmail(email);
+        // If we reach here, email exists but password is wrong
+        throw new Error('Invalid Password');
+      } catch (fetchError) {
+        if (fetchError.code === 'auth/user-not-found') {
+          throw new Error('User not found in database');
+        }
+        // If email exists but password wrong, or any other error
+        throw new Error('Invalid Password');
+      }
     } else if (error.code === 'auth/invalid-email') {
       throw new Error('User not found in database');
     } else {
