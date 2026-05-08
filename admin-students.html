@@ -14,8 +14,8 @@
 
     <header class="topbar no-print">
       <div>
-        <a href="admin-panel.html" style="display:flex;align-items:center;gap:0.5rem;text-decoration:none;color:inherit;">
-          <div style="font-size: 1.5rem;">🎓</div>
+        <a href="admin-panel.html" class="logo-link">
+          <div class="logo-icon">🎓</div>
           <span class="logo-text" id="pageTitle">School Students</span>
         </a>
       </div>
@@ -26,12 +26,12 @@
 
   <button class="theme-toggle no-print" id="themeToggle">🌙</button>
 
-   <main class="container" style="padding-top: 2rem;">
+   <main class="container container-pt">
 
      <!-- Filter Controls -->
      <div class="card">
-       <div class="filters" style="margin-bottom: 1rem;">
-         <select id="classFilter" onchange="window.loadAdminStudents()">
+       <div class="filters filters-mb">
+         <select id="classFilter" title="Select Class" onchange="window.loadAdminStudents()">
            <option value="">All Classes</option>
            <option value="Nursery">Nursery</option>
            <option value="LKG">LKG</option>
@@ -50,7 +50,7 @@
          </select>
          <button onclick="window.clearAdminFilters()" class="secondary">Clear Filter</button>
        </div>
-       <div class="flex gap-2" style="flex-wrap: wrap;">
+       <div class="flex gap-2 flex-wrap">
          <button onclick="window.adminExportCSV()">📥 Export CSV</button>
          <button onclick="window.adminBulkDownload()">📦 Download ZIP</button>
          <button onclick="window.adminBulkPrint()">🖨️ Print All</button>
@@ -58,14 +58,14 @@
      </div>
 
      <div id="loading" class="text-center mt-3">
-      <div class="spinner" style="width:40px;height:40px;"></div>
+      <div class="spinner spinner-large"></div>
       <p class="text-muted mt-1">Loading students...</p>
     </div>
 
-    <div id="studentsGrid" class="grid mt-3" style="display:none;"></div>
+    <div id="studentsGrid" class="grid mt-3 hidden"></div>
 
-    <div id="emptyState" class="empty-state" style="display:none;">
-      <div style="font-size:4rem;margin-bottom:1rem;">📭</div>
+    <div id="emptyState" class="empty-state hidden">
+      <div class="empty-icon">📭</div>
       <h3>No Students Found</h3>
       <p>This school has not added any students yet.</p>
     </div>

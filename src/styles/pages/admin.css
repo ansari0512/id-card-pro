@@ -566,3 +566,38 @@
     max-width: calc(100% - 1rem);
   }
 }
+
+/* Admin Students Page Styles */
+.logo-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.logo-icon {
+  font-size: 1.5rem;
+}
+
+.container-pt {
+  padding-top: 2rem;
+}
+
+.filters-mb {
+  margin-bottom: 1rem;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.spinner-large {
+  width: 40px;
+  height: 40px;
+}
+
+.empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}

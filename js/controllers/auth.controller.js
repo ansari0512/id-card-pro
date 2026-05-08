@@ -46,6 +46,13 @@ window.initAuth = function(onChange) {
  */
 window.login = async function(email, password) {
   try {
+    // First check if email exists
+    const methods = await firebase.auth().fetchSignInMethodsForEmail(email);
+    if (methods.length === 0) {
+      throw new Error('User not found in data base');
+    }
+
+    // Email exists, try to sign in
     const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
     const user = userCredential.user;
 
@@ -56,6 +63,11 @@ window.login = async function(email, password) {
 
     return { user, role };
   } catch (error) {
+    // If it's our custom error, throw as is
+    if (error.message === 'User not found in data base') {
+      throw error;
+    }
+    // Otherwise map Firebase errors
     throw mapAuthError(error.code, error.message);
   }
 };
@@ -168,8 +180,9 @@ function mapAuthError(code, message) {
   const errorMap = {
     'auth/invalid-email': 'Invalid email address',
     'auth/user-disabled': 'Account disabled',
-    'auth/user-not-found': 'User not found',
-    'auth/wrong-password': 'Incorrect password',
+    'auth/user-not-found': 'User not found in data base',
+    'auth/wrong-password': 'Invalid password',
+    'auth/invalid-login-credentials': 'Invalid password',
     'auth/email-already-in-use': 'Email already registered',
     'auth/weak-password': 'Password should be at least 6 characters',
     'auth/operation-not-allowed': 'Operation not allowed',
