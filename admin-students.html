@@ -31,6 +31,10 @@
      <!-- Filter Controls -->
      <div class="card">
        <div class="filters filters-mb">
+         <!-- School filter - sirf View All mode me dikhega -->
+         <select id="schoolFilter" title="Select School" onchange="window.onSchoolFilterChange()" style="display:none;">
+           <option value="">All Schools</option>
+         </select>
          <select id="classFilter" title="Select Class" onchange="window.loadAdminStudents()">
            <option value="">All Classes</option>
            <option value="Nursery">Nursery</option>

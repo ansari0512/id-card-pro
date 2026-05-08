@@ -1,10 +1,13 @@
 /**
  * Admin Students Controller
  * Handles admin view of school students (admin-students.html)
+ * Supports: single school view (schoolId param) + View All mode (mode=all)
  */
 
 window.adminSchoolId = null;
 window.adminAllStudents = [];
+window.adminMode = 'single'; // 'single' ya 'all'
+window.adminSchoolsList = []; // View All mode me sab schools
 
 /**
  * Initialize admin students page
@@ -12,30 +15,63 @@ window.adminAllStudents = [];
 window.initAdminStudents = function() {
   const params = new URLSearchParams(window.location.search);
   window.adminSchoolId = params.get('schoolId');
-  const schoolName = params.get('schoolName') || 'School';
-
-  document.getElementById('pageTitle').textContent = decodeURIComponent(schoolName) + ' — Students';
+  window.adminMode = params.get('mode') === 'all' ? 'all' : 'single';
 
   window.initAuth(async (user, role) => {
-    if (!user) {
-      window.location.href = 'index.html';
-      return;
-    }
+    if (!user) { window.location.href = 'index.html'; return; }
+    if (role !== 'admin') { window.location.href = 'dashboard.html'; return; }
 
-    if (role !== 'admin') {
-      window.location.href = 'dashboard.html';
-      return;
+    if (window.adminMode === 'all') {
+      // View All Students mode
+      document.getElementById('pageTitle').textContent = 'All Students';
+      document.getElementById('schoolFilter').style.display = 'block';
+      await window.loadSchoolsDropdown();
+      window.loadAdminStudents();
+    } else {
+      // Single school mode
+      if (!window.adminSchoolId) {
+        document.getElementById('loading').innerHTML = '<p style="color:red;">School ID missing. Please go back and try again.</p>';
+        return;
+      }
+      const schoolName = params.get('schoolName') || 'School';
+      document.getElementById('pageTitle').textContent = decodeURIComponent(schoolName) + ' — Students';
+      window.loadAdminStudents();
     }
-
-    window.loadAdminStudents();
   });
 };
 
 /**
- * Load students for selected school
+ * View All mode: schools dropdown populate karo
+ */
+window.loadSchoolsDropdown = async function() {
+  try {
+    const snap = await firebase.firestore().collection('schools').orderBy('schoolName').get();
+    window.adminSchoolsList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    const select = document.getElementById('schoolFilter');
+    select.innerHTML = '<option value="">All Schools</option>';
+    window.adminSchoolsList.forEach(school => {
+      const opt = document.createElement('option');
+      opt.value = school.id;
+      opt.textContent = school.schoolName || school.email;
+      select.appendChild(opt);
+    });
+  } catch(e) {
+    console.warn('Schools dropdown load failed:', e.message);
+  }
+};
+
+/**
+ * School filter change handler
+ */
+window.onSchoolFilterChange = function() {
+  window.loadAdminStudents();
+};
+
+/**
+ * Load students - school + class filter ke saath
  */
 window.loadAdminStudents = async function() {
-  // Reset state
   document.getElementById('loading').style.display = 'block';
   document.getElementById('studentsGrid').style.display = 'none';
   document.getElementById('emptyState').style.display = 'none';
@@ -44,9 +80,46 @@ window.loadAdminStudents = async function() {
     const classFilter = document.getElementById('classFilter').value;
     const filters = classFilter ? { class: classFilter } : {};
 
-    const students = await window.dbGetAllStudents(window.adminSchoolId, filters);
-    window.adminAllStudents = students;
+    let students = [];
 
+    if (window.adminMode === 'all') {
+      // View All mode: selected school ya sab schools
+      const selectedSchool = document.getElementById('schoolFilter').value;
+
+      if (selectedSchool) {
+        // Ek school ke students
+        students = await window.dbGetAllStudents(selectedSchool, filters);
+        // School name title me dikhao
+        const school = window.adminSchoolsList.find(s => s.id === selectedSchool);
+        if (school) {
+          document.getElementById('pageTitle').textContent = (school.schoolName || 'School') + ' — Students';
+          window.adminSchoolId = selectedSchool;
+        }
+      } else {
+        // Sab schools ke students
+        document.getElementById('pageTitle').textContent = 'All Students';
+        window.adminSchoolId = null;
+        const schoolsToLoad = window.adminSchoolsList.length > 0
+          ? window.adminSchoolsList
+          : (await firebase.firestore().collection('schools').get()).docs.map(d => ({ id: d.id, ...d.data() }));
+
+        const allResults = await Promise.all(
+          schoolsToLoad.map(async school => {
+            try {
+              const s = await window.dbGetAllStudents(school.id, filters);
+              // Har student me schoolName add karo
+              return s.map(st => ({ ...st, _schoolName: school.schoolName || school.email, _schoolId: school.id }));
+            } catch(e) { return []; }
+          })
+        );
+        students = allResults.flat();
+      }
+    } else {
+      // Single school mode
+      students = await window.dbGetAllStudents(window.adminSchoolId, filters);
+    }
+
+    window.adminAllStudents = students;
     document.getElementById('loading').style.display = 'none';
 
     if (students.length === 0) {
@@ -70,6 +143,9 @@ window.renderAdminStudents = function(students) {
   grid.innerHTML = '';
 
   students.forEach(student => {
+    const schoolBadge = student._schoolName
+      ? `<p style="font-size:11px;color:var(--primary);font-weight:600;margin:2px 0;">🏫 ${student._schoolName}</p>`
+      : '';
     const card = document.createElement('div');
     card.className = 'student-card';
     card.innerHTML = `
@@ -77,14 +153,15 @@ window.renderAdminStudents = function(students) {
       <div class="body">
         <img class="photo" src="${student.photo || 'assets/placeholder.png'}" alt="Photo" onerror="this.src='assets/placeholder.png'">
         <h4 style="margin:5px 0;">${student.name || 'Unknown'}</h4>
+        ${schoolBadge}
         <p style="font-size:13px;color:var(--text-muted);">${student.class || ''} - ${student.section || ''}</p>
         <div class="details">
           <p><strong>Father:</strong> <span>${student.father || '-'}</span></p>
           <p><strong>Mobile:</strong> <span>${student.mobile || '-'}</span></p>
-          <p><strong>Added:</strong> <span>${new Date(student.createdAt).toLocaleDateString('en-IN')}</span></p>
+          <p><strong>Added:</strong> <span>${student.createdAt ? new Date(student.createdAt).toLocaleDateString('en-IN') : '-'}</span></p>
         </div>
         <div class="actions">
-          <button onclick="window.printStudent('${student.id}')">🖨️ Print</button>
+          <button onclick="window.printStudent('${student.id}', '${student._schoolId || window.adminSchoolId || ''}')">🖨️ Print</button>
         </div>
       </div>
     `;
@@ -93,18 +170,24 @@ window.renderAdminStudents = function(students) {
 };
 
 /**
- * Clear class filter
+ * Clear all filters
  */
 window.clearAdminFilters = function() {
   document.getElementById('classFilter').value = '';
+  if (window.adminMode === 'all') {
+    document.getElementById('schoolFilter').value = '';
+    document.getElementById('pageTitle').textContent = 'All Students';
+    window.adminSchoolId = null;
+  }
   window.loadAdminStudents();
 };
 
 /**
  * Print single student
  */
-window.printStudent = function(studentId) {
-  window.open(`print.html?id=${studentId}&schoolId=${window.adminSchoolId}`, '_blank', 'width=800,height=600');
+window.printStudent = function(studentId, schoolId) {
+  const sid = schoolId || window.adminSchoolId || '';
+  window.open(`print.html?id=${studentId}&schoolId=${sid}`, '_blank', 'width=800,height=600');
 };
 
 /**
@@ -116,7 +199,8 @@ window.adminBulkPrint = function() {
     return;
   }
   const ids = window.adminAllStudents.map(s => s.id).join(',');
-  window.open(`print.html?ids=${ids}&schoolId=${window.adminSchoolId}`, '_blank', 'width=800,height=600');
+  const schoolId = window.adminSchoolId || '';
+  window.open(`print.html?ids=${ids}&schoolId=${schoolId}`, '_blank', 'width=800,height=600');
 };
 
 /**
@@ -127,16 +211,19 @@ window.adminExportCSV = async function() {
     window.showToast('No students to export', 'error');
     return;
   }
-  let schoolName = 'School';
-  try {
-    const doc = await firebase.firestore().collection('schools').doc(window.adminSchoolId).get();
-    if (doc.exists) schoolName = doc.data().schoolName || 'School';
-  } catch(e) {}
+  let schoolName = window.adminMode === 'all' ? 'All Schools' : 'School';
+  if (window.adminSchoolId) {
+    try {
+      const doc = await firebase.firestore().collection('schools').doc(window.adminSchoolId).get();
+      if (doc.exists) schoolName = doc.data().schoolName || 'School';
+    } catch(e) {}
+  }
 
-  const headers = ['Student ID', 'Name', 'Father Name', 'Class', 'Section', 'Mobile', 'Address', 'Added On'];
+  const headers = ['Student ID', 'Name', 'Father Name', 'Class', 'Section', 'Mobile', 'Address', 'School', 'Added On'];
   const rows = window.adminAllStudents.map(s => [
     s.id||'', s.name||'', s.father||'', s.class||'',
     s.section||'', s.mobile||'', s.address||'',
+    s._schoolName || schoolName,
     s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-IN') : ''
   ]);
   const csv = [
@@ -169,19 +256,18 @@ window.adminBulkDownload = async function() {
   window.showToast(`Preparing ZIP for ${window.adminAllStudents.length} students...`, 'info');
   try {
     const zip = new JSZip();
-
-    // School name fetch karo
-    let schoolName = 'School';
-    try {
-      const doc = await firebase.firestore().collection('schools').doc(window.adminSchoolId).get();
-      if (doc.exists) schoolName = doc.data().schoolName || 'School';
-    } catch(e) {}
+    let schoolName = window.adminMode === 'all' ? 'All_Schools' : 'School';
+    if (window.adminSchoolId) {
+      try {
+        const doc = await firebase.firestore().collection('schools').doc(window.adminSchoolId).get();
+        if (doc.exists) schoolName = doc.data().schoolName || 'School';
+      } catch(e) {}
+    }
 
     const short = schoolName.split(/\s+/).map(w => w[0].toUpperCase()).join('').slice(0,6);
     const dateStr = new Date().toISOString().slice(0,10);
-
-    // Photos — class wise folders
     const photosFolder = zip.folder('photos');
+
     await Promise.all(window.adminAllStudents.filter(s => s.photo).map(s => new Promise(async resolve => {
       try {
         const storageRef = firebase.storage().refFromURL(s.photo);
@@ -203,11 +289,11 @@ window.adminBulkDownload = async function() {
       resolve();
     })));
 
-    // CSV
-    const headers = ['Student ID', 'Name', 'Father Name', 'Class', 'Section', 'Mobile', 'Address', 'Added On'];
+    const headers = ['Student ID', 'Name', 'Father Name', 'Class', 'Section', 'Mobile', 'Address', 'School', 'Added On'];
     const rows = window.adminAllStudents.map(s => [
       s.id||'', s.name||'', s.father||'', s.class||'',
       s.section||'', s.mobile||'', s.address||'',
+      s._schoolName || schoolName,
       s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-IN') : ''
     ]);
     const csv = [
