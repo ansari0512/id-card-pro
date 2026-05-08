@@ -172,24 +172,39 @@ window.renderAdminStudents = function(students) {
 
   students.forEach(student => {
     const schoolBadge = student._schoolName
-      ? `<p style="font-size:11px;color:var(--primary);font-weight:600;margin:2px 0;">🏫 ${student._schoolName}</p>`
+      ? `<div class="info-row"><span class="info-label">School:</span><span class="info-value" style="color:var(--primary);font-weight:600;">🏫 ${student._schoolName}</span></div>`
       : '';
     const card = document.createElement('div');
     card.className = 'student-card';
     card.innerHTML = `
-      <div class="header">Student ID: ${student.id || 'N/A'}</div>
-      <div class="body">
-        <img class="photo" src="${student.photo || 'assets/placeholder.png'}" alt="Photo" onerror="this.src='assets/placeholder.png'">
-        <h4 style="margin:5px 0;">${student.name || 'Unknown'}</h4>
-        ${schoolBadge}
-        <p style="font-size:13px;color:var(--text-muted);">${student.class || ''} - ${student.section || ''}</p>
-        <div class="details">
-          <p><strong>Father:</strong> <span>${student.father || '-'}</span></p>
-          <p><strong>Mobile:</strong> <span>${student.mobile || '-'}</span></p>
-          <p><strong>Added:</strong> <span>${student.createdAt ? new Date(student.createdAt).toLocaleDateString('en-IN') : '-'}</span></p>
+      <div class="student-id-header">
+        <div class="student-id-text">Student ID: ${student.id || 'N/A'}</div>
+      </div>
+      <div class="student-content">
+        <img class="student-photo" src="${student.photo || 'assets/placeholder.png'}" alt="${student.name}" onerror="this.src='assets/placeholder.png'">
+        <h3 class="student-name">${student.name || 'Unknown'}</h3>
+        <div class="student-class">${student.class || '-'} - ${student.section || '-'}</div>
+        <div class="student-info-grid">
+          ${schoolBadge}
+          <div class="info-row">
+            <span class="info-label">Father:</span>
+            <span class="info-value">${student.father || 'Not provided'}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Mobile:</span>
+            <span class="info-value">${student.mobile || 'Not provided'}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Address:</span>
+            <span class="info-value">${student.address || 'Not provided'}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Added:</span>
+            <span class="info-value">${student.createdAt ? new Date(student.createdAt).toLocaleDateString('en-IN') : '-'}</span>
+          </div>
         </div>
-        <div class="actions">
-          <button onclick="window.printStudent('${student.id}', '${student._schoolId || window.adminSchoolId || ''}')">🖨️ Print</button>
+        <div class="student-actions">
+          <button class="btn-print" onclick="window.printStudent('${student.id}', '${student._schoolId || window.adminSchoolId || ''}')">🖨️ Print</button>
         </div>
       </div>
     `;
