@@ -46,13 +46,6 @@ window.initAuth = function(onChange) {
  */
 window.login = async function(email, password) {
   try {
-    // First check if email exists
-    const methods = await firebase.auth().fetchSignInMethodsForEmail(email);
-    if (methods.length === 0) {
-      throw new Error('User not found in data base');
-    }
-
-    // Email exists, try to sign in
     const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
     const user = userCredential.user;
 
@@ -63,11 +56,6 @@ window.login = async function(email, password) {
 
     return { user, role };
   } catch (error) {
-    // If it's our custom error, throw as is
-    if (error.message === 'User not found in data base') {
-      throw error;
-    }
-    // Otherwise map Firebase errors
     throw mapAuthError(error.code, error.message);
   }
 };
