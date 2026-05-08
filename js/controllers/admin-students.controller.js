@@ -83,20 +83,16 @@ window.loadAdminStudents = async function() {
     let students = [];
 
     if (window.adminMode === 'all') {
-      // View All mode: selected school ya sab schools
       const selectedSchool = document.getElementById('schoolFilter').value;
 
       if (selectedSchool) {
-        // Ek school ke students
         students = await window.dbGetAllStudents(selectedSchool, filters);
-        // School name title me dikhao
         const school = window.adminSchoolsList.find(s => s.id === selectedSchool);
         if (school) {
           document.getElementById('pageTitle').textContent = (school.schoolName || 'School') + ' — Students';
           window.adminSchoolId = selectedSchool;
         }
       } else {
-        // Sab schools ke students
         document.getElementById('pageTitle').textContent = 'All Students';
         window.adminSchoolId = null;
         const schoolsToLoad = window.adminSchoolsList.length > 0
@@ -107,7 +103,6 @@ window.loadAdminStudents = async function() {
           schoolsToLoad.map(async school => {
             try {
               const s = await window.dbGetAllStudents(school.id, filters);
-              // Har student me schoolName add karo
               return s.map(st => ({ ...st, _schoolName: school.schoolName || school.email, _schoolId: school.id }));
             } catch(e) { return []; }
           })
@@ -115,12 +110,14 @@ window.loadAdminStudents = async function() {
         students = allResults.flat();
       }
     } else {
-      // Single school mode
       students = await window.dbGetAllStudents(window.adminSchoolId, filters);
     }
 
     window.adminAllStudents = students;
     document.getElementById('loading').style.display = 'none';
+
+    // Class filter update karo — sirf wahi classes jo students me hain
+    window.updateClassFilter(students, classFilter);
 
     if (students.length === 0) {
       document.getElementById('emptyState').style.display = 'block';
@@ -133,6 +130,37 @@ window.loadAdminStudents = async function() {
     document.getElementById('loading').innerHTML =
       '<p style="color:red;">Failed to load: ' + err.message + '</p>';
   }
+};
+
+/**
+ * Class filter dynamically update karo - sirf available classes dikhao
+ */
+window.updateClassFilter = function(students, selectedClass) {
+  // Agar class filter already selected hai to update mat karo (loop avoid)
+  if (selectedClass) return;
+
+  // Students se unique classes nikalo
+  const classOrder = ['Nursery','LKG','UKG','KG','1','2','3','4','5','6','7','8','9','10'];
+  const availableClasses = [...new Set(students.map(s => s.class).filter(Boolean))]
+    .sort((a, b) => {
+      const ai = classOrder.indexOf(a);
+      const bi = classOrder.indexOf(b);
+      if (ai === -1 && bi === -1) return a.localeCompare(b);
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    });
+
+  const select = document.getElementById('classFilter');
+  const currentVal = select.value;
+  select.innerHTML = '<option value="">All Classes</option>';
+  availableClasses.forEach(cls => {
+    const opt = document.createElement('option');
+    opt.value = cls;
+    opt.textContent = isNaN(cls) ? cls : 'Class ' + cls;
+    if (cls === currentVal) opt.selected = true;
+    select.appendChild(opt);
+  });
 };
 
 /**
