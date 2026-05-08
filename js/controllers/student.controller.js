@@ -142,7 +142,7 @@ window.renderStudents = function(students) {
     card.innerHTML = `
       <div class="student-id-header">
         <div class="student-id-text">Student ID: ${student.id || 'N/A'}</div>
-        <input type="checkbox" class="header-checkbox student-checkbox" data-id="${student.id}" id="student-${student.id}">
+        <input type="checkbox" class="header-checkbox student-checkbox" data-id="${student.docId || student.id}" id="student-${student.docId || student.id}">
       </div>
       <div class="student-content">
         <img class="student-photo" src="${student.photo || 'assets/placeholder.png'}" alt="${student.name}" onerror="this.src='assets/placeholder.png'">
@@ -386,28 +386,29 @@ window.bulkPrint = function() {
 /**
  * Bulk delete
  */
-window.bulkDelete = function() {
+window.bulkDelete = async function() {
   if (window.selectedStudents.size === 0) {
     window.showToast('Select at least one student', 'error');
     return;
   }
   if (!confirm(`Delete ${window.selectedStudents.size} selected students? This cannot be undone.`)) return;
 
-  const ids = Array.from(window.selectedStudents);
+  const docIds = Array.from(window.selectedStudents);
   const user = firebase.auth().currentUser;
 
-  Promise.all(ids.map(async id => {
-    const student = window.allStudents.find(s => s.id === id);
-    if (student?.photo) {
-      await window.deletePhoto(student.photo);
-    }
-    return window.dbStudents(user.uid, student?.class).doc(id).delete();
-  })).then(() => {
-    window.showToast(`Deleted ${ids.length} students`, 'success');
+  try {
+    await Promise.all(docIds.map(async docId => {
+      const student = window.allStudents.find(s => (s.docId || s.id) === docId);
+      if (student?.photo) await window.deletePhoto(student.photo);
+      return window.dbStudents(user.uid, student?.class).doc(docId).delete();
+    }));
+    window.showToast(`Deleted ${docIds.length} students`, 'success');
     window.selectedStudents.clear();
     window.updateSelectedCount();
     window.loadStudents();
-  }).catch(err => window.showToast('Bulk delete failed: ' + err.message, 'error'));
+  } catch(err) {
+    window.showToast('Bulk delete failed: ' + err.message, 'error');
+  }
 };
 
 // Short school name helper
