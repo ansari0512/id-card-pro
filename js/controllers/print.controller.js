@@ -71,15 +71,14 @@ window.renderPrintCards = function(students) {
         <div class="details">
           <p><strong>Name:</strong> <span>${student.name || '-'}</span></p>
           <p><strong>ID:</strong> <span>${student.id || '-'}</span></p>
-          <p><strong>Class:</strong> <span>${student.class || '-'}</span></p>
-          <p><strong>Section:</strong> <span>${student.section || '-'}</span></p>
+          <p><strong>Class:</strong> <span>${student.class || '-'} - ${student.section || '-'}</span></p>
           <p><strong>Father:</strong> <span>${student.father || '-'}</span></p>
           <p><strong>Mobile:</strong> <span>${student.mobile || '-'}</span></p>
         </div>
       </div>
-      <div class="id-number">${student.id || ''}</div>
-      <div class="qr">
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=45x45&data=${encodeURIComponent(student.id || '')}" alt="QR">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+        <div class="id-number">${student.id || ''}</div>
+        <img class="qr" src="https://api.qrserver.com/v1/create-qr-code/?size=40x40&data=${encodeURIComponent(student.id || '')}" alt="QR" style="position:static;width:40px;height:40px;">
       </div>
     `;
     container.appendChild(card);
