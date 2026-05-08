@@ -952,12 +952,10 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
-    // School name topbar aur subtitle mein dikhao
+    // School name badge mein dikhao
     try {
       const doc = await firebase.firestore().collection('schools').doc(user.uid).get();
       const name = doc.exists ? (doc.data().schoolName || '') : '';
-      const topbarEl = document.getElementById('schoolNameTopbar');
-      if (topbarEl && name) topbarEl.textContent = '🏫 ' + name;
       const badge = document.getElementById('schoolNameSubtitle');
       const badgeText = document.getElementById('schoolNameText');
       if (badge && badgeText && name) {
