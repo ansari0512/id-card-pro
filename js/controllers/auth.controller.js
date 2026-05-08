@@ -48,39 +48,58 @@ window.login = async function(email, password) {
   try {
     const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
     const user = userCredential.user;
-
     const role = await window.fetchUserRole(user);
-
     window.currentUser = user;
     window.currentRole = role;
-
     return { user, role };
   } catch (error) {
-    // Handle Firebase auth errors with specific messages
-    if (error.code === 'auth/user-not-found') {
+    const code = error.code || '';
+
+    // Old Firebase error codes (still work on some projects)
+    if (code === 'auth/user-not-found' || code === 'auth/invalid-email') {
       throw new Error('User not found in database');
-    } else if (error.code === 'auth/wrong-password') {
-      throw new Error('Invalid Password');
-    } else if (error.code === 'auth/invalid-login-credentials') {
-      // Firebase v9+ returns this for both cases - we need to check if user exists first
-      try {
-        // Try to get user by email to check if email exists
-        await firebase.auth().fetchSignInMethodsForEmail(email);
-        // If we reach here, email exists but password is wrong
-        throw new Error('Invalid Password');
-      } catch (fetchError) {
-        if (fetchError.code === 'auth/user-not-found') {
-          throw new Error('User not found in database');
-        }
-        // If email exists but password wrong, or any other error
-        throw new Error('Invalid Password');
-      }
-    } else if (error.code === 'auth/invalid-email') {
-      throw new Error('User not found in database');
-    } else {
-      // Use the proper error mapping function for other errors
-      throw mapAuthError(error.code, error.message);
     }
+    if (code === 'auth/wrong-password') {
+      throw new Error('Invalid Password');
+    }
+
+    // Firebase v9+ combines both errors into one code
+    // We check Firestore to find out if email exists
+    if (code === 'auth/invalid-login-credentials' || code === 'auth/invalid-credential') {
+      try {
+        // Check if any user document has this email in Firestore
+        const usersSnap = await firebase.firestore()
+          .collection('users')
+          .where('email', '==', email)
+          .limit(1)
+          .get();
+
+        if (usersSnap.empty) {
+          // Email Firestore me nahi mila — user exist nahi karta
+          throw new Error('User not found in database');
+        } else {
+          // Email mila — matlab password galat hai
+          throw new Error('Invalid Password');
+        }
+      } catch (firestoreError) {
+        // Agar firestoreError hamara khud ka throw kiya hua hai to wahi throw karo
+        if (firestoreError.message === 'User not found in database' ||
+            firestoreError.message === 'Invalid Password') {
+          throw firestoreError;
+        }
+        // Firestore read fail hua to generic message
+        throw new Error('User not found in database');
+      }
+    }
+
+    if (code === 'auth/too-many-requests') {
+      throw new Error('Too many attempts. Please try later.');
+    }
+    if (code === 'auth/network-request-failed') {
+      throw new Error('Network error. Please check connection.');
+    }
+
+    throw mapAuthError(code, error.message);
   }
 };
 
