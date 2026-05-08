@@ -46,18 +46,6 @@ window.initAuth = function(onChange) {
  */
 window.login = async function(email, password) {
   try {
-    // First check if email exists in our users collection
-    const usersSnapshot = await firebase.firestore().collection('users')
-      .where('email', '==', email)
-      .limit(1)
-      .get();
-    
-    if (usersSnapshot.empty) {
-      // Email not found in our database
-      throw new Error('User not found in data base');
-    }
-    
-    // Email exists, now try to authenticate
     const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
     const user = userCredential.user;
 
@@ -68,18 +56,19 @@ window.login = async function(email, password) {
 
     return { user, role };
   } catch (error) {
-    // If it's our custom "User not found" error, throw it as is
-    if (error.message === 'User not found in data base') {
-      throw error;
-    }
-    
-    // For Firebase auth errors, map them properly
-    if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-login-credentials') {
+    // Handle Firebase auth errors properly
+    if (error.code === 'auth/user-not-found') {
+      throw new Error('User not found in data base');
+    } else if (error.code === 'auth/wrong-password') {
       throw new Error('Invalid password');
+    } else if (error.code === 'auth/invalid-login-credentials') {
+      // Firebase v9+ returns this for both wrong email and password for security
+      // We'll show a generic message
+      throw new Error('Invalid email or password');
+    } else {
+      // Use the proper error mapping function for other errors
+      throw mapAuthError(error.code, error.message);
     }
-    
-    // Use the proper error mapping function for other errors
-    throw mapAuthError(error.code, error.message);
   }
 };
 
