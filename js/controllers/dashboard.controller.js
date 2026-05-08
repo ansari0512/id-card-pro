@@ -34,8 +34,30 @@ window.initDashboard = function() {
  */
 window.loadStats = async function(user) {
   try {
+    // School name fetch karo
+    const schoolDoc = await firebase.firestore().collection('schools').doc(user.uid).get();
+    const schoolName = schoolDoc.exists ? (schoolDoc.data().schoolName || '') : '';
+
+    // Dashboard mein dikhao
+    const nameEl = document.getElementById('schoolNameDisplay');
+    if (nameEl) nameEl.textContent = schoolName ? '🏫 ' + schoolName : 'Dashboard';
+
+    // Students page topbar mein dikhao (agar woh element exist kare)
+    const topbarEl = document.getElementById('schoolNameTopbar');
+    if (topbarEl && schoolName) topbarEl.textContent = '🏫 ' + schoolName;
+
     const students = await window.dbGetAllStudents(user.uid);
     document.getElementById('totalStudents').textContent = students.length;
+
+    // With photos count
+    const withPhotos = students.filter(s => s.photo).length;
+    const activeEl = document.getElementById('activeStudents');
+    if (activeEl) activeEl.textContent = withPhotos;
+
+    // Pending count
+    const pendingSnap = await firebase.firestore().collection('schools').doc(user.uid).collection('pending_students').get();
+    const pendingEl = document.getElementById('pendingStudents');
+    if (pendingEl) pendingEl.textContent = pendingSnap.size;
   } catch (e) {
     console.error('Stats load failed:', e);
   }

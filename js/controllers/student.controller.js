@@ -936,11 +936,25 @@ window.uploadPendingPhoto = async function() {
 
 document.addEventListener('DOMContentLoaded', function() {
   // Auth listener
-  firebase.auth().onAuthStateChanged(user => {
+  firebase.auth().onAuthStateChanged(async user => {
     if (!user) {
       window.location.href = 'index.html';
       return;
     }
+
+    // School name topbar aur subtitle mein dikhao
+    try {
+      const doc = await firebase.firestore().collection('schools').doc(user.uid).get();
+      const name = doc.exists ? (doc.data().schoolName || '') : '';
+      const topbarEl = document.getElementById('schoolNameTopbar');
+      if (topbarEl && name) topbarEl.textContent = '🏫 ' + name;
+      const badge = document.getElementById('schoolNameSubtitle');
+      const badgeText = document.getElementById('schoolNameText');
+      if (badge && badgeText && name) {
+        badgeText.textContent = name;
+        badge.style.display = 'inline-flex';
+      }
+    } catch(e) {}
 
     // Auto-capitalize for edit form
     ['editName', 'editFather', 'editAddress'].forEach(id => {

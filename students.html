@@ -22,6 +22,7 @@
       </a>
     </div>
     <div class="topbar-right">
+      <span id="schoolNameTopbar" style="font-size:13px;font-weight:600;color:var(--primary);"></span>
       <a href="dashboard.html"><button class="secondary">← Back</button></a>
     </div>
   </header>
@@ -32,8 +33,11 @@
 
     <!-- Professional Header -->
     <div class="page-header">
-      <h1>🎓 Student Management</h1>
-      <p>Manage student records, print ID cards, and export data efficiently</p>
+      <div class="page-header-text">
+        <h1>Student Management</h1>
+        <div id="schoolNameSubtitle" class="school-name-badge" style="display:none">🏫 <span id="schoolNameText"></span></div>
+        <p class="desc">Manage student records, print ID cards, and export data efficiently</p>
+      </div>
     </div>
 
     <!-- Tab Navigation -->
