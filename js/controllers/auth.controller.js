@@ -56,11 +56,8 @@ window.login = async function(email, password) {
 
     return { user, role };
   } catch (error) {
-    if (error.code === 'auth/user-not-found') {
-      throw new Error('User not found in data base');
-    } else {
-      throw new Error('Invalid password');
-    }
+    // Use the proper error mapping function
+    throw mapAuthError(error.code, error.message);
   }
 };
 
