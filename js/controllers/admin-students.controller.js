@@ -35,6 +35,11 @@ window.initAdminStudents = function() {
  * Load students for selected school
  */
 window.loadAdminStudents = async function() {
+  // Reset state
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('studentsGrid').style.display = 'none';
+  document.getElementById('emptyState').style.display = 'none';
+
   try {
     const classFilter = document.getElementById('classFilter').value;
     const filters = classFilter ? { class: classFilter } : {};
