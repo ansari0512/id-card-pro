@@ -553,10 +553,25 @@ window.bulkDownload = async function() {
 // ── IMPORT & PENDING ─────────────────────────────────────
 
 window.currentTab = 'complete';
+window.allPendingStudents = [];
+window.selectedPending = new Set();
 
 // Pending students collection
 window.dbPending = function(schoolId) {
   return firebase.firestore().collection('schools').doc(schoolId).collection('pending_students');
+};
+
+// Update pending selection count & checkboxes state
+window.updatePendingSelectedCount = function() {
+  const count = window.selectedPending.size;
+  const countEl = document.getElementById('pendingSelectedCount');
+  if (countEl) countEl.textContent = count;
+
+  const selectAll = document.getElementById('pendingSelectAllCheckbox');
+  if (selectAll) {
+    selectAll.checked = window.allPendingStudents.length > 0 && count === window.allPendingStudents.length;
+    selectAll.indeterminate = count > 0 && count < window.allPendingStudents.length;
+  }
 };
 
 // Load pending students
@@ -567,15 +582,23 @@ window.loadPendingStudents = async function() {
     const user = firebase.auth().currentUser;
     const snap = await window.dbPending(user.uid).orderBy('createdAt', 'desc').get();
     const students = snap.docs.map(d => ({ docId: d.id, ...d.data() }));
+    window.allPendingStudents = students;
+    window.selectedPending.clear();
     document.getElementById('loading').style.display = 'none';
+
+    const actionsBar = document.getElementById('pendingActionsBar');
+    const emptyState = document.getElementById('emptyPendingState');
+
     if (students.length === 0) {
-      document.getElementById('emptyState').style.display = 'block';
-      document.getElementById('emptyState').querySelector('h3').textContent = 'No Pending Students';
-      document.getElementById('emptyState').querySelector('p').textContent = 'Sab students complete hain!';
+      if (actionsBar) actionsBar.style.display = 'none';
+      if (emptyState) { emptyState.classList.remove('hidden'); emptyState.style.display = 'block'; }
     } else {
+      if (actionsBar) actionsBar.style.display = 'flex';
+      if (emptyState) { emptyState.classList.add('hidden'); emptyState.style.display = 'none'; }
       window.renderPendingStudents(students);
       document.getElementById('pendingGrid').style.display = 'grid';
     }
+    window.updatePendingSelectedCount();
   } catch(e) {
     document.getElementById('loading').style.display = 'none';
     window.showToast('Failed to load: ' + e.message, 'error');
@@ -586,12 +609,15 @@ window.loadPendingStudents = async function() {
 window.renderPendingStudents = function(students) {
   const grid = document.getElementById('pendingGrid');
   grid.innerHTML = '';
+  window.selectedPending.clear();
+
   students.forEach(s => {
     const card = document.createElement('div');
     card.className = 'student-card';
     card.innerHTML = `
       <div class="student-id-header">
         <div class="student-id-text">Student ID: ${s.id || 'N/A'}</div>
+        <input type="checkbox" class="header-checkbox pending-checkbox" data-docid="${s.docId}" id="pending-${s.docId}">
       </div>
       <div class="student-content">
         <img class="student-photo" src="assets/placeholder.png" alt="No Photo" style="opacity:0.4;">
@@ -629,6 +655,70 @@ window.renderPendingStudents = function(students) {
     `;
     grid.appendChild(card);
   });
+
+  // Manual checkbox handlers
+  document.querySelectorAll('.pending-checkbox').forEach(cb => {
+    cb.addEventListener('change', e => {
+      if (e.target.checked) window.selectedPending.add(e.target.dataset.docid);
+      else window.selectedPending.delete(e.target.dataset.docid);
+      window.updatePendingSelectedCount();
+    });
+  });
+
+  // Select All checkbox
+  const selectAll = document.getElementById('pendingSelectAllCheckbox');
+  if (selectAll) {
+    selectAll.checked = false;
+    selectAll.indeterminate = false;
+    selectAll.onchange = function() {
+      document.querySelectorAll('.pending-checkbox').forEach(cb => {
+        cb.checked = this.checked;
+        if (this.checked) window.selectedPending.add(cb.dataset.docid);
+        else window.selectedPending.delete(cb.dataset.docid);
+      });
+      window.updatePendingSelectedCount();
+    };
+  }
+
+  // Class-wise select dropdown
+  const classFilter = document.getElementById('pendingClassFilter');
+  if (classFilter) {
+    classFilter.value = '';
+    classFilter.onchange = function() {
+      const cls = this.value;
+      window.selectedPending.clear();
+      document.querySelectorAll('.pending-checkbox').forEach(cb => {
+        const student = window.allPendingStudents.find(s => s.docId === cb.dataset.docid);
+        const match = cls === '' ? false : student?.class === cls;
+        cb.checked = match;
+        if (match) window.selectedPending.add(cb.dataset.docid);
+      });
+      window.updatePendingSelectedCount();
+    };
+  }
+
+  window.updatePendingSelectedCount();
+};
+
+// Bulk delete pending students
+window.bulkDeletePending = async function() {
+  if (window.selectedPending.size === 0) {
+    window.showToast('Pehle students select karein', 'error');
+    return;
+  }
+  if (!confirm(`${window.selectedPending.size} pending students delete karein? Yeh undo nahi hoga.`)) return;
+
+  const user = firebase.auth().currentUser;
+  const ids = Array.from(window.selectedPending);
+  try {
+    await Promise.all(ids.map(docId => window.dbPending(user.uid).doc(docId).delete()));
+    window.showToast(`${ids.length} students deleted`, 'success');
+    window.selectedPending.clear();
+    window.loadPendingStudents();
+    window.updatePendingBadge();
+  } catch(e) {
+    window.showToast('Delete failed: ' + e.message, 'error');
+  }
 };
 
 // Update pending badge count
