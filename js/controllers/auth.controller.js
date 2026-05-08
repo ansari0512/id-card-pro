@@ -56,15 +56,17 @@ window.login = async function(email, password) {
 
     return { user, role };
   } catch (error) {
-    // Handle Firebase auth errors properly
+    // Handle Firebase auth errors with specific messages
     if (error.code === 'auth/user-not-found') {
-      throw new Error('User not found in data base');
+      throw new Error('User not found in database');
     } else if (error.code === 'auth/wrong-password') {
-      throw new Error('Invalid password');
+      throw new Error('Invalid Password');
     } else if (error.code === 'auth/invalid-login-credentials') {
-      // Firebase v9+ returns this for both wrong email and password for security
-      // We'll show a generic message
-      throw new Error('Invalid email or password');
+      // Firebase v9+ returns this for security - but we need to be more specific
+      // This usually means wrong email or password combination
+      throw new Error('User not found in database');
+    } else if (error.code === 'auth/invalid-email') {
+      throw new Error('User not found in database');
     } else {
       // Use the proper error mapping function for other errors
       throw mapAuthError(error.code, error.message);
@@ -178,15 +180,16 @@ window.requireAdmin = function(redirectUrl = 'dashboard.html') {
  */
 function mapAuthError(code, message) {
   const errorMap = {
-    'auth/invalid-email': 'Invalid email address',
+    'auth/invalid-email': 'User not found in database',
     'auth/user-disabled': 'Account disabled',
-    'auth/user-not-found': 'User not found in data base',
-    'auth/wrong-password': 'Invalid password',
-    'auth/invalid-login-credentials': 'Invalid password',
+    'auth/user-not-found': 'User not found in database',
+    'auth/wrong-password': 'Invalid Password',
+    'auth/invalid-login-credentials': 'User not found in database',
     'auth/email-already-in-use': 'Email already registered',
     'auth/weak-password': 'Password should be at least 6 characters',
     'auth/operation-not-allowed': 'Operation not allowed',
-    'auth/network-request-failed': 'Network error. Please check connection.'
+    'auth/network-request-failed': 'Network error. Please check connection.',
+    'auth/too-many-requests': 'Too many attempts. Please try later.'
   };
   return new Error(errorMap[code] || message);
 }

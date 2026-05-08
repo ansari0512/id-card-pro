@@ -322,12 +322,16 @@
          let message = error.message;
          const code = error.code || '';
 
-         if (code === 'auth/invalid-email') message = '❌ Invalid email address';
+         // Custom error messages based on your requirements
+         if (code === 'auth/invalid-email') message = '❌ User not found in database';
          else if (code === 'auth/user-disabled') message = '❌ Account disabled';
-         else if (code === 'auth/user-not-found') message = '❌ Email not registered';
-         else if (code === 'auth/wrong-password') message = '❌ Incorrect password';
+         else if (code === 'auth/user-not-found') message = '❌ User not found in database';
+         else if (code === 'auth/wrong-password') message = '❌ Invalid Password';
+         else if (code === 'auth/invalid-login-credentials') message = '❌ User not found in database';
          else if (code === 'auth/too-many-requests') message = '❌ Too many attempts. Please try later.';
          else if (code === 'auth/network-request-failed') message = '❌ Network error. Check connection.';
+         else if (message.includes('User not found in database')) message = '❌ User not found in database';
+         else if (message.includes('Invalid Password')) message = '❌ Invalid Password';
 
          errorMsg.textContent = message;
          errorMsg.classList.add('show');
