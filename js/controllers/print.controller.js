@@ -28,7 +28,10 @@ window.loadPrintStudents = async function(user) {
     const params = new URLSearchParams(window.location.search);
     const idsParam = params.get('ids') || params.get('id');
 
-    const allStudents = await window.dbGetAllStudents(user.uid);
+    // Admin se print karne pe schoolId URL me hoga, warna apna uid use karo
+    const schoolId = params.get('schoolId') || user.uid;
+
+    const allStudents = await window.dbGetAllStudents(schoolId);
 
     if (idsParam) {
       const idArray = idsParam.split(',');

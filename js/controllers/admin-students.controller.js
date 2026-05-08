@@ -104,7 +104,7 @@ window.clearAdminFilters = function() {
  * Print single student
  */
 window.printStudent = function(studentId) {
-  window.open('print.html?id=' + studentId, '_blank', 'width=800,height=600');
+  window.open(`print.html?id=${studentId}&schoolId=${window.adminSchoolId}`, '_blank', 'width=800,height=600');
 };
 
 /**
@@ -116,7 +116,7 @@ window.adminBulkPrint = function() {
     return;
   }
   const ids = window.adminAllStudents.map(s => s.id).join(',');
-  window.open('print.html?ids=' + ids, '_blank', 'width=800,height=600');
+  window.open(`print.html?ids=${ids}&schoolId=${window.adminSchoolId}`, '_blank', 'width=800,height=600');
 };
 
 /**
