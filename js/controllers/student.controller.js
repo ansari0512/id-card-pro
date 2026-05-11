@@ -607,6 +607,9 @@ window.loadPendingStudents = async function() {
   }
 };
 
+// Store dropdown selections globally to persist across renders
+window.dropdownSelections = window.dropdownSelections || {};
+
 // Populate class dropdown with only available classes
 window.populateClassDropdown = function(students, dropdownId) {
   const dropdown = document.getElementById(dropdownId);
@@ -616,7 +619,7 @@ window.populateClassDropdown = function(students, dropdownId) {
   const availableClasses = [...new Set(students.map(s => s.class).filter(Boolean))];
   
   // Store current selection before clearing
-  const currentValue = dropdown.value;
+  const currentValue = dropdown.value || window.dropdownSelections[dropdownId] || '';
   
   // Clear and rebuild options
   dropdown.innerHTML = '';
@@ -641,7 +644,13 @@ window.populateClassDropdown = function(students, dropdownId) {
   // Restore previous selection if still available
   if (currentValue && (currentValue === '' || availableClasses.includes(currentValue))) {
     dropdown.value = currentValue;
+    window.dropdownSelections[dropdownId] = currentValue;
   }
+  
+  // Add change event listener to store selection
+  dropdown.onchange = function() {
+    window.dropdownSelections[dropdownId] = this.value;
+  };
 };
 
 // Render pending student cards with new design
