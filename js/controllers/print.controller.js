@@ -74,6 +74,7 @@ window.renderPrintCards = function(students) {
           <p><strong>Class:</strong> <span>${student.class || '-'} - ${student.section || '-'}</span></p>
           <p><strong>Father:</strong> <span>${student.father || '-'}</span></p>
           <p><strong>Mobile:</strong> <span>${student.mobile || '-'}</span></p>
+          <p><strong>DOB:</strong> <span>${student.dob || '-'}</span></p>
         </div>
       </div>
       <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">

@@ -46,6 +46,16 @@
 
           <div class="form-row">
             <div class="form-group">
+              <label for="dob">Date of Birth</label>
+              <input type="date" id="dob" name="dob" placeholder="Optional">
+            </div>
+            <div class="form-group">
+              <!-- Empty for balance -->
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
               <label for="class">Class *</label>
               <select id="class" name="class" required>
                 <option value="">Select Class</option>
@@ -122,6 +132,7 @@
           <h3 id="cardName" style="margin: 10px 0; font-size: 16px; word-break: break-word;">Student Name</h3>
           <div class="info">
             <p><strong>ID:</strong> <span id="cardId">-</span></p>
+            <p><strong>DOB:</strong> <span id="cardDob">-</span></p>
             <p><strong>Class:</strong> <span id="cardClass">-</span></p>
             <p><strong>Section:</strong> <span id="cardSection">-</span></p>
             <p><strong>Father:</strong> <span id="cardFather">-</span></p>

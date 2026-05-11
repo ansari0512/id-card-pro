@@ -140,7 +140,7 @@ window.updateClassFilter = function(students, selectedClass) {
   if (selectedClass) return;
 
   // Extract unique classes from the current students.
-  const classOrder = ['Nursery','LKG','UKG','KG','1','2','3','4','5','6','7','8','9','10'];
+  const classOrder = ['Nursery','LKG','UKG','KG','1','2','3','4','5','6','7','8','9','10','11','12'];
   const availableClasses = [...new Set(students.map(s => s.class).filter(Boolean))]
     .sort((a, b) => {
       const ai = classOrder.indexOf(a);
@@ -186,6 +186,10 @@ window.renderAdminStudents = function(students) {
         <div class="student-class">${student.class || '-'} - ${student.section || '-'}</div>
         <div class="student-info-grid">
           ${schoolBadge}
+          <div class="info-row">
+            <span class="info-label">DOB:</span>
+            <span class="info-value">${student.dob || 'Not provided'}</span>
+          </div>
           <div class="info-row">
             <span class="info-label">Father:</span>
             <span class="info-value">${student.father || 'Not provided'}</span>

@@ -302,8 +302,8 @@
   <div class="modal-overlay" id="importModal" onclick="if(event.target === this) window.closeImportModal()">
     <div class="modal">
       <h3>📂 Import Students from CSV</h3>
-      <p>CSV or Excel format: Name, Father Name, Class, Section, Mobile, Address</p>
-      <p class="import-desc">First row = header (will be skipped). You can add photos later.</p>
+      <p>CSV or Excel format: Name, Father Name, DOB, Class, Section, Mobile, Address</p>
+      <p class="import-desc">First row = header (will be skipped). DOB must be the third column. You can add photos later.</p>
       <div class="form-group form-group-mt">
         <label for="importFile">Select File *</label>
         <input type="file" id="importFile" accept=".csv,.xlsx,.xls" required>

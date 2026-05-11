@@ -153,6 +153,10 @@ window.renderStudents = function(students) {
         
         <div class="student-info-grid">
           <div class="info-row">
+            <span class="info-label">DOB:</span>
+            <span class="info-value">${student.dob || 'Not provided'}</span>
+          </div>
+          <div class="info-row">
             <span class="info-label">Father:</span>
             <span class="info-value">${student.father || 'Not provided'}</span>
           </div>
@@ -814,7 +818,25 @@ window.parseImportFile = function(file) {
       try {
         let students = [];
         if (file.name.endsWith('.csv')) {
-          students = window.parseCSV(e.target.result);
+          const rawRows = window.parseCSV(e.target.result);
+          students = rawRows.map(row => {
+            const normalized = {};
+            Object.entries(row).forEach(([key, value]) => {
+              const normalizedKey = String(key || '').trim().toLowerCase()
+                .replace(/\s+/g, '')
+                .replace(/[^a-z]/g, '');
+              normalized[normalizedKey] = String(value || '').trim();
+            });
+            return {
+              name: normalized.name || normalized.fullname || '',
+              father: normalized.fathername || normalized.father || '',
+              dob: normalized.dob || normalized.dateofbirth || '',
+              class: normalized.class || normalized.classname || '',
+              section: normalized.section || '',
+              mobile: normalized.mobile || normalized.phone || '',
+              address: normalized.address || ''
+            };
+          }).filter(s => s.name && s.class);
         } else {
           // Excel
           const wb = XLSX.read(e.target.result, { type: 'binary' });
@@ -823,10 +845,11 @@ window.parseImportFile = function(file) {
           students = rows.slice(1).map(cols => ({
             name: String(cols[0] || '').trim(),
             father: String(cols[1] || '').trim(),
-            class: String(cols[2] || '').trim(),
-            section: String(cols[3] || '').trim(),
-            mobile: String(cols[4] || '').trim(),
-            address: String(cols[5] || '').trim()
+            dob: String(cols[2] || '').trim(),
+            class: String(cols[3] || '').trim(),
+            section: String(cols[4] || '').trim(),
+            mobile: String(cols[5] || '').trim(),
+            address: String(cols[6] || '').trim()
           })).filter(s => s.name && s.class);
         }
         resolve(students);
@@ -905,6 +928,7 @@ window.importCSV = async function() {
       const ref = window.dbPending(user.uid).doc();
       batch.set(ref, {
         id, name: s.name, father: s.father,
+        dob: s.dob || '',
         class: s.class, section: s.section,
         mobile: s.mobile, address: s.address,
         schoolId: user.uid, status: 'pending',

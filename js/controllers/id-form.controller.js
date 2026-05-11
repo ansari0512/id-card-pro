@@ -29,6 +29,8 @@ window.updateIdPreview = function() {
   document.getElementById('cardFather').textContent = document.getElementById('father').value || '-';
   const mob = document.getElementById('mobile').value;
   document.getElementById('cardMobile').textContent = mob ? mob.replace(/(\d{5})(\d{5})/, '$1 $2') : '-';
+  const dob = document.getElementById('dob').value;
+  document.getElementById('cardDob').textContent = dob || '-';
 };
 
 /**
@@ -52,6 +54,7 @@ window.submitStudentForm = async function(e) {
     const section = document.getElementById('section').value;
     const mobile = document.getElementById('mobile').value.trim();
     const address = window.sanitize(document.getElementById('address').value.trim());
+    const dob = document.getElementById('dob').value.trim();
     const photoFile = document.getElementById('photo').files[0];
 
     // Validation
@@ -70,7 +73,7 @@ window.submitStudentForm = async function(e) {
       id: studentId,
       uid: user.uid,
       schoolId: user.uid,
-      name, father, class: cls, section, mobile, address,
+      name, father, class: cls, section, mobile, address, dob,
       photo: photoUrl,
       createdAt: Date.now(),
       updatedAt: Date.now()
