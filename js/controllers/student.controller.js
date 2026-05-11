@@ -615,20 +615,31 @@ window.populateClassDropdown = function(students, dropdownId) {
   // Get unique classes from students
   const availableClasses = [...new Set(students.map(s => s.class).filter(Boolean))];
   
-  // Clear existing options except "All Classes"
+  // Store current selection before clearing
   const currentValue = dropdown.value;
-  dropdown.innerHTML = '<option value="">All Classes</option>';
+  
+  // Clear and rebuild options
+  dropdown.innerHTML = '';
+  
+  // Add "All Classes" option
+  const allOption = document.createElement('option');
+  allOption.value = '';
+  allOption.textContent = 'All Classes';
+  dropdown.appendChild(allOption);
   
   // Add available classes in order
   const classOrder = ['Nursery','LKG','UKG','KG','1','2','3','4','5','6','7','8','9','10','11','12'];
   classOrder.forEach(cls => {
     if (availableClasses.includes(cls)) {
-      dropdown.innerHTML += `<option value="${cls}">${cls === 'Nursery' ? 'Nursery' : cls === 'LKG' ? 'LKG' : cls === 'UKG' ? 'UKG' : cls === 'KG' ? 'KG' : 'Class ' + cls}</option>`;
+      const option = document.createElement('option');
+      option.value = cls;
+      option.textContent = cls === 'Nursery' ? 'Nursery' : cls === 'LKG' ? 'LKG' : cls === 'UKG' ? 'UKG' : cls === 'KG' ? 'KG' : 'Class ' + cls;
+      dropdown.appendChild(option);
     }
   });
   
   // Restore previous selection if still available
-  if (currentValue && availableClasses.includes(currentValue)) {
+  if (currentValue && (currentValue === '' || availableClasses.includes(currentValue))) {
     dropdown.value = currentValue;
   }
 };
