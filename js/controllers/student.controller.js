@@ -648,11 +648,6 @@ window.populateClassDropdown = function(students, dropdownId) {
     dropdown.value = currentValue;
     window.dropdownSelections[dropdownId] = currentValue;
   }
-  
-  // Add change event listener to store selection
-  dropdown.onchange = function() {
-    window.dropdownSelections[dropdownId] = this.value;
-  };
 };
 
 // Render pending student cards with new design
