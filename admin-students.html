@@ -71,7 +71,21 @@
    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
-    <script src="js/firebase-config.js?v=a94822a"></script>
+    <!-- Firebase Configuration -->
+    <script>
+      const firebaseConfig = {
+        apiKey: "AIzaSyCyUuz7QVLswGTs9RwdDNy1RSDYUKEyfIw",
+        authDomain: "my-id-card-app-b2bbc.firebaseapp.com",
+        projectId: "my-id-card-app-b2bbc",
+        storageBucket: "my-id-card-app-b2bbc.firebasestorage.app",
+        messagingSenderId: "335385118535",
+        appId: "1:335385118535:web:14033f686c0216a771ae62"
+      };
+      
+      if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+      }
+    </script>
 
     <!-- Utils -->
     <script src="js/helpers.js?v=a94822a"></script>
