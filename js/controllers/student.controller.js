@@ -741,7 +741,6 @@ window.renderPendingStudents = function(students) {
   // Class-wise select dropdown
   const classFilter = document.getElementById('pendingClassFilter');
   if (classFilter) {
-    classFilter.value = '';
     classFilter.onchange = function() {
       // Re-render students with the new filter
       window.renderPendingStudents(window.allPendingStudents);
