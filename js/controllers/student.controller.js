@@ -115,6 +115,8 @@ window.loadStudents = async function() {
     if (students.length === 0) {
       empty.style.display = 'block';
     } else {
+      // Populate class dropdown with available classes
+      window.populateClassDropdown(students, 'classFilter');
       window.renderStudents(students);
       grid.style.display = 'grid';
       grid.classList.remove('hidden');
@@ -605,11 +607,40 @@ window.loadPendingStudents = async function() {
   }
 };
 
+// Populate class dropdown with only available classes
+window.populateClassDropdown = function(students, dropdownId) {
+  const dropdown = document.getElementById(dropdownId);
+  if (!dropdown) return;
+  
+  // Get unique classes from students
+  const availableClasses = [...new Set(students.map(s => s.class).filter(Boolean))];
+  
+  // Clear existing options except "All Classes"
+  const currentValue = dropdown.value;
+  dropdown.innerHTML = '<option value="">All Classes</option>';
+  
+  // Add available classes in order
+  const classOrder = ['Nursery','LKG','UKG','KG','1','2','3','4','5','6','7','8','9','10','11','12'];
+  classOrder.forEach(cls => {
+    if (availableClasses.includes(cls)) {
+      dropdown.innerHTML += `<option value="${cls}">${cls === 'Nursery' ? 'Nursery' : cls === 'LKG' ? 'LKG' : cls === 'UKG' ? 'UKG' : cls === 'KG' ? 'KG' : 'Class ' + cls}</option>`;
+    }
+  });
+  
+  // Restore previous selection if still available
+  if (currentValue && availableClasses.includes(currentValue)) {
+    dropdown.value = currentValue;
+  }
+};
+
 // Render pending student cards with new design
 window.renderPendingStudents = function(students) {
   const grid = document.getElementById('pendingGrid');
   grid.innerHTML = '';
   window.selectedPending.clear();
+
+  // Populate class dropdown with available classes
+  window.populateClassDropdown(students, 'pendingClassFilter');
 
   // Get selected class filter
   const classFilterElement = document.getElementById('pendingClassFilter');
