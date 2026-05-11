@@ -659,6 +659,9 @@ window.renderPendingStudents = function(students) {
   grid.innerHTML = '';
   window.selectedPending.clear();
 
+  // Populate class dropdown with only available classes from pending students
+  window.populateClassDropdown(students, 'pendingClassFilter');
+
   // Get selected class filter
   const classFilterElement = document.getElementById('pendingClassFilter');
   const selectedClass = classFilterElement ? classFilterElement.value : '';
