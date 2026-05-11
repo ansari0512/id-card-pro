@@ -586,14 +586,14 @@ window.loadPendingStudents = async function() {
     window.selectedPending.clear();
     document.getElementById('loading').style.display = 'none';
 
-    const actionsBar = document.getElementById('pendingActionsBar');
+    const filtersBar = document.getElementById('pendingFiltersBar');
     const emptyState = document.getElementById('emptyPendingState');
 
     if (students.length === 0) {
-      if (actionsBar) actionsBar.style.display = 'none';
+      if (filtersBar) filtersBar.style.display = 'none';
       if (emptyState) { emptyState.classList.remove('hidden'); emptyState.style.display = 'block'; }
     } else {
-      if (actionsBar) actionsBar.style.display = 'flex';
+      if (filtersBar) filtersBar.style.display = 'flex';
       if (emptyState) { emptyState.classList.add('hidden'); emptyState.style.display = 'none'; }
       window.renderPendingStudents(students);
       document.getElementById('pendingGrid').style.display = 'grid';
@@ -611,7 +611,16 @@ window.renderPendingStudents = function(students) {
   grid.innerHTML = '';
   window.selectedPending.clear();
 
-  students.forEach(s => {
+  // Get selected class filter
+  const classFilterElement = document.getElementById('pendingClassFilter');
+  const selectedClass = classFilterElement ? classFilterElement.value : '';
+  
+  // Filter students by class if a class is selected
+  const filteredStudents = selectedClass ? 
+    students.filter(s => s.class === selectedClass) : 
+    students;
+
+  filteredStudents.forEach(s => {
     const card = document.createElement('div');
     card.className = 'student-card';
     card.innerHTML = `
@@ -685,14 +694,8 @@ window.renderPendingStudents = function(students) {
   if (classFilter) {
     classFilter.value = '';
     classFilter.onchange = function() {
-      const cls = this.value;
-      window.selectedPending.clear();
-      document.querySelectorAll('.pending-checkbox').forEach(cb => {
-        const student = window.allPendingStudents.find(s => s.docId === cb.dataset.docid);
-        const match = cls === '' ? false : student?.class === cls;
-        cb.checked = match;
-        if (match) window.selectedPending.add(cb.dataset.docid);
-      });
+      // Re-render students with the new filter
+      window.renderPendingStudents(window.allPendingStudents);
       window.updatePendingSelectedCount();
     };
   }
