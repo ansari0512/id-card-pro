@@ -597,6 +597,8 @@ window.loadPendingStudents = async function() {
     } else {
       if (filtersBar) filtersBar.style.display = 'flex';
       if (emptyState) { emptyState.classList.add('hidden'); emptyState.style.display = 'none'; }
+      // Populate dropdown with available classes (only once when loading)
+      window.populateClassDropdown(students, 'pendingClassFilter');
       window.renderPendingStudents(students);
       document.getElementById('pendingGrid').style.display = 'grid';
     }
@@ -659,10 +661,7 @@ window.renderPendingStudents = function(students) {
   grid.innerHTML = '';
   window.selectedPending.clear();
 
-  // Populate class dropdown with only available classes from pending students
-  window.populateClassDropdown(students, 'pendingClassFilter');
-
-  // Get selected class filter
+  // Get selected class filter (don't rebuild dropdown, just filter)
   const classFilterElement = document.getElementById('pendingClassFilter');
   const selectedClass = classFilterElement ? classFilterElement.value : '';
   
