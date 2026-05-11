@@ -659,9 +659,6 @@ window.renderPendingStudents = function(students) {
   grid.innerHTML = '';
   window.selectedPending.clear();
 
-  // Populate class dropdown with available classes
-  window.populateClassDropdown(students, 'pendingClassFilter');
-
   // Get selected class filter
   const classFilterElement = document.getElementById('pendingClassFilter');
   const selectedClass = classFilterElement ? classFilterElement.value : '';
@@ -995,6 +992,29 @@ window.uploadPendingPhoto = async function() {
   }
 };
 
+// Clear pending filters
+window.clearPendingFilters = function() {
+  document.getElementById('pendingClassFilter').value = '';
+  if (window.allPendingStudents) {
+    window.renderPendingStudents(window.allPendingStudents);
+  }
+};
+
+// Clear complete tab filters
+window.clearFilters = function() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('classFilter').value = '';
+  document.getElementById('sectionFilter').value = '';
+  window.loadStudents();
+};
+
+// Clear promote filters
+window.clearPromoteFilters = function() {
+  document.getElementById('promoteClassFilter').value = '';
+  document.getElementById('promoteSectionFilter').value = '';
+  window.loadPromoteStudentsTable();
+};
+
 // ── PROMOTE STUDENTS ─────────────────────────────────────────
 
 // Global promote state
@@ -1320,8 +1340,12 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('classFilter')?.addEventListener('change', window.loadStudents);
   document.getElementById('sectionFilter')?.addEventListener('change', window.loadStudents);
 
-  // Clear filters button
-  document.getElementById('clearFiltersBtn')?.addEventListener('click', window.clearFilters);
+  // Pending tab filter
+  document.getElementById('pendingClassFilter')?.addEventListener('change', () => {
+    if (window.allPendingStudents) {
+      window.renderPendingStudents(window.allPendingStudents);
+    }
+  });
 
   // Edit form submit
   document.getElementById('editForm')?.addEventListener('submit', window.saveStudentEdit);
