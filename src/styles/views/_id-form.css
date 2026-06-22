@@ -1,0 +1,82 @@
+/* ==========================================
+   ID Form Page Styles
+   ========================================== */
+
+/* Segmented toggle — from id-form-floating.css */
+.seg-toggle {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+  background: var(--seg-bg);
+  padding: 6px;
+  border-radius: 14px;
+}
+
+.seg-btn {
+  flex: 1;
+  border: 1px solid var(--seg-border);
+  background: transparent;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--text-muted, var(--text-muted-fallback));
+}
+
+.seg-btn.active {
+  background: var(--seg-active-bg);
+  border-color: var(--seg-active-border);
+  color: var(--seg-active-text);
+}
+
+.seg-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--seg-focus-shadow);
+}
+
+/* Teacher landscape card */
+.teacher-landscape-wrap {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.teacher-preview-content {
+  flex: 1;
+  min-width: 0;
+}
+
+#teacherPreviewCard .info p span {
+  max-width: 70%;
+}
+
+@media (max-width: 768px) {
+  #teacherPreviewCard .teacher-landscape-wrap {
+    flex-direction: column;
+  }
+}
+
+/* Mobile ID Card Preview */
+@media (max-width: 480px) {
+  .id-card-preview {
+    transform: none;
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+}
+
+/* Inline style replacements */
+.form-group-full {
+  grid-column: span 2;
+}
+
+.form-error-inline {
+  display: none;
+  margin-top: 10px;
+}
+
+.preview-hidden {
+  display: none;
+}

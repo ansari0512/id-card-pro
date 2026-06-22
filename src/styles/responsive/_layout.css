@@ -1,0 +1,31 @@
+/* ==========================================
+   Responsive Layout Overrides
+   ========================================== */
+
+/* Tablet (481px to 768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+  .students-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+  .actions-grid { grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+  .id-card-preview { transform: none; width: 100%; max-width: 420px; margin: 0 auto; }
+}
+
+/* Desktop (769px and up) */
+@media (min-width: 769px) {
+  .students-grid { grid-template-columns: repeat(3, 1fr); }
+  .stats-grid { grid-template-columns: repeat(4, 1fr); }
+  .actions-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* Large Desktop (1025px and up) */
+@media (min-width: 1025px) {
+  .students-grid { grid-template-columns: repeat(3, 1fr); }
+  .stats-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* Landscape Mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+  .dashboard-header { margin-bottom: 1rem; }
+  .stats-grid { grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+  .modal { max-height: 80vh; }
+}

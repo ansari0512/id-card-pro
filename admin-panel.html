@@ -9,13 +9,14 @@
   <meta name="referrer" content="no-referrer">
    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
    <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'dark');</script>
-   <link rel="stylesheet" href="src/styles/main.css?v=2.0">
+    <link rel="stylesheet" href="src/styles/main.css?v=2.0">
+  <link rel="stylesheet" href="src/styles/views/_admin.css?v=2.0">
 </head>
 <body>
 
    <!-- Topbar -->
    <header class="topbar no-print">
-     <div>
+     <div class="admin-topbar-left">
        <a href="admin-panel.html" class="logo-link">
          <div class="logo-emoji">🎓</div>
          <span class="logo-text">RK Choice</span><span class="logo-badge">ADMIN</span>
@@ -23,7 +24,7 @@
      </div>
      <div class="topbar-right">
        <span id="adminEmail" class="user-email"></span>
-       <button class="secondary logout-btn" onclick="doLogout()">Logout</button>
+        <button class="secondary logout-btn" id="adminLogoutBtn">Logout</button>
      </div>
    </header>
 
@@ -37,8 +38,8 @@
         <p>Manage all schools and monitor system performance</p>
       </div>
       <div class="admin-actions">
-        <button onclick="openAddModal()" class="primary">➕ Add New School</button>
-        <a href="admin-students.html?mode=all"><button class="secondary">👥 View All Students</button></a>
+        <button id="adminAddSchoolBtn" class="primary">➕ Add New School</button>
+        <button class="secondary" id="viewAllSchoolDataBtn">👥 View All School Data</button>
       </div>
     </div>
 
@@ -65,14 +66,21 @@
            <div class="stat-label">Inactive Schools</div>
          </div>
        </div>
-       <div class="admin-stat-card students">
-         <div class="stat-icon">🎓</div>
-         <div class="stat-content">
-           <div class="stat-number" id="totalStudentsAll">0</div>
-           <div class="stat-label">Total Students</div>
-         </div>
-       </div>
-     </div>
+        <div class="admin-stat-card students">
+          <div class="stat-icon">🎓</div>
+          <div class="stat-content">
+            <div class="stat-number" id="totalStudentsAll">0</div>
+            <div class="stat-label">Total Students</div>
+          </div>
+        </div>
+        <div class="admin-stat-card teachers">
+          <div class="stat-icon">🧑‍🏫</div>
+          <div class="stat-content">
+            <div class="stat-number" id="totalTeachersAll">0</div>
+            <div class="stat-label">Teacher / Staff</div>
+          </div>
+        </div>
+      </div>
 
     <!-- Schools Management -->
     <div class="admin-schools-section">
@@ -82,8 +90,8 @@
           <p>Manage all registered schools and their status</p>
         </div>
         <div class="section-actions">
-          <button onclick="refreshSchools()" class="secondary">🔄 Refresh</button>
-          <button onclick="exportSchoolsData()" class="btn-csv">📄 Export</button>
+          <button id="refreshSchoolsBtn" class="secondary">🔄 Refresh</button>
+          <button id="exportSchoolsBtn" class="btn-csv">📄 Export</button>
         </div>
       </div>
 
@@ -98,6 +106,7 @@
                <th>School Name</th>
                <th>Email</th>
                <th>Students</th>
+                <th>Teacher<br>/Staff</th>
                <th>Added On</th>
                <th>Status</th>
                <th>Actions</th>
@@ -111,7 +120,7 @@
         <div class="admin-empty-icon">🏫</div>
         <h3>No Schools Registered</h3>
         <p>Get started by adding your first school to the system</p>
-        <button onclick="openAddModal()" class="admin-add-button">➕ Add First School</button>
+        <button id="addFirstSchoolBtn" class="admin-add-button">➕ Add First School</button>
       </div>
     </div>
 
@@ -119,16 +128,19 @@
 
   <!-- Add School Modal -->
    <div class="modal-overlay" id="addModal">
+
+
      <div class="modal modal-wide">
+
       <h3>🏫 Add New School</h3>
       <form id="addSchoolForm">
         <div class="form-group">
           <label>School Name *</label>
-          <input type="text" id="newSchoolName" placeholder="e.g. Delhi Public School" required maxlength="100"
-            oninput="const p=this.selectionStart;this.value=this.value.replace(/\w\S*/g,w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase());this.setSelectionRange(p,p)">
+           <input type="text" id="newSchoolName" placeholder="e.g. Delhi Public School" required maxlength="100">
         </div>
         <div class="form-group">
           <label>Login Email *</label>
+
           <input type="email" id="newSchoolEmail" placeholder="school@example.com" required>
           <small class="form-helper-text">This will be the school's login email</small>
         </div>
@@ -139,200 +151,85 @@
         <div class="form-group">
           <label>City / Location</label>
           <input type="text" id="newSchoolCity" placeholder="e.g. New Delhi" maxlength="50"
-            oninput="const p=this.selectionStart;this.value=this.value.replace(/\w\S*/g,w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase());this.setSelectionRange(p,p)">
+            >
         </div>
         <div id="addError" class="form-error-message"></div>
         <div class="form-buttons-container">
           <button type="submit" class="success form-button-flex" id="addBtn">
             <span class="btn-text">✅ Create Account</span>
           </button>
-          <button type="button" class="secondary form-button-flex" onclick="closeAddModal()">Cancel</button>
+          <button type="button" class="secondary form-button-flex" id="closeAddModalBtn">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit School Modal -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal modal-wide">
+      <h3>✏️ Edit School</h3>
+      <form id="editSchoolForm">
+        <input type="hidden" id="editSchoolId" />
+
+        <div class="form-group">
+          <label>School Name *</label>
+          <input type="text" id="editSchoolName" required maxlength="100" placeholder="e.g. Delhi Public School" />
+        </div>
+
+        <div class="form-group">
+          <label>Email *</label>
+          <input type="email" id="editSchoolEmail" required placeholder="school@example.com" />
+        </div>
+
+        <div class="form-group">
+          <label>City / Location</label>
+          <input type="text" id="editSchoolCity" maxlength="50" placeholder="e.g. New Delhi" />
+        </div>
+
+        <div id="editError" class="form-error-message hidden"></div>
+
+        <div class="form-buttons-container">
+          <button type="submit" class="success form-button-flex" id="editSaveBtn">
+            <span class="btn-text">✅ Update</span>
+          </button>
+          <button type="button" class="secondary form-button-flex" id="closeEditModalBtn">Cancel</button>
         </div>
       </form>
     </div>
   </div>
 
    <!-- Firebase SDK -->
+
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
-    <!-- Firebase Configuration -->
-    <script>
-      const firebaseConfig = {
-        apiKey: "AIzaSyCyUuz7QVLswGTs9RwdDNy1RSDYUKEyfIw",
-        authDomain: "my-id-card-app-b2bbc.firebaseapp.com",
-        projectId: "my-id-card-app-b2bbc",
-        storageBucket: "my-id-card-app-b2bbc.firebasestorage.app",
-        messagingSenderId: "335385118535",
-        appId: "1:335385118535:web:14033f686c0216a771ae62"
-      };
-      
-      if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-      }
-    </script>
+    <!-- Centralized Firebase Configuration -->
+    <script src="src/config/firebase-config.js?v=2.0"></script>
 
     <!-- Utils -->
-    <script src="js/helpers.js?v=a94822a"></script>
+   <script src="js/helpers.js?v=a94822a"></script>
 
-    <!-- Auth Controller -->
-    <script src="js/controllers/auth.controller.js?v=a94822a"></script>
+   <!-- Admin Excel Styles -->
+   <script src="src/js/admin-excel-styles.js?v=2.0"></script>
 
-    <!-- Admin Controller -->
-    <script src="js/controllers/admin.controller.js?v=a94822a"></script>
+   <!-- Auth Controller -->
+   <script src="js/controllers/auth.controller.js?v=a94822a"></script>
 
-   <!-- Theme + Init -->
-   <script>
-     // Apply the theme before initializing the page.
-     (function() {
-       const t = localStorage.getItem('theme') || 'dark';
-       document.documentElement.setAttribute('data-theme', t);
-       const btn = document.getElementById('themeToggle');
-       if (btn) btn.textContent = t === 'light' ? '☀️' : '🌙';
-     })();
+   <!-- Teacher/Staff Data Controller -->
+   <script src="js/controllers/teacher-staff-data.controller.js?v=2.0"></script>
 
-     document.getElementById('themeToggle').addEventListener('click', function() {
-       const current = document.documentElement.getAttribute('data-theme');
-       const next = current === 'light' ? 'dark' : 'light';
-       document.documentElement.setAttribute('data-theme', next);
-       localStorage.setItem('theme', next);
-       this.textContent = next === 'light' ? '☀️' : '🌙';
-     });
+   <!-- Admin Controller -->
+   <script src="js/controllers/admin.controller.js?v=a94822a"></script>
 
-     document.getElementById('addSchoolForm').addEventListener('submit', window.createSchool);
-     function doLogout() { window.adminLogout(); }
-     
-     // Additional admin functions
-     window.refreshSchools = function() {
-       window.showToast('Refreshing schools data...', 'info');
-       window.loadSchools();
-     };
-     
-/**
- * Export schools data as styled Excel file
- */
-window.exportSchoolsData = async function() {
-  window.showToast('Preparing export... please wait', 'info');
+   <!-- Centralized Theme System -->
+   <script src="src/js/theme.js?v=2.0"></script>
 
-  try {
-    const snapshot = await firebase.firestore()
-      .collection('schools')
-      .orderBy('schoolName')
-      .get();
+   <!-- Admin Panel Init -->
+   <script src="js/controllers/admin-panel-init.js?v=2.0"></script>
+   <script src="js/controllers/admin-panel-inline.js?v=2.0"></script>
 
-    const schools = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-
-    if (schools.length === 0) {
-      window.showToast('No schools to export', 'error');
-      return;
-    }
-
-    const classOrder = ['Nursery','LKG','UKG','KG','1','2','3','4','5','6','7','8','9','10'];
-
-    const schoolsData = await Promise.all(schools.map(async school => {
-      try {
-        const students = await window.dbGetAllStudents(school.id);
-        const classCount = {};
-        students.forEach(s => {
-          const cls = s.class || 'Unknown';
-          classCount[cls] = (classCount[cls] || 0) + 1;
-        });
-        return { school, students, classCount };
-      } catch(e) {
-        return { school, students: [], classCount: {} };
-      }
-    }));
-
-    const allClasses = [...new Set(
-      schoolsData.flatMap(d => Object.keys(d.classCount))
-    )].sort((a, b) => {
-      const ai = classOrder.indexOf(a), bi = classOrder.indexOf(b);
-      if (ai === -1 && bi === -1) return a.localeCompare(b);
-      if (ai === -1) return 1;
-      if (bi === -1) return -1;
-      return ai - bi;
-    });
-
-    const classHeaders = allClasses.map(c => isNaN(c) ? c : 'Class ' + c);
-    const headers = ['School Name', 'City', 'Email', 'Status', 'Total Students', ...classHeaders, 'Added On'];
-
-    const dataRows = schoolsData.map(({ school, students, classCount }) => [
-      school.schoolName || '',
-      school.city || '',
-      school.email || '',
-      school.active !== false ? 'Active' : 'Inactive',
-      students.length,
-      ...allClasses.map(c => classCount[c] || 0),
-      school.createdAt ? new Date(school.createdAt).toLocaleDateString('en-IN') : ''
-    ]);
-
-    const totalStudents = schoolsData.reduce((sum, d) => sum + d.students.length, 0);
-    const totalByClass = allClasses.map(c => schoolsData.reduce((sum, d) => sum + (d.classCount[c] || 0), 0));
-    const totalRow = ['TOTAL', '', '', '', totalStudents, ...totalByClass, ''];
-
-    // Build a styled HTML table that opens correctly in Excel.
-    const headerCells = headers.map((h, i) => {
-      const isTotalCol = i === 4;
-      return `<th style="background:#D9D9D9;font-weight:bold;border:1px solid #AAAAAA;padding:6px 10px;text-align:center;font-size:12px;${isTotalCol ? 'color:#1F3864;' : ''}">${h}</th>`;
-    }).join('');
-
-    const dataRowsHtml = dataRows.map(row => {
-      const cells = row.map((val, i) => {
-        const isTotalCol = i === 4;
-        return `<td style="border:1px solid #DDDDDD;padding:5px 10px;text-align:${i === 0 ? 'left' : 'center'};font-size:12px;${isTotalCol ? 'font-weight:bold;color:#1F3864;' : ''}">${val}</td>`;
-      }).join('');
-      return `<tr>${cells}</tr>`;
-    }).join('');
-
-    const totalCells = totalRow.map((val, i) => {
-      const isTotalCol = i === 4;
-      return `<td style="background:#FFF2CC;font-weight:bold;border:1px solid #AAAAAA;padding:6px 10px;text-align:${i === 0 ? 'left' : 'center'};font-size:12px;${isTotalCol ? 'color:#1F3864;' : ''}">${val}</td>`;
-    }).join('');
-
-    const dateStr = new Date().toLocaleDateString('en-IN');
-    const html = `
-      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-      <head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Schools Report</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>
-      <body>
-        <table border="0" cellpadding="0" cellspacing="0" style="font-family:Arial,sans-serif;border-collapse:collapse;">
-          <tr><td colspan="${headers.length}" style="font-size:14px;font-weight:bold;padding:8px 10px;color:#1F3864;">RK Choice - Schools Export (${dateStr})</td></tr>
-          <tr><td colspan="${headers.length}" style="padding:4px;"></td></tr>
-          <tr>${headerCells}</tr>
-          ${dataRowsHtml}
-          <tr><td colspan="${headers.length}" style="padding:4px;"></td></tr>
-          <tr>${totalCells}</tr>
-        </table>
-      </body></html>`;
-
-    const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `schools_export_${new Date().toISOString().slice(0,10)}.xls`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    window.showToast(`✅ Exported ${schools.length} schools successfully!`, 'success');
-  } catch(err) {
-    window.showToast('Export failed: ' + err.message, 'error');
-  }
-};
-
-     // Initialize after auth is ready.
-     firebase.auth().onAuthStateChanged(async function(user) {
-       if (!user) { window.location.href = 'index.html'; return; }
-       const role = await window.fetchUserRole(user);
-       if (role !== 'admin') { window.location.href = 'dashboard.html'; return; }
-       window.adminUser = user;
-       window.currentUser = user;
-       window.currentRole = role;
-       document.getElementById('adminEmail').textContent = user.email;
-       window.loadSchools();
-     });
-   </script>
 
 </body>
 </html>

@@ -8,8 +8,8 @@
   <meta name="referrer" content="no-referrer">
   <title>Students - RK Choice</title>
   <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'dark');</script>
-  <link rel="stylesheet" href="src/styles/main.css?v=2.1">
-
+   <link rel="stylesheet" href="src/styles/main.css?v=2.0">
+  <link rel="stylesheet" href="src/styles/views/_students.css?v=2.0">
 
 </head>
 <body>
@@ -28,13 +28,13 @@
 
   <button class="theme-toggle no-print" id="themeToggle">🌙</button>
 
-  <main class="container container-pt-1-5">
+<main class="container container-padding-top-0">
 
     <!-- Professional Header -->
     <div class="page-header">
       <div class="page-header-text">
         <h1>Student Management</h1>
-        <div id="schoolNameSubtitle" class="school-name-badge" style="display:none">🏫 <span id="schoolNameText"></span></div>
+        <div id="schoolNameSubtitle" class="school-name-badge d-none">🏫 <span id="schoolNameText"></span></div>
         <p class="desc">Manage student records, print ID cards, and export data efficiently</p>
       </div>
     </div>
@@ -42,23 +42,30 @@
     <!-- Tab Navigation -->
     <div class="tabs-nav">
       <button id="tabComplete" class="tab-btn active" onclick="window.switchTab('complete')">
-        ✅ Complete Students
+        <span class="desktop-label">✅ Complete Students</span>
+        <span class="mobile-label">✅ Completed</span>
       </button>
       <button id="tabPending" class="tab-btn" onclick="window.switchTab('pending')">
-        ⏳ Pending Photos
+        <span class="desktop-label">⏳ Pending Photos</span>
+        <span class="mobile-label">⏳ Pending</span>
         <span id="pendingBadge" class="badge-pill hidden">0</span>
       </button>
       <button id="tabPromote" class="tab-btn" onclick="window.switchTab('promote')">
-        🎓 Promote Students
+        <span class="desktop-label">🎓 Promote Students</span>
+        <span class="mobile-label">🎓 Promotion</span>
       </button>
     </div>
 
     <!-- Complete Tab -->
     <div id="completeTab" class="tab-content active">
+      <div class="info-section">
+        ✅ Manage complete student records with photos. Use filters to find students quickly.
+      </div>
+
       <!-- Filter Bar -->
       <div class="filters-bar">
         <input type="text" id="searchInput" placeholder="🔍 Search by name or student ID">
-        <select id="classFilter" title="Select Class">
+        <select id="classFilter" title="Select Class" aria-label="Select Class">
           <option value="">All Classes</option>
           <option value="Nursery">Nursery</option>
           <option value="LKG">LKG</option>
@@ -77,19 +84,9 @@
           <option value="11">Class 11</option>
           <option value="12">Class 12</option>
         </select>
-        <select id="sectionFilter" title="Select Section">
+        <select id="sectionFilter" title="Select Section" aria-label="Select Section">
           <option value="">All Sections</option>
-          <option value="A">A</option>
-          <option value="B">B</option>
-          <option value="C">C</option>
-          <option value="D">D</option>
-          <option value="E">E</option>
-          <option value="F">F</option>
-          <option value="G">G</option>
-          <option value="H">H</option>
         </select>
-        <button class="primary" onclick="loadStudents()">🔍 Filter</button>
-        <button class="secondary" onclick="clearFilters()">Clear</button>
       </div>
 
       <!-- Actions Bar -->
@@ -98,14 +95,10 @@
           <input type="checkbox" id="selectAllCheckbox">
           <span>Select All</span>
         </label>
-        <span class="selected-count">
-          <span id="selectedCount">0</span> selected
-        </span>
-        <button class="btn-print" onclick="bulkPrint()">🖨️ Print</button>
-        <button class="btn-download" onclick="bulkDownload()">📦 Download ZIP</button>
-        <button class="btn-csv" onclick="exportCSV()">📥 Export CSV</button>
-        <button class="btn-import" onclick="window.openImportModal()">📂 Import</button>
-        <button class="danger" onclick="bulkDelete()">🗑️ Delete</button>
+
+        <span id="studentCount" class="student-count-badge"></span>
+        <button class="secondary" onclick="window.clearFilters()">Clear</button>
+        <button class="danger" onclick="window.bulkDelete()">🗑️ Delete</button>
       </div>
 
       <div id="loading" class="text-center loading-padding">
@@ -113,9 +106,9 @@
         <p class="text-muted loading-text">Loading students...</p>
       </div>
 
-      <div id="studentsGrid" class="students-grid" style="display:none"></div>
+      <div id="studentsGrid" class="students-grid hidden"></div>
 
-      <div id="emptyState" class="empty-state" style="display:none">
+      <div id="emptyState" class="empty-state hidden">
         <div class="empty-icon">📭</div>
         <h3>No Students Found</h3>
         <p>Get started by creating your first student ID card.</p>
@@ -129,37 +122,36 @@
         📝 These students were imported from CSV but need photos to be added. Click on a student to upload their photo.
       </div>
 
-      <!-- Pending Filter Bar -->
-      <div class="filters-bar" id="pendingFiltersBar" style="display:none">
+      <!-- Pending Filters -->
+      <div class="filters-bar" id="pendingFiltersBar">
+        <input type="text" id="pendingSearchInput" placeholder="🔍 Search by name or student ID">
+        <select id="pendingClassFilter" title="Select Class" aria-label="Select Class">
+          <option value="">All Classes</option>
+        </select>
+        <select id="pendingSectionFilter" title="Select Section" aria-label="Select Section">
+          <option value="">All Sections</option>
+        </select>
+      </div>
+
+      <!-- Pending Actions -->
+      <div class="actions-bar" id="pendingActionsBar">
         <label class="select-all-label">
           <input type="checkbox" id="pendingSelectAllCheckbox">
           <span>Select All</span>
         </label>
-        <select id="pendingClassFilter" title="Filter by Class">
-          <option value="">All Classes</option>
-          <option value="Nursery">Nursery</option>
-          <option value="LKG">LKG</option>
-          <option value="UKG">UKG</option>
-          <option value="KG">KG</option>
-          <option value="1">Class 1</option>
-          <option value="2">Class 2</option>
-          <option value="3">Class 3</option>
-          <option value="4">Class 4</option>
-          <option value="5">Class 5</option>
-          <option value="6">Class 6</option>
-          <option value="7">Class 7</option>
-          <option value="8">Class 8</option>
-          <option value="9">Class 9</option>
-          <option value="10">Class 10</option>
-          <option value="11">Class 11</option>
-          <option value="12">Class 12</option>
-        </select>
+
+        <span id="pendingStudentCount" class="student-count-badge"></span>
         <button class="secondary" onclick="window.clearPendingFilters()">Clear</button>
-        <span class="selected-count"><span id="pendingSelectedCount">0</span> selected</span>
-        <button class="danger" onclick="window.bulkDeletePending()">🗑️ Delete Selected</button>
+        <button class="danger" onclick="window.bulkDeletePending()">🗑️ Delete</button>
       </div>
 
-      <div id="pendingGrid" class="students-grid"></div>
+      <div id="pendingLoading" class="text-center loading-padding hidden">
+        <div class="spinner spinner-large"></div>
+        <p class="text-muted loading-text">Loading students...</p>
+      </div>
+
+      <div id="pendingGrid" class="students-grid hidden"></div>
+
       <div id="emptyPendingState" class="empty-state hidden">
         <div class="empty-icon">✅</div>
         <h3>All Done!</h3>
@@ -170,12 +162,13 @@
     <!-- Promote Tab -->
     <div id="promoteTab" class="tab-content">
       <div class="info-section">
-        🎓 Select students to promote to the next class/section. Use the filters below to find students.
+        🎓 Select students to promote to the next class/section. Use filters to find students quickly.
       </div>
 
       <!-- Promote Filters -->
-      <div class="filters-bar">
-        <select id="promoteClassFilter" title="Select Class" onchange="window.loadPromoteStudentsTable()">
+      <div class="filters-bar" id="promoteFiltersBar">
+        <input type="text" id="promoteSearchInput" placeholder="🔍 Search by name or student ID">
+        <select id="promoteClassFilter" title="Select Class" aria-label="Select Class">
           <option value="">All Classes</option>
           <option value="Nursery">Nursery</option>
           <option value="LKG">LKG</option>
@@ -192,54 +185,32 @@
           <option value="9">Class 9</option>
           <option value="10">Class 10</option>
           <option value="11">Class 11</option>
-          <option value="12">Class 12</option>
         </select>
-        <select id="promoteSectionFilter" title="Select Section" onchange="window.loadPromoteStudentsTable()">
+        <select id="promoteSectionFilter" title="Select Section" aria-label="Select Section">
           <option value="">All Sections</option>
-          <option value="A">A</option>
-          <option value="B">B</option>
-          <option value="C">C</option>
-          <option value="D">D</option>
-          <option value="E">E</option>
-          <option value="F">F</option>
-          <option value="G">G</option>
-          <option value="H">H</option>
         </select>
-        <button class="primary" onclick="window.loadPromoteStudentsTable()">🔍 Filter</button>
+      </div>
+
+      <div class="actions-bar" id="promoteActionsBar">
+        <label class="select-all-label">
+          <input type="checkbox" id="promoteSelectAllCheckbox" onchange="window.promoteToggleAllRows(this.checked)">
+          <span>Select All</span>
+        </label>
+
+        <span id="promoteStudentCount" class="student-count-badge"></span>
         <button class="secondary" onclick="window.clearPromoteFilters()">Clear</button>
+        <button class="success" id="promoteConfirmBtn" onclick="window.openPromoteTargetModal()" disabled>🎓 Promote Selected</button>
       </div>
 
-      <div class="actions-bar" id="promoteActionsBar" style="display:none">
-        <span class="selected-count">
-          <span id="promoteSelectedCount">0</span> selected
-        </span>
-        <button class="success" id="promoteConfirmBtn" onclick="window.openPromoteTargetModal()" disabled>
-          🎓 Promote Selected
-        </button>
-      </div>
 
-      <div id="promoteLoading" class="text-center loading-padding" style="display:none">
+      <div id="promoteLoading" class="text-center loading-padding hidden">
         <div class="spinner spinner-large"></div>
         <p class="text-muted loading-text">Loading students...</p>
       </div>
 
-      <div id="promoteTableContainer" style="display:none; overflow-x: auto;">
-        <table class="students-table" id="promoteTable">
-          <thead>
-            <tr>
-              <th><input type="checkbox" id="promoteTableSelectAll" onchange="window.promoteToggleAllRows(this.checked)"></th>
-              <th>Name</th>
-              <th>Father Name</th>
-              <th>Class</th>
-              <th>Section</th>
-              <th>Photo</th>
-            </tr>
-          </thead>
-          <tbody id="promoteTableBody"></tbody>
-        </table>
-      </div>
+      <div id="promoteGrid" class="students-grid hidden"></div>
 
-      <div id="emptyPromoteState" class="empty-state" style="display:none">
+      <div id="emptyPromoteState" class="empty-state hidden">
         <div class="empty-icon">📭</div>
         <h3>No Students Found</h3>
         <p>Select a class and section to see students for promotion.</p>
@@ -250,7 +221,7 @@
 
   <!-- Promote Target Modal -->
   <div class="modal-overlay" id="promoteTargetModal" onclick="if(event.target === this) window.closePromoteTargetModal()">
-    <div class="modal" style="max-width:420px;">
+    <div class="modal modal-max-width-420">
       <h3>🎓 Promote Selected Students</h3>
       <div class="form-row">
         <div class="form-group">
@@ -290,7 +261,7 @@
           </select>
         </div>
       </div>
-      <div id="promoteTargetError" class="edit-error" style="display:none"></div>
+      <div id="promoteTargetError" class="edit-error d-none"></div>
       <div class="modal-buttons modal-buttons-mt">
         <button class="success" onclick="window.confirmPromotion()" id="promoteTargetConfirmBtn">✅ Confirm Promote</button>
         <button class="secondary" onclick="window.closePromoteTargetModal()">Cancel</button>
@@ -300,13 +271,36 @@
 
   <!-- Import CSV Modal -->
   <div class="modal-overlay" id="importModal" onclick="if(event.target === this) window.closeImportModal()">
-    <div class="modal">
+      <div class="modal">
       <h3>📂 Import Students from CSV</h3>
-      <p>CSV or Excel format: Name, Father Name, DOB, Class, Section, Mobile, Address</p>
-      <p class="import-desc">First row = header (will be skipped). DOB must be the third column. You can add photos later.</p>
+      <p class="import-desc">First row = header (will be skipped). You can add photos later.</p>
+
+      <div style="display:none" aria-hidden="true">
+        <!-- accessibility placeholder -->
+      </div>
+
+      <div class="import-format-block" style="margin: 0.75rem 0 0.5rem; padding: 0.75rem; border: 1px solid rgba(59,130,246,0.35); border-radius: 10px; background: rgba(59,130,246,0.08);">
+        <div style="font-weight: 700; margin-bottom: 0.35rem;">Required Excel Format</div>
+        <div style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: 12px; line-height: 1.6; white-space: pre-wrap;">
+          A = Addition
+          B = Admission No.
+          C = Student Name
+          D = Roll No.
+          E = Date of Birth
+          F = Father's Name
+          G = Mother's Name
+          H = Blood Group
+          I = Class
+          J = Section
+          K = Mobile No.
+          L = Address
+          M = Other Info.
+        </div>
+      </div>
+
       <div class="form-group form-group-mt">
         <label for="importFile">Select File *</label>
-        <input type="file" id="importFile" accept=".csv,.xlsx,.xls" required>
+        <input type="file" id="importFile" accept=".csv,.xlsx,.xls" required title="Select CSV/Excel file for import">
       </div>
       <div id="importPreview" class="import-preview">
         <p class="import-count">
@@ -365,6 +359,38 @@
             <input type="text" id="editFather" required maxlength="50">
           </div>
         </div>
+        <!-- New Student Fields for Edit Modal -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="editAddition">Addition</label>
+            <input type="text" id="editAddition" maxlength="50" oninput="window.applyProperCase(this)">
+          </div>
+          <div class="form-group">
+            <label for="editAdmissionNo">Admission No.</label>
+            <input type="text" id="editAdmissionNo" maxlength="50">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="editRollNo">Roll No.</label>
+            <input type="text" id="editRollNo" maxlength="50">
+          </div>
+          <div class="form-group">
+            <label for="editMotherName">Mother's Name</label>
+            <input type="text" id="editMotherName" maxlength="50" oninput="window.applyProperCase(this)">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="editBloodGroup">Blood Group</label>
+            <input type="text" id="editBloodGroup" maxlength="5">
+          </div>
+          <div class="form-group">
+            <label for="editOtherInfo">Other Info.</label>
+            <input type="text" id="editOtherInfo" maxlength="200" oninput="window.applyProperCase(this)">
+          </div>
+        </div>
+        <!-- End New Student Fields -->
         <div class="form-row">
           <div class="form-group">
             <label for="editClass">Class *</label>
@@ -434,15 +460,13 @@
           <button type="submit" class="success" id="editSaveBtn">
             <span class="btn-text">✅ Save Changes</span>
           </button>
-          <button type="button" class="secondary" onclick="closeEditModal()">Cancel</button>
+          <button type="button" class="secondary" onclick="window.closeEditModal()">Cancel</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Promote Students Modal - Deprecated (now uses tab view instead) -->
-
-    <!-- JSZip -->
+  <!-- JSZip -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <!-- SheetJS for Excel support -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -453,21 +477,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
-    <!-- Firebase Configuration -->
-    <script>
-      const firebaseConfig = {
-        apiKey: "AIzaSyCyUuz7QVLswGTs9RwdDNy1RSDYUKEyfIw",
-        authDomain: "my-id-card-app-b2bbc.firebaseapp.com",
-        projectId: "my-id-card-app-b2bbc",
-        storageBucket: "my-id-card-app-b2bbc.firebasestorage.app",
-        messagingSenderId: "335385118535",
-        appId: "1:335385118535:web:14033f686c0216a771ae62"
-      };
-      
-      if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-      }
-    </script>
+    <!-- Centralized Firebase Configuration -->
+    <script src="src/config/firebase-config.js?v=2.0"></script>
 
     <!-- Utils -->
     <script src="js/helpers.js?v=a94822a"></script>
@@ -475,80 +486,17 @@
     <!-- Auth Controller -->
     <script src="js/controllers/auth.controller.js?v=a94822a"></script>
 
-   <!-- Student Controller -->
-    <script src="js/controllers/student.controller.js?v=a94822a"></script>
+    <!-- Student Data Controller -->
+    <script src="js/controllers/student-data.controller.js?v=2.0"></script>
 
-    <!-- Theme & Tab Logic -->
-    <script>
-     (function() {
-       const t = localStorage.getItem('theme') || 'dark';
-       document.documentElement.setAttribute('data-theme', t);
-       const btn = document.getElementById('themeToggle');
-       if (btn) btn.textContent = t === 'light' ? '☀️' : '🌙';
-     })();
-     
-     document.getElementById('themeToggle')?.addEventListener('click', function() {
-       const current = document.documentElement.getAttribute('data-theme');
-       const next = current === 'light' ? 'dark' : 'light';
-       document.documentElement.setAttribute('data-theme', next);
-       localStorage.setItem('theme', next);
-       this.textContent = next === 'light' ? '☀️' : '🌙';
-     });
+    <!-- Student UI Controller -->
+    <script src="js/controllers/student-ui.controller.js?v=2.0"></script>
 
-     // Tab Switching
-     window.switchTab = function(tab) {
-       // Hide all tabs
-       document.getElementById('completeTab').classList.remove('active');
-       document.getElementById('pendingTab').classList.remove('active');
-       document.getElementById('promoteTab').classList.remove('active');
-       
-       // Remove active state from buttons
-       document.getElementById('tabComplete').classList.remove('active');
-       document.getElementById('tabPending').classList.remove('active');
-       document.getElementById('tabPromote').classList.remove('active');
-       
-       // Show selected tab & mark button as active
-       if (tab === 'complete') {
-         document.getElementById('completeTab').classList.add('active');
-         document.getElementById('tabComplete').classList.add('active');
-         loadStudents();
-       } else if (tab === 'pending') {
-         document.getElementById('pendingTab').classList.add('active');
-         document.getElementById('tabPending').classList.add('active');
-         loadPendingStudents();
-       } else if (tab === 'promote') {
-         document.getElementById('promoteTab').classList.add('active');
-         document.getElementById('tabPromote').classList.add('active');
-         window.loadPromoteStudentsTable();
-       }
-     };
+    <!-- Centralized Theme System -->
+    <script src="src/js/theme.js?v=2.0"></script>
 
-     // Modal Management
-     window.openImportModal = function() {
-       document.getElementById('importModal').classList.add('open');
-     };
-
-     window.closeImportModal = function() {
-       document.getElementById('importModal').classList.remove('open');
-     };
-
-     window.closePhotoUploadModal = function() {
-       document.getElementById('photoUploadModal').classList.remove('open');
-     };
-
-     window.closeEditModal = function() {
-       document.getElementById('editModal').classList.remove('open');
-     };
-
-     // Close modals on outside click
-     ['importModal', 'photoUploadModal', 'editModal'].forEach(id => {
-       document.getElementById(id)?.addEventListener('click', function(e) {
-         if (e.target === this) {
-           this.classList.remove('open');
-         }
-       });
-     });
-    </script>
+    <!-- Students Page Script -->
+    <script src="src/js/pages/students.js?v=2.0"></script>
 
 </body>
 </html>

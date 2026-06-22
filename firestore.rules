@@ -19,8 +19,37 @@ service cloud.firestore {
       return request.resource.data.name is string &&
              request.resource.data.name.size() > 0 &&
              request.resource.data.name.size() <= 100 &&
+             request.resource.data.father is string &&
+             request.resource.data.father.size() > 0 &&
+             request.resource.data.class is string &&
+             request.resource.data.class.size() > 0 &&
              request.resource.data.section is string &&
-             request.resource.data.mobile is string;
+             request.resource.data.mobile is string &&
+             request.resource.data.mobile.matches('^[0-9]{10}$') &&
+             request.resource.data.schoolId is string &&
+             request.resource.data.schoolId.size() > 0;
+    }
+
+    function validTeacherData() {
+      return request.resource.data.name is string &&
+             request.resource.data.name.size() > 0 &&
+             request.resource.data.name.size() <= 100 &&
+             request.resource.data.designation is string &&
+             request.resource.data.designation.size() > 0 &&
+             request.resource.data.fatherName is string &&
+             request.resource.data.fatherName.size() > 0 &&
+             request.resource.data.dob is string &&
+             request.resource.data.dob.size() > 0 &&
+             request.resource.data.mobile is string &&
+             request.resource.data.mobile.matches('^[0-9]{10}$');
+    }
+
+    function validPendingStudentData() {
+      return request.resource.data.name is string &&
+             request.resource.data.name.size() > 0 &&
+             request.resource.data.name.size() <= 100 &&
+             request.resource.data.class is string &&
+             request.resource.data.class.size() > 0;
     }
 
     // ── Users ──────────────────────────────────────────────
@@ -38,14 +67,30 @@ service cloud.firestore {
       // ── Pending Students subcollection ────────────────
       match /pending_students/{studentId} {
         allow read:  if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
-        allow create: if isLoggedIn() && isSchoolOwner(schoolId);
-        allow update: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
+        allow create: if isLoggedIn() && isSchoolOwner(schoolId) && validPendingStudentData();
+        allow update: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId)) && validPendingStudentData();
         allow delete: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
       }
 
       // ── ID Counters subcollection ─────────────────────
+      // Only allow known fields (count, teacherCount) with non-negative numbers
+      // Each field is optional — allow writing only count or only teacherCount
       match /counters/{year} {
-        allow read, write: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
+        allow read: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
+        allow write: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId)) &&
+          request.resource.data.keys().hasOnly(['count', 'teacherCount']) &&
+          (
+            (!('count' in request.resource.data) || (request.resource.data.count is number && request.resource.data.count >= 0)) &&
+            (!('teacherCount' in request.resource.data) || (request.resource.data.teacherCount is number && request.resource.data.teacherCount >= 0))
+          );
+      }
+
+      // ── Teachers subcollection ──────────────────────────
+      match /teachers/{teacherId} {
+        allow read: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
+        allow create: if isLoggedIn() && isSchoolOwner(schoolId) && validTeacherData();
+        allow update: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId)) && validTeacherData();
+        allow delete: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
       }
 
       // ── Classes subcollection ──────────────────────────
@@ -70,6 +115,12 @@ service cloud.firestore {
           allow delete: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
         }
       }
+    }
+
+    // ── Deletion Logs (Auto-logged by Cloud Functions) ────────
+    match /deletion_logs/{logId} {
+      allow read:  if isAdmin();
+      allow write: if false;
     }
   }
 }

@@ -1,0 +1,80 @@
+/* ==========================================
+   Grid Layout — SINGLE source of truth
+   FIXED: Removed global !important, wrapped mobile in proper media query
+   ========================================== */
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  max-width: 1250px;
+  margin: 0.25rem auto;
+  padding: 0 20px;
+}
+
+/* Desktop: form + preview side-by-side */
+@media (min-width: 769px) {
+  main.layout {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    flex-wrap: nowrap;
+    gap: 2.5rem;
+  }
+
+  main.layout .form {
+    flex: 1 1 0;
+    width: 100%;
+    max-width: calc(100% - 440px);
+    min-width: 0;
+    margin: 0;
+  }
+
+  main.layout .preview {
+    flex: 0 0 420px;
+    max-width: 420px;
+    position: sticky;
+    top: 100px;
+    align-self: flex-start;
+  }
+
+  main.layout .preview .id-card-preview {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+/* Mobile: stack vertically */
+@media (max-width: 768px) {
+  .layout {
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    gap: 20px;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+  }
+
+  .form, .preview, .id-card-preview {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+  }
+}
+
+/* Small screens: single column */
+@media (max-width: 480px) {
+  .layout {
+    padding: 8px;
+    gap: 16px;
+  }
+}
+
+/* High DPI Displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .id-card-preview {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}

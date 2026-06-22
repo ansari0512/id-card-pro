@@ -1,0 +1,22 @@
+/* ==========================================
+   Toast Notifications — from admin.css
+   ========================================== */
+
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 14px 24px;
+  border-radius: 10px;
+  z-index: 10000;
+  font-weight: 500;
+  animation: slideIn 0.3s ease;
+  box-shadow: var(--shadow-lg);
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+.toast-success { background: var(--success); color: white; }
+.toast-error { background: var(--error); color: white; }
+.toast-info { background: var(--primary); color: white; }

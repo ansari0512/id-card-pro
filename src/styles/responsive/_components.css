@@ -1,0 +1,79 @@
+/* ==========================================
+   Responsive Component Overrides
+   Consolidated from responsive.css component sections
+   ========================================== */
+
+/* Touch-friendly buttons */
+@media (hover: none) and (pointer: coarse) {
+  .btn, button {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 12px 16px;
+  }
+
+  .theme-toggle {
+    width: 48px;
+    height: 48px;
+    font-size: 18px;
+  }
+
+  .checkbox {
+    min-width: 24px;
+    min-height: 24px;
+  }
+}
+
+/* Mobile: ID Card Preview */
+@media (max-width: 480px) {
+  .id-card-preview {
+    transform: none;
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+}
+
+/* Tablet: ID Card Preview */
+@media (min-width: 481px) and (max-width: 768px) {
+  .id-card-preview {
+    transform: none;
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+}
+
+/* Filter Bar Mobile */
+@media (max-width: 768px) {
+  .filters-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  
+  .filters-bar input,
+  .filters-bar select {
+    width: 100% !important;
+  }
+
+  .count-clear-wrapper {
+    display: flex !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    gap: 10px;
+  }
+}
+
+/* Filter Bar Desktop */
+@media (min-width: 769px) {
+  #searchInput { flex: 0 0 40% !important; }
+  #classFilter, #sectionFilter { flex: 0 0 18% !important; }
+  #promoteClassFilter, #promoteSectionFilter { flex: 0 0 35% !important; }
+  #pendingClassFilter, #pendingSectionFilter { flex: 0 0 35% !important; }
+  
+  .count-clear-wrapper {
+    flex: 1 !important;
+    display: flex !important;
+    justify-content: flex-end !important;
+    gap: 12px !important;
+  }
+}

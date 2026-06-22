@@ -8,16 +8,18 @@
   <meta name="referrer" content="no-referrer">
   <title>Create ID Card - RK Choice</title>
    <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'dark');</script>
-   <link rel="stylesheet" href="src/styles/main.css?v=2.0">
+    <link rel="stylesheet" href="src/styles/main.css?v=2.0">
+  <link rel="stylesheet" href="src/styles/views/_id-form.css?v=2.0">
 </head>
+
 <body>
 
    <!-- Topbar -->
    <header class="topbar no-print">
      <div>
-       <a href="dashboard.html" style="display:flex;align-items:center;gap:0.5rem;text-decoration:none;color:inherit;">
-         <div style="font-size: 1.5rem;">🎓</div>
-         <h2 style="margin: 0;">Create ID Card</h2>
+       <a href="dashboard.html" class="d-flex align-center gap-0-5 no-underline">
+         <div class="logo-display">🎓</div>
+         <h2 class="m-0">Create ID Card</h2>
        </a>
      </div>
      <a href="dashboard.html"><button class="secondary">← Back</button></a>
@@ -27,116 +29,383 @@
 
   <main class="layout">
 
+
+
     <!-- Left: Form -->
     <div class="form">
       <div class="glass-card">
-        <h2 style="margin-top: 0;">Student Information</h2>
+        <div class="id-card-type-wrapper">
+          <h2 class="mt-0">ID Card Type</h2>
+          <div class="seg-toggle" role="tablist">
+            <button type="button" class="seg-btn active" id="segStudent">Student</button>
+            <button type="button" class="seg-btn" id="segTeacherStaff">Teacher / Staff</button>
+              <!-- Hidden inputs to keep existing controller logic ids (student default) -->
+              <input type="hidden" name="idCardType" id="idCardTypeStudent" value="student" checked>
+              <input type="hidden" name="idCardType" id="idCardTypeTeacherStaff" value="teacherstaff">
+            </div>
+
+        <!-- Student Form (existing workflow, no changes) -->
+
+
+        <h2 id="studentTypeTitle" class="mt-0">Student Information</h2>
 
         <form id="studentForm">
+          <!-- Student Form Layout (2-column + full-width rows) -->
+          <!-- Row 1: Addition (Left) + Admission No. (Right) -->
           <div class="form-row">
             <div class="form-group">
-              <label for="name">Student Name *</label>
-              <input type="text" id="name" name="name" required maxlength="50" placeholder="Enter full name">
+              <div class="float-field" data-for="addition">
+                <input type="text" id="addition" name="addition" maxlength="50" placeholder=" " autocomplete="off">
+                <label class="float-label" for="addition">Addition</label>
+                <span class="float-status" aria-hidden="true"></span>
+
+              </div>
             </div>
             <div class="form-group">
-              <label for="father">Father's Name *</label>
-              <input type="text" id="father" name="father" required maxlength="50" placeholder="Father's name">
+              <div class="float-field" data-for="admissionNo">
+                <input type="text" id="admissionNo" name="admissionNo" maxlength="50" placeholder=" " autocomplete="off">
+                <label class="float-label" for="admissionNo">Admission No.</label>
+
+                <span class="float-status" aria-hidden="true"></span>
+              </div>
             </div>
           </div>
 
+          <!-- Row 2: Student Name * (Left) + Roll No. (Right) -->
           <div class="form-row">
             <div class="form-group">
-              <label for="dob">Date of Birth</label>
-              <input type="date" id="dob" name="dob" placeholder="Optional">
+              <div class="float-field" data-for="name">
+                <input type="text" id="name" name="name" required maxlength="50" placeholder=" " autocomplete="off">
+                <label class="float-label" for="name">Student Name<span class="req-star">*</span></label>
+
+
+                <span class="float-status" aria-hidden="true"></span>
+              </div>
             </div>
             <div class="form-group">
-              <!-- Empty for balance -->
+              <div class="float-field" data-for="rollNo">
+                <input type="text" id="rollNo" name="rollNo" maxlength="50" placeholder=" " autocomplete="off">
+                <label class="float-label" for="rollNo">Roll No.</label>
+
+                <span class="float-status" aria-hidden="true"></span>
+              </div>
             </div>
           </div>
 
+          <!-- Row 3: DOB * (Left) + Father's Name * (Right) -->
           <div class="form-row">
             <div class="form-group">
-              <label for="class">Class *</label>
-              <select id="class" name="class" required>
-                <option value="">Select Class</option>
-                <option value="Nursery">Nursery</option>
-                <option value="LKG">LKG</option>
-                <option value="UKG">UKG</option>
-                <option value="KG">KG</option>
-                <option value="1">Class 1</option>
-                <option value="2">Class 2</option>
-                <option value="3">Class 3</option>
-                <option value="4">Class 4</option>
-                <option value="5">Class 5</option>
-                <option value="6">Class 6</option>
-                <option value="7">Class 7</option>
-                <option value="8">Class 8</option>
-                <option value="9">Class 9</option>
-                <option value="10">Class 10</option>
-                <option value="11">Class 11</option>
-                <option value="12">Class 12</option>
-              </select>
+              <div class="float-field" data-for="dob">
+                <input type="text" id="dob" name="dob" required placeholder=" " autocomplete="off">
+
+                <label class="float-label" for="dob">Date of Birth<span class="req-star">*</span></label>
+
+
+                <span class="float-status" aria-hidden="true"></span>
+              </div>
             </div>
             <div class="form-group">
-              <label for="section">Section *</label>
-              <select id="section" name="section" required>
-                <option value="">Select Section</option>
-                <option value="A">A</option>
-                <option value="B">B</option>
-                <option value="C">C</option>
-                <option value="D">D</option>
-                <option value="E">E</option>
-                <option value="F">F</option>
-                <option value="G">G</option>
-                <option value="H">H</option>
-              </select>
+              <div class="float-field" data-for="father">
+                <input type="text" id="father" name="father" required maxlength="50" placeholder=" " autocomplete="off">
+                <label class="float-label" for="father">Father's Name<span class="req-star">*</span></label>
+
+
+                <span class="float-status" aria-hidden="true"></span>
+              </div>
             </div>
           </div>
 
+          <!-- Row 4: Mother's Name (Optional) + Blood Group (Optional) -->
           <div class="form-row">
             <div class="form-group">
-              <label for="mobile">Mobile Number *</label>
-              <input type="tel" id="mobile" name="mobile" required maxlength="10" placeholder="10-digit mobile"
-                pattern="[0-9]{10}" inputmode="numeric"
-                oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,10)">
+              <div class="float-field" data-for="motherName">
+                <input type="text" id="motherName" name="motherName" maxlength="50" placeholder=" " autocomplete="off">
+                <label class="float-label" for="motherName">Mother's Name</label>
+
+                <span class="float-status" aria-hidden="true"></span>
+              </div>
             </div>
             <div class="form-group">
-              <label for="address">Address</label>
-              <input type="text" id="address" name="address" maxlength="200" placeholder="Optional">
+              <div class="float-field" data-for="bloodGroup">
+                <input type="text" id="bloodGroup" name="bloodGroup" maxlength="5" placeholder=" " autocomplete="off">
+                <label class="float-label" for="bloodGroup">Blood Group</label>
+
+                <span class="float-status" aria-hidden="true"></span>
+              </div>
             </div>
           </div>
 
-          <div class="form-group">
-            <label for="photo">Student Photo *</label>
-            <input type="file" id="photo" name="photo" accept="image/*" required>
-            <small style="color: var(--text-muted); font-size: 12px;">Max size: 5MB. Recommended: 2x2 inch, 300 DPI</small>
+          <!-- Row 5: Class * (Left) + Section * (Right) -->
+          <div class="form-row">
+            <div class="form-group">
+              <div class="float-field" data-for="class">
+                <select id="class" name="class" required>
+                  <option value=""> </option>
+                  <option value="Nursery">Nursery</option>
+                  <option value="LKG">LKG</option>
+                  <option value="UKG">UKG</option>
+                  <option value="KG">KG</option>
+                  <option value="1">Class 1</option>
+                  <option value="2">Class 2</option>
+                  <option value="3">Class 3</option>
+                  <option value="4">Class 4</option>
+                  <option value="5">Class 5</option>
+                  <option value="6">Class 6</option>
+                  <option value="7">Class 7</option>
+                  <option value="8">Class 8</option>
+                  <option value="9">Class 9</option>
+                  <option value="10">Class 10</option>
+                  <option value="11">Class 11</option>
+                  <option value="12">Class 12</option>
+                </select>
+                <label class="float-label" for="class">Class<span class="req-star">*</span></label>
+
+
+                <span class="float-status" aria-hidden="true"></span>
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="float-field" data-for="section">
+                <select id="section" name="section" required>
+                  <option value=""> </option>
+                  <option value="A">A</option>
+                  <option value="B">B</option>
+                  <option value="C">C</option>
+                  <option value="D">D</option>
+                  <option value="E">E</option>
+                  <option value="F">F</option>
+                  <option value="G">G</option>
+                  <option value="H">H</option>
+                </select>
+                <label class="float-label" for="section">Section<span class="req-star">*</span></label>
+
+
+                <span class="float-status" aria-hidden="true"></span>
+              </div>
+            </div>
           </div>
 
-          <div id="photoPreview" class="text-center" style="display: none; margin: 1rem 0;">
-            <img id="previewImg" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary);">
+          <!-- Row 6: Mobile No. * (Full width) -->
+          <div class="form-row">
+            <div class="form-group form-group-full">
+              <div class="float-field" data-for="mobile">
+                <input type="tel" id="mobile" name="mobile" required maxlength="10" placeholder=" "
+                  pattern="[0-9]{10}" inputmode="numeric"
+                  >
+                <label class="float-label" for="mobile">Mobile No.<span class="req-star">*</span></label>
+
+
+                <span class="float-status" aria-hidden="true"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 7: Full width Address -->
+          <div class="form-row">
+            <div class="form-group form-group-full">
+              <div class="float-field" data-for="address">
+                <input type="text" id="address" name="address" maxlength="200" placeholder=" " autocomplete="off">
+                <label class="float-label" for="address">Address</label>
+
+                <span class="float-status" aria-hidden="true"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 8: Full width Other Info -->
+          <div class="form-row">
+            <div class="form-group form-group-full">
+              <div class="float-field" data-for="otherInfo">
+                <input type="text" id="otherInfo" name="otherInfo" maxlength="200" placeholder=" " autocomplete="off">
+                <label class="float-label" for="otherInfo">Other Info.</label>
+
+                <span class="float-status" aria-hidden="true"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 9: Photo Upload Section (Shifted above button) -->
+          <div class="form-row">
+            <div class="form-group form-group-full">
+              <div class="float-field mt-photo">
+                <input type="file" id="photo" name="photo" accept="image/*" required>
+                <label class="float-label static-top" for="photo">Upload Photo<span class="req-star">*</span></label>
+              </div>
+              <small class="photo-size-note">Max size: 5MB. Recommended: 2x2 inch, 300 DPI</small>
+            </div>
           </div>
 
           <button type="submit" class="full success button-mt" id="saveBtn">
+
             <span class="btn-text">✅ Save & Generate ID</span>
           </button>
+
+        </form>
+
+        <!-- Teacher/Staff Form (new, separate) -->
+        <h2 id="teacherTypeTitle" class="mt-0">Teacher / Staff Information</h2>
+
+        <form id="teacherStaffForm" novalidate>
+          <div class="form-row">
+            <div class="form-group">
+              <div class="float-field" data-for="tsName">
+                 <input type="text" id="tsName" required maxlength="50" placeholder=" " autocomplete="off">
+                <label class="float-label" for="tsName">Name<span class="req-star">*</span></label>
+                <span class="float-status" aria-hidden="true"></span>
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="float-field" data-for="tsTeacherId">
+                <input type="text" id="tsTeacherId" maxlength="60" placeholder=" " autocomplete="off">
+                <label class="float-label" for="tsTeacherId">Teacher ID</label>
+                <span class="float-status" aria-hidden="true"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <div class="float-field" data-for="tsDesignation">
+                 <input type="text" id="tsDesignation" required maxlength="50" placeholder=" " autocomplete="off">
+                <label class="float-label" for="tsDesignation">Designation<span class="req-star">*</span></label>
+                <span class="float-status" aria-hidden="true"></span>
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="float-field" data-for="tsDob">
+                 <input type="text" id="tsDob" required placeholder=" " autocomplete="off">
+                <label class="float-label" for="tsDob">Date of Birth<span class="req-star">*</span></label>
+                <span class="float-status" aria-hidden="true"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <div class="float-field" data-for="tsFatherName">
+                 <input type="text" id="tsFatherName" required maxlength="50" placeholder=" " autocomplete="off">
+                <label class="float-label" for="tsFatherName">Father's name<span class="req-star">*</span></label>
+                <span class="float-status" aria-hidden="true"></span>
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="float-field" data-for="tsHusbandName">
+                 <input type="text" id="tsHusbandName" maxlength="50" placeholder=" " autocomplete="off">
+                <label class="float-label" for="tsHusbandName">Husband's name</label>
+                <span class="float-status" aria-hidden="true"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <div class="float-field" data-for="tsBloodGroup">
+                <input type="text" id="tsBloodGroup" maxlength="5" placeholder=" " autocomplete="off">
+                <label class="float-label" for="tsBloodGroup">Blood Group</label>
+                <span class="float-status" aria-hidden="true"></span>
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="float-field" data-for="tsMobile">
+                <input type="tel" id="tsMobile" required maxlength="10" placeholder=" "
+                  pattern="[0-9]{10}" inputmode="numeric"
+                   >
+                <label class="float-label" for="tsMobile">Mobile No.<span class="req-star">*</span></label>
+                <span class="float-status" aria-hidden="true"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group form-group-full">
+              <div class="float-field" data-for="tsAddress">
+                 <input type="text" id="tsAddress" maxlength="200" placeholder=" " autocomplete="off">
+                <label class="float-label" for="tsAddress">Address</label>
+                <span class="float-status" aria-hidden="true"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group form-group-full">
+              <div class="float-field" data-for="tsOtherDetails">
+                 <input type="text" id="tsOtherDetails" maxlength="200" placeholder=" " autocomplete="off">
+                <label class="float-label" for="tsOtherDetails">Other Details</label>
+                <span class="float-status" aria-hidden="true"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group form-group-full">
+              <div class="float-field mt-photo">
+                <input type="file" id="tsPhoto" name="tsPhoto" accept="image/*" required>
+                <label class="float-label static-top" for="tsPhoto">Upload Photo<span class="req-star">*</span></label>
+              </div>
+              <small class="photo-size-note">Max size: 5MB. Recommended: 2x2 inch, 300 DPI</small>
+            </div>
+          </div>
+
+          <button type="submit" class="full success button-mt" id="tsSaveBtn">
+            <span class="btn-text">✅ Save & Generate ID</span>
+          </button>
+
+          <div id="tsFormError" class="edit-error form-error-inline"></div>
         </form>
       </div>
     </div>
+  </div>
+
 
     <!-- Right: Live Preview -->
     <div class="preview">
       <div class="id-card-preview" id="idCard">
         <div class="card-header">RK CHOICE ID</div>
         <div class="card-body">
-          <img id="cardPhoto" class="photo" src="assets/placeholder.png" alt="Student Photo">
-          <h3 id="cardName" style="margin: 10px 0; font-size: 16px; word-break: break-word;">Student Name</h3>
-          <div class="info">
-            <p><strong>ID:</strong> <span id="cardId">-</span></p>
-            <p><strong>DOB:</strong> <span id="cardDob">-</span></p>
-            <p><strong>Class:</strong> <span id="cardClass">-</span></p>
-            <p><strong>Section:</strong> <span id="cardSection">-</span></p>
-            <p><strong>Father:</strong> <span id="cardFather">-</span></p>
-            <p><strong>Mobile:</strong> <span id="cardMobile">-</span></p>
+          <!-- Student preview (existing) -->
+          <div id="studentPreviewCard">
+            <div class="student-photo-wrapper">
+              <img id="cardPhoto" class="photo" src="assets/placeholder.png" alt="">
+              <span class="student-photo-placeholder-text">Student<br>Photo</span>
+            </div>
+            <h3 id="cardName" class="card-name">Student Name</h3>
+            <div class="info">
+              <p><strong>ID:</strong> <span id="cardId">-</span></p>
+              <p><strong>Addition:</strong> <span id="cardAddition">-</span></p>
+              <p><strong>Admission No:</strong> <span id="cardAdmissionNo">-</span></p>
+              <p><strong>Roll No:</strong> <span id="cardRollNo">-</span></p>
+              <p><strong>DOB:</strong> <span id="cardDob">-</span></p>
+              <p><strong>Class:</strong> <span id="cardClass">-</span></p>
+              <p><strong>Section:</strong> <span id="cardSection">-</span></p>
+              <p><strong>Blood Group:</strong> <span id="cardBloodGroup">-</span></p>
+              <p><strong>Father's Name:</strong> <span id="cardFather">-</span></p>
+              <p><strong>Mother's Name:</strong> <span id="cardMotherName">-</span></p>
+              <p><strong>Mobile No.:</strong> <span id="cardMobile">-</span></p>
+              <p><strong>Address:</strong> <span id="cardAddress">-</span></p>
+              <p><strong>Other Info:</strong> <span id="cardOtherInfo">-</span></p>
+            </div>
+          </div>
+
+
+          <!-- Teacher/Staff preview (new) -->
+          <div id="teacherPreviewCard" class="preview-hidden">
+            <div class="student-photo-wrapper">
+              <img id="tsCardPhoto" class="photo" src="assets/placeholder.png" alt="">
+              <span class="student-photo-placeholder-text">Teacher<br>Photo</span>
+            </div>
+            <h3 id="tsCardName" class="card-name">Teacher Name</h3>
+            <div class="info">
+              <p><strong>ID:</strong> <span id="tsCardTeacherIdFinal">-</span></p>
+              <p><strong>Teacher ID:</strong> <span id="tsCardTeacherId">-</span></p>
+              <p><strong>Designation:</strong> <span id="tsCardDesignation">-</span></p>
+              <p><strong>Date of Birth:</strong> <span id="tsCardDob">-</span></p>
+              <p><strong>Father's name:</strong> <span id="tsCardFather">-</span></p>
+              <p><strong>Husband's name:</strong> <span id="tsCardHusband">-</span></p>
+              <p><strong>Blood Group:</strong> <span id="tsCardBlood">-</span></p>
+              <p><strong>Mobile No.:</strong> <span id="tsCardMobile">-</span></p>
+              <p><strong>Address:</strong> <span id="tsCardAddress">-</span></p>
+              <p><strong>Other Details:</strong> <span id="tsCardOther">-</span></p>
+            </div>
           </div>
         </div>
       </div>
@@ -150,21 +419,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
-    <!-- Firebase Configuration -->
-    <script>
-      const firebaseConfig = {
-        apiKey: "AIzaSyCyUuz7QVLswGTs9RwdDNy1RSDYUKEyfIw",
-        authDomain: "my-id-card-app-b2bbc.firebaseapp.com",
-        projectId: "my-id-card-app-b2bbc",
-        storageBucket: "my-id-card-app-b2bbc.firebasestorage.app",
-        messagingSenderId: "335385118535",
-        appId: "1:335385118535:web:14033f686c0216a771ae62"
-      };
-      
-      if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-      }
-    </script>
+    <!-- Centralized Firebase Configuration -->
+    <script src="src/config/firebase-config.js?v=2.0"></script>
 
     <!-- Utils -->
     <script src="js/helpers.js?v=a94822a"></script>
@@ -172,22 +428,16 @@
     <!-- Auth Controller -->
     <script src="js/controllers/auth.controller.js?v=a94822a"></script>
 
+    <!-- Teacher/Staff Data Controller (Required for dbTeachersCollection) -->
+    <script src="js/controllers/teacher-staff-data.controller.js?v=a94822a"></script>
     <!-- ID Form Controller -->
     <script src="js/controllers/id-form.controller.js?v=a94822a"></script>
+    <!-- Teacher/Staff ID Form Controller -->
+    <script src="js/controllers/teacher-staff-id-form.controller.js?v=2.0"></script>
 
-   <!-- Theme -->
-   <script>
-     (function() {
-       const t = localStorage.getItem('theme') || 'dark';
-       document.documentElement.setAttribute('data-theme', t);
-       const btn = document.getElementById('themeToggle');
-       if (btn) btn.textContent = t === 'light' ? '☀️' : '🌙';
-     })();
-     document.getElementById('themeToggle')?.addEventListener('click', function() {
-       const current = document.documentElement.getAttribute('data-theme');
-       const next = current === 'light' ? 'dark' : 'light';
-       document.documentElement.setAttribute('data-theme', next);
-       localStorage.setItem('theme', next);
-       this.textContent = next === 'light' ? '☀️' : '🌙';
-     });
-   </script>
+    <!-- UI-only helpers (floating labels + form toggle) -->
+    <script src="js/controllers/id-form.ui.js?v=1.0"></script>
+
+
+   <!-- Centralized Theme System -->
+   <script src="src/js/theme.js?v=2.0"></script>

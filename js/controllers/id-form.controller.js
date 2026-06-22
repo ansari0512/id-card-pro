@@ -4,38 +4,98 @@
  */
 
 /**
- * Mock mode detector
+ * Mock mode detector - delegates to shared implementation in helpers.js
  */
 window.isMockMode = function() {
-  return !window.firebase?.firestore;
+  return window.commonIsMockMode && window.commonIsMockMode();
 };
 
 /**
- * Apply proper case to input
+ * Apply proper case to input - delegates to shared implementation in helpers.js
  */
 window.applyProperCase = function(input) {
-  const pos = input.selectionStart;
-  input.value = window.toProperCase(input.value);
-  input.setSelectionRange(pos, pos);
+  return window.commonApplyProperCase && window.commonApplyProperCase(input);
 };
 
 /**
  * Update ID card preview
  */
 window.updateIdPreview = function() {
-  document.getElementById('cardName').textContent = document.getElementById('name').value || 'Student Name';
-  document.getElementById('cardClass').textContent = document.getElementById('class').value || '-';
-  document.getElementById('cardSection').textContent = document.getElementById('section').value || '-';
-  document.getElementById('cardFather').textContent = document.getElementById('father').value || '-';
-  const mob = document.getElementById('mobile').value;
-  document.getElementById('cardMobile').textContent = mob ? mob.replace(/(\d{5})(\d{5})/, '$1 $2') : '-';
-  const dob = document.getElementById('dob').value;
-  document.getElementById('cardDob').textContent = dob || '-';
+    document.getElementById('cardName').textContent = document.getElementById('name').value || 'Student Name';
+    document.getElementById('cardClass').textContent = document.getElementById('class').value || '-';
+    document.getElementById('cardSection').textContent = document.getElementById('section').value || '-';
+    document.getElementById('cardFather').textContent = document.getElementById('father').value || '-';
+    const mob = document.getElementById('mobile').value;
+    document.getElementById('cardMobile').textContent = mob ? mob.replace(/(\d{5})(\d{5})/, '$1 $2') : '-';
+    const dob = document.getElementById('dob').value;
+    document.getElementById('cardDob').textContent = dob || '-';
+
+    // Optional fields preview (only if preview spans exist)
+    const el = (id) => document.getElementById(id);
+    const setIf = (spanId, inputId) => {
+      const span = el(spanId);
+      const input = el(inputId);
+      if (!span || !input) return;
+      const v = input.value?.trim();
+      span.textContent = v ? v : '-';
+    };
+    setIf('cardAddition', 'addition');
+    setIf('cardAdmissionNo', 'admissionNo');
+    setIf('cardRollNo', 'rollNo');
+    setIf('cardMotherName', 'motherName');
+    setIf('cardBloodGroup', 'bloodGroup');
+    setIf('cardOtherInfo', 'otherInfo');
+    setIf('cardAddress', 'address');
+
 };
 
 /**
  * Submit student form
  */
+window.generateTeacherStaffId = async function(schoolId) {
+  // Teacher/Staff ID generation (separate counter)
+  const year = new Date().getFullYear();
+  let schoolCode = 'SCH';
+  try {
+    const schoolDoc = await firebase.firestore().collection('schools').doc(schoolId).get();
+    if (schoolDoc.exists) {
+      const nm = schoolDoc.data().schoolName || '';
+      schoolCode = nm.split(/\s+/).filter(Boolean).map(w => w[0].toUpperCase()).join('').slice(0, 4) || 'SCH';
+    }
+  } catch (err) {}
+
+  const counterRef = firebase.firestore().collection('schools').doc(schoolId).collection('counters').doc(String(year));
+  // Use a separate field in same counter doc to avoid schema changes.
+  // If missing, start at 0.
+  const next = await firebase.firestore().runTransaction(async (tx) => {
+    const doc = await tx.get(counterRef);
+    const data = doc.exists ? doc.data() : {};
+    const current = data.teacherCount || 0;
+    tx.set(counterRef, { teacherCount: current + 1 }, { merge: true });
+    return current + 1;
+  });
+
+  return `${schoolCode}-TCH-${year}-${String(next).padStart(4, '0')}`;
+};
+
+window.uploadTeacherStaffPhoto = async function(schoolId, teacherId, file, teacherName) {
+  let schoolName = 'School';
+  try {
+    const doc = await firebase.firestore().collection('schools').doc(schoolId).get();
+    if (doc.exists) schoolName = doc.data().schoolName || 'School';
+  } catch (e) {}
+
+  const safeSchoolName = String(schoolName).replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
+  const safeTeacherName = String(teacherName || teacherId).replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
+  const ext = file.type.includes('png') ? 'png' : 'jpg';
+  // Storage rule match ke liye path teacher_photos se hi start karega
+  const path = `teacher_photos/${safeSchoolName}/${safeTeacherName}_${teacherId}.${ext}`;
+  
+  const storageRef = firebase.storage().ref().child(path);
+  const snapshot = await storageRef.put(file, { contentType: file.type });
+  return await snapshot.ref.getDownloadURL();
+};
+
 window.submitStudentForm = async function(e) {
   e.preventDefault();
   const btn = document.getElementById('saveBtn');
@@ -53,15 +113,25 @@ window.submitStudentForm = async function(e) {
     const cls = document.getElementById('class').value;
     const section = document.getElementById('section').value;
     const mobile = document.getElementById('mobile').value.trim();
+
+    // Optional fields
+    const addition = window.sanitize(document.getElementById('addition')?.value.trim() || '');
+    const admissionNo = window.sanitize(document.getElementById('admissionNo')?.value.trim() || '');
+    const rollNo = window.sanitize(document.getElementById('rollNo')?.value.trim() || '');
+    const motherName = window.sanitize(document.getElementById('motherName')?.value.trim() || '');
+    const bloodGroup = window.sanitize(document.getElementById('bloodGroup')?.value.trim() || '');
+    const otherInfo = window.sanitize(document.getElementById('otherInfo')?.value.trim() || '');
+
     const address = window.sanitize(document.getElementById('address').value.trim());
     const dob = document.getElementById('dob').value.trim();
     const photoFile = document.getElementById('photo').files[0];
+
 
     // Validation
     if (!/^\d{10}$/.test(mobile)) throw new Error('Mobile number must be 10 digits');
     if (!photoFile) throw new Error('Photo is required');
     if (!photoFile.type.startsWith('image/')) throw new Error('Only image files allowed');
-    if (photoFile.size > 5 * 1024 * 1024) throw new Error('Photo must be less than 5MB');
+    if (photoFile.size > 3 * 1024 * 1024) throw new Error('Photo must be less than 3MB');
 
     const studentId = await window.generateStudentId(user.uid);
 
@@ -73,11 +143,27 @@ window.submitStudentForm = async function(e) {
       id: studentId,
       uid: user.uid,
       schoolId: user.uid,
-      name, father, class: cls, section, mobile, address, dob,
+      name,
+      father,
+      class: cls,
+      section,
+      mobile,
+      address,
+      dob,
+
+      // Optional fields
+      addition,
+      admissionNo,
+      rollNo,
+      motherName,
+      bloodGroup,
+      otherInfo,
+
       photo: photoUrl,
       createdAt: Date.now(),
       updatedAt: Date.now()
     };
+
 
     if (window.isMockMode()) {
       const newStudent = { ...student, docId: 'doc_' + Date.now() };
@@ -94,7 +180,6 @@ window.submitStudentForm = async function(e) {
 
     // Reset form
     document.getElementById('studentForm').reset();
-    document.getElementById('photoPreview').style.display = 'none';
     document.getElementById('cardPhoto').src = 'assets/placeholder.png';
     document.getElementById('cardId').textContent = '-';
     window.updateIdPreview();
@@ -118,33 +203,77 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Proper case for inputs
-    ['name', 'father', 'address'].forEach(id => {
+    ['name', 'father', 'address', 'addition', 'motherName', 'otherInfo'].forEach(id => {
       const el = document.getElementById(id);
       if (el) {
         el.addEventListener('input', function() {
-          const pos = this.selectionStart;
-          this.value = window.toProperCase(this.value);
-          this.setSelectionRange(pos, pos);
+          window.applyProperCase(this);
         });
       }
     });
+
+    // Mobile number input filter
+    const mobileInput = document.getElementById('mobile');
+    if (mobileInput) {
+      mobileInput.addEventListener('input', function() {
+        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
+      });
+    }
+
+    // Teacher/Staff form proper case and mobile filter
+    const teacherFields = ['tsName', 'tsDesignation', 'tsFatherName', 'tsHusbandName', 'tsAddress', 'tsOtherDetails'];
+    teacherFields.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('input', function() {
+          window.applyProperCase(this);
+        });
+      }
+    });
+
+    const tsMobileInput = document.getElementById('tsMobile');
+    if (tsMobileInput) {
+      tsMobileInput.addEventListener('input', function() {
+        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
+      });
+    }
+
+    // Date picker activation for DOB fields
+    function setupDatePicker(inputId) {
+      const el = document.getElementById(inputId);
+      if (!el) return;
+      el.addEventListener('focus', function() {
+        this.type = 'date';
+      });
+      el.addEventListener('blur', function() {
+        if (!this.value) this.type = 'text';
+      });
+    }
+    setupDatePicker('dob');
+    setupDatePicker('tsDob');
 
     // Live preview
     document.getElementById('studentForm').querySelectorAll('input, select').forEach(el => {
       el.addEventListener('input', window.updateIdPreview);
     });
 
-    // Photo preview
+    // Photo upload → live card preview only
     document.getElementById('photo').addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = ev => {
-        document.getElementById('previewImg').src = ev.target.result;
         document.getElementById('cardPhoto').src = ev.target.result;
-        document.getElementById('photoPreview').style.display = 'block';
+        document.querySelector('#studentPreviewCard .student-photo-placeholder-text').style.display = 'none';
       };
       reader.readAsDataURL(file);
+    });
+
+    // Hide placeholder when real photo loads
+    document.getElementById('cardPhoto').addEventListener('load', function() {
+      if (this.src !== 'assets/placeholder.png') {
+        document.querySelector('#studentPreviewCard .student-photo-placeholder-text').style.display = 'none';
+      }
     });
 
     // Form submit

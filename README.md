@@ -1,155 +1,54 @@
 # 🎓 RK Choice ID Card System
 
-A modern, **production-ready** Student ID Card Management System built with Firebase. Designed for schools and educational institutes to create, manage, and print professional ID cards with zero infrastructure cost.
-
-**✨ Now with Professional Architecture & Mobile-First Design!**
-
----
-
-## 🏢 Professional Architecture
-
-### 📁 Modular Structure
-```
-src/
-├── styles/           # Modular CSS Architecture
-│   ├── variables.css   # Design tokens & themes
-│   ├── base.css        # Reset & typography
-│   ├── buttons.css     # Button components
-│   ├── forms.css       # Form components
-│   ├── components.css  # UI components
-│   ├── navigation.css  # Navigation & topbar
-│   ├── utilities.css   # Helper classes
-│   ├── performance.css # Optimizations
-│   ├── components/     # Component-specific styles
-│   │   └── modal.css
-│   └── pages/          # Page-specific styles
-│       ├── dashboard.css
-│       ├── login.css
-│       ├── admin.css
-│       └── print.css
-├── services/        # Business Logic Layer
-│   ├── firebase.service.js
-│   ├── auth.service.js
-│   ├── student.service.js
-│   └── utility.service.js
-├── components/      # Reusable UI components
-└── utils/           # Helper utilities
-```
-
-### 📱 Mobile-First Design
-- **Touch-friendly** interface with 44px+ touch targets
-- **Responsive grid** layouts that adapt to any screen size
-- **iOS zoom prevention** with proper font sizing
-- **Performance optimized** with GPU acceleration
-- **Accessibility compliant** with proper contrast and focus states
-
-### ⚡ Performance Features
-- **Modular CSS** for faster loading and better caching
-- **Service layer architecture** for maintainable code
-- **Lazy loading** support for images
-- **Print optimizations** for high-quality ID card printing
-- **Reduced motion** support for accessibility
+A modern, **production-ready** Student & Teacher/Staff ID Card Management System built with Firebase. Designed for schools and educational institutes to create, manage, and print professional ID cards with zero infrastructure cost.
 
 ---
 
 ## 📋 Table of Contents
 
-- [Features](#features)
-- [How It Works](#how-it-works)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Setup Guide](#setup-guide)
-- [Deployment](#deployment)
-- [Usage Guide](#usage-guide)
-- [Security](#security)
-- [Browser Support](#browser-support)
-- [License](#license)
+- [Features](#-features)
+- [Tech Stack](#-tech-stack)
+- [Project Structure](#-project-structure)
+- [Setup Guide](#-setup-guide)
+- [Deployment](#-deployment)
+- [Usage Guide](#-usage-guide)
+- [Security](#-security)
+- [Browser Support](#-browser-support)
 
 ---
 
 ## ✨ Features
 
 ### For Admin
-- ✅ **Create School Accounts** — One-click school registration with auto-generated Firebase credentials
-- ✅ **View All Schools** — See total schools, active/inactive counts, and student statistics
+- ✅ **Create School Accounts** — One-click school registration
+- ✅ **View All Schools** — Total schools, active/inactive counts, student statistics
 - ✅ **Manage Schools** — Activate/deactivate schools remotely
 - ✅ **Access All Students** — View and search students across any school
-- ✅ **Dashboard Analytics** — Real-time stats on total schools and total students
+- ✅ **Export Schools Data** — Download school data as CSV
 
 ### For Schools
 - ✅ **Student Management** — Add, edit, delete student records with photo upload
-- ✅ **Bulk Operations** — Select multiple students for batch printing or deletion
-- ✅ **Smart Search & Filter** — Find students instantly by name, ID, or class
-- ✅ **Export Data** — Download student data as CSV/Excel
-- ✅ **Photo Management** — Bulk download all student photos as ZIP archive
+- ✅ **Teacher/Staff Management** — Full CRUD for teacher/staff records
+- ✅ **Bulk Operations** — Select multiple students/teachers for batch printing or deletion
+- ✅ **Smart Search & Filter** — Find students by name, ID, or class
+- ✅ **CSV/Excel Import** — Bulk import students from CSV or Excel files
+- ✅ **Export Data** — Download student data as CSV
+- ✅ **Photo Management** — Bulk download all photos as ZIP archive
+- ✅ **Student Promotion** — Promote students to next class/section
 - ✅ **ID Card Preview** — Live preview before saving
 
 ### ID Card Printing
-- ✅ **Batch Printing** — Print multiple ID cards at once (3 per A4 row)
+- ✅ **Student ID Cards** — Portrait layout, 3 per A4 row
+- ✅ **Teacher/Staff ID Cards** — Landscape layout, 3 per A4 row
+- ✅ **Batch Printing** — Print multiple ID cards at once
 - ✅ **PDF Export** — Save as PDF directly from browser
-- ✅ **Individual Print** — Print single card from student card view
-- ✅ **Professional Layout** — Clean, school-branded design with QR code
+- ✅ **QR Code** — Auto-generated QR codes on every card
 
 ### User Experience
-- ✅ **Dark & Light Themes** — Toggle between dark/light mode (persisted)
+- ✅ **Dark & Light Themes** — Toggle with persistence
 - ✅ **Fully Responsive** — Works on desktop, tablet, and mobile
-- ✅ **Real-time Updates** — Instant feedback with toast notifications
-- ✅ **Secure Authentication** — Role-based access control (Admin vs School)
-
----
-
-## 🔧 How It Works
-
-### Architecture
-
-```
-┌─────────────────┐
-│   User (Browser)│
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐      ┌────────────────────┐
-│    Firebase     │◄────►│  Security Rules    │
-│  Authentication │      │  (Data Isolation)  │
-└────────┬────────┘      └────────────────────┘
-         │
-         ▼
-┌─────────────────┐      ┌────────────────────┐
-│   Firestore DB  │◄────►│  Per-School Data   │
-│  (Users, Schools│      │   Segregation      │
-│   Students)     │      └────────────────────┘
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Firebase Storage│
-│  (Student Photos)│
-└─────────────────┘
-```
-
-### User Roles
-
-| Role | Access | Can Do |
-|------|--------|--------|
-| **Admin** | `admin-panel.html` | Create/disable schools, view all student data, full system control |
-| **School** | `dashboard.html` | Manage own students only, create/print ID cards, export data |
-
-### Authentication Flow
-
-1. User visits `index.html` (login page)
-2. Enters email/password
-3. System checks user's `role` field in Firestore (`users/{uid}`)
-4. Redirects automatically:
-   - `admin` → Admin Panel
-   - `school` → School Dashboard
-
-### Data Isolation
-
-Each school is identified by their Firebase User UID. Firestore security rules ensure:
-
-- **Schools** can only read/write their own `schools/{schoolId}` and `schools/{schoolId}/students/{studentId}`
-- **Admin** can read/write everything
-- All data is automatically scoped by `request.auth.uid`
+- ✅ **Real-time Updates** — Toast notifications for all actions
+- ✅ **Secure Authentication** — Role-based access (Admin vs School)
 
 ---
 
@@ -157,11 +56,11 @@ Each school is identified by their Firebase User UID. Firestore security rules e
 
 | Layer | Technology |
 |-------|------------|
-| **Frontend** | HTML5, CSS3 (Modern), Vanilla JavaScript (ES6+) |
+| **Frontend** | HTML5, CSS3 (CSS Variables, Grid), Vanilla JavaScript (ES6+) |
 | **Backend** | Firebase (Serverless) |
 | **Database** | Cloud Firestore (NoSQL) |
 | **Auth** | Firebase Authentication (Email/Password) |
-| **Storage** | Firebase Storage (Student photos) |
+| **Storage** | Firebase Storage (Student & Teacher photos) |
 | **Hosting** | Firebase Hosting (or any static host) |
 | **Fonts** | Google Fonts (Poppins) |
 
@@ -174,58 +73,107 @@ Each school is identified by their Firebase User UID. Firestore security rules e
 ```
 id-card-pro/
 │
-├── 📄 index.html              # Login page (role-based redirect)
-├── 📄 dashboard.html          # School dashboard (school view)
-├── 📄 admin-panel.html        # Admin dashboard (manage schools)
-├── 📄 id-form.html            # Create/Edit student + ID card form
-├── 📄 students.html           # Manage students (view/edit/delete/bulk)
-├── 📄 print.html              # Print ID cards (A4 layout)
+├── 📄 index.html                  # Login page (role-based redirect)
+├── 📄 dashboard.html              # School dashboard
+├── 📄 id-form.html                # Create student + teacher/staff ID card
+├── 📄 students.html               # Student management (CRUD, import, promote)
+├── 📄 teacher-staff.html          # Teacher/staff management (CRUD, search)
+├── 📄 print.html                  # Print student ID cards (A4 portrait)
+├── 📄 teacher-staff-card-print.html  # Print teacher/staff ID cards (A4 landscape)
+├── 📄 admin-panel.html            # Admin dashboard (manage schools)
+├── 📄 admin-students.html         # Admin view of all students
 │
-├── 🗂️ css/
-│   └── style.css              # All styles + dark/light theme
+├── 🗂️ src/
+│   ├── 📁 config/
+│   │   └── firebase-config.js     # Centralized Firebase configuration
+│   ├── 📁 js/
+│   │   ├── theme.js               # ThemeManager class
+│   │   ├── common-functions.js    # Shared utility functions
+│   │   ├── performance.js         # Performance optimizations
+│   │   ├── admin-excel-styles.js  # Excel export styles
+│   │   └── 📁 pages/
+│   │       ├── login.js           # Login page logic
+│   │       ├── dashboard.js       # Dashboard page logic
+│   │       └── students.js        # Students page tab switching
+│   └── 📁 styles/
+│       ├── main.css               # Master stylesheet (imports all modules)
+│       ├── variables.css          # Design tokens & CSS variables
+│       ├── base.css               # Reset & typography
+│       ├── buttons.css            # Button components
+│       ├── forms.css              # Form components
+│       ├── components.css         # UI components (cards, modals, etc.)
+│       ├── navigation.css         # Topbar & navigation
+│       ├── utilities.css          # Helper classes (.hidden, .d-none, etc.)
+│       ├── performance.css        # GPU acceleration, reduced motion
+│       ├── responsive.css         # Mobile-first responsive breakpoints
+│       ├── id-form-floating.css   # Floating label inputs for ID form
+│       ├── 📁 components/
+│       │   └── modal.css          # Modal dialog styles
+│       └── 📁 pages/
+│           ├── login.css          # Login page styles
+│           ├── dashboard.css      # Dashboard page styles
+│           ├── admin.css          # Admin panel styles
+│           ├── students.css       # Students page styles
+│           ├── students-layout.css    # Students page layout grid
+│           ├── students-components.css # Students page components
+│           ├── print.css          # Student print page (CSS variables, A4 portrait)
+│           └── teacher-staff-print.css # Teacher print page (CSS variables, A4 landscape)
 │
 ├── 🗂️ js/
-│   ├── firebase-config.js     # Firebase project configuration
-│   ├── auth.controller.js     # Login, logout, role detection
-│   ├── dashboard.controller.js# School dashboard logic
-│   ├── admin.controller.js    # Admin panel logic
-│   ├── student.controller.js  # Student CRUD operations
-│   ├── id-form.controller.js  # ID card creation + QR generator
-│   ├── print.controller.js    # Print page logic
-│   └── helpers.js             # Utility functions (CSV export, ZIP, etc.)
+│   ├── helpers.js                 # Utility functions (showToast, sanitize, etc.)
+│   └── 📁 controllers/
+│       ├── auth.controller.js     # Login, logout, role detection
+│       ├── dashboard.controller.js    # School dashboard logic
+│       ├── admin.controller.js    # Admin school CRUD
+│       ├── admin-panel-init.js    # Admin panel initialization
+│       ├── admin-panel-inline.js  # Admin panel inline handlers
+│       ├── admin-students-data.controller.js  # Admin students data
+│       ├── admin-students-ui.controller.js    # Admin students UI
+│       ├── student-data.controller.js     # Student CRUD + import/export
+│       ├── student-ui.controller.js       # Student UI (modals, filters, tabs)
+│       ├── student.controller.js          # Legacy student controller
+│       ├── id-form.controller.js          # Student ID card creation
+│       ├── id-form.ui.js                  # ID form UI (floating labels, toggle)
+│       ├── teacher-staff-data.controller.js   # Teacher CRUD + export
+│       ├── teacher-staff-ui.controller.js     # Teacher UI (search, edit modal)
+│       ├── teacher-staff-id-form.controller.js # Teacher ID card creation
+│       ├── teacher-staff-print.controller.js  # Teacher print page logic
+│       ├── print.controller.js         # Student print page logic
+│       └── print-choice-modal.controller.js   # Print choice modal on dashboard
 │
-├── 🔒 firestore.rules         # Firestore security rules
-├── 🗂️ storage.rules           # Firebase Storage security rules
-├── 📘 firebase.json           # Firebase Hosting config
+├── 🗂️ functions/
+│   ├── index.js                   # Cloud Functions (deletion logging)
+│   └── package.json               # Functions dependencies
 │
-├── 🗂️ .firebase/              # Firebase CLI cache (gitignored)
-├── 📄 package.json            # Dev tools (local server only)
+├── 🗂️ assets/
+│   └── placeholder.png            # Default avatar placeholder
 │
-└── 📖 README.md               # This file
+├── 🔒 firestore.rules            # Firestore security rules
+├── 🗂️ storage.rules              # Firebase Storage security rules
+├── 📘 firebase.json              # Firebase Hosting config
+├── 📄 .firebaserc                # Firebase project alias
+├── 📄 package.json               # Dev tools (local server only)
+├── 📄 .gitignore                 # Git ignore rules
+│
+└── 📖 README.md                  # This file
 ```
 
 ---
 
 ## 🛠️ Setup Guide
 
-Follow these steps to set up the system on your own Firebase project.
-
 ### Step 1: Create Firebase Project
 
 1. Go to [Firebase Console](https://console.firebase.google.com/)
 2. Click **"Add project"**
 3. Enter project name: `rk-choice-id` (or any name)
-4. Enable Google Analytics (optional)
-5. Click **Create project**
+4. Click **Create project**
 
 ### Step 2: Enable Firebase Services
-
-In your Firebase project, enable these services:
 
 #### 1. Authentication
 - Navigate to **Authentication → Sign-in method**
 - Enable **Email/Password** provider
-- (Optional: Enable Google Sign-In)
 
 #### 2. Firestore Database
 - Click **Create database**
@@ -235,30 +183,16 @@ In your Firebase project, enable these services:
 #### 3. Storage
 - Navigate to **Storage**
 - Click **Get started**
-- Accept default settings (test mode, then secure with rules)
 
 ### Step 3: Get Firebase Configuration
 
 1. In Firebase Console, go to **Project Settings** (gear icon)
 2. Scroll to **"Your apps"** section
 3. Click **Web** icon (`</>`) to add a web app
-4. Name it: `rk-choice-id-web` (or skip nickname)
-5. Don't enable Firebase Hosting yet (optional)
-6. Copy the **config object** (it looks like this):
+4. Copy the **config object**
 
-```javascript
-const firebaseConfig = {
-  apiKey: "AIzaSy...",
-  authDomain: "your-project.firebaseapp.com",
-  projectId: "your-project",
-  storageBucket: "your-project.firebasestorage.app",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abc123"
-};
-```
-
-7. Open `js/firebase-config.js`
-8. Replace the entire content with your config values:
+5. Open `src/config/firebase-config.js`
+6. Replace the content with your config values:
 
 ```javascript
 const firebaseConfig = {
@@ -273,13 +207,11 @@ const firebaseConfig = {
 
 ### Step 4: Deploy Security Rules
 
-⚠️ **Important** — Security rules protect your data. Deploy them before adding any users.
+⚠️ **Important** — Deploy rules before adding any users.
 
 #### Firestore Rules
 
-1. Go to **Firestore Database → Rules** tab
-2. Delete any existing rules
-3. Copy & paste the contents of `firestore.rules` file:
+Go to **Firestore Database → Rules** tab and paste contents of `firestore.rules`:
 
 ```javascript
 rules_version = '2';
@@ -303,64 +235,117 @@ service cloud.firestore {
       return request.resource.data.name is string &&
              request.resource.data.name.size() > 0 &&
              request.resource.data.name.size() <= 100 &&
+             request.resource.data.father is string &&
+             request.resource.data.father.size() > 0 &&
+             request.resource.data.class is string &&
+             request.resource.data.class.size() > 0 &&
              request.resource.data.section is string &&
              request.resource.data.mobile is string &&
-             request.resource.data.mobile.size() == 10;
+             request.resource.data.mobile.matches('^[0-9]{10}$') &&
+             request.resource.data.schoolId is string &&
+             request.resource.data.schoolId.size() > 0;
     }
 
-    // ── Users ──────────────────────────────────────────────
+    function validTeacherData() {
+      return request.resource.data.name is string &&
+             request.resource.data.name.size() > 0 &&
+             request.resource.data.name.size() <= 100 &&
+             request.resource.data.designation is string &&
+             request.resource.data.designation.size() > 0 &&
+             request.resource.data.fatherName is string &&
+             request.resource.data.fatherName.size() > 0 &&
+             request.resource.data.dob is string &&
+             request.resource.data.dob.size() > 0 &&
+             request.resource.data.mobile is string &&
+             request.resource.data.mobile.matches('^[0-9]{10}$');
+    }
+
+    function validPendingStudentData() {
+      return request.resource.data.name is string &&
+             request.resource.data.name.size() > 0 &&
+             request.resource.data.name.size() <= 100 &&
+             request.resource.data.class is string &&
+             request.resource.data.class.size() > 0;
+    }
+
     match /users/{uid} {
       allow read:  if request.auth != null && request.auth.uid == uid;
       allow write: if request.auth != null &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // ── Schools ────────────────────────────────────────────
     match /schools/{schoolId} {
       allow read:  if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
       allow write: if isAdmin();
 
-      // ── Classes subcollection ──────────────────────────
+      match /pending_students/{studentId} {
+        allow read:  if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
+        allow create: if isLoggedIn() && isSchoolOwner(schoolId) && validPendingStudentData();
+        allow update: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId)) && validPendingStudentData();
+        allow delete: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
+      }
+
+      match /counters/{year} {
+        allow read: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
+        allow write: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId)) &&
+          request.resource.data.keys().hasOnly(['count', 'teacherCount']) &&
+          (
+            (!('count' in request.resource.data) || (request.resource.data.count is number && request.resource.data.count >= 0)) &&
+            (!('teacherCount' in request.resource.data) || (request.resource.data.teacherCount is number && request.resource.data.teacherCount >= 0))
+          );
+      }
+
+      match /teachers/{teacherId} {
+        allow read: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
+        allow create: if isLoggedIn() && isSchoolOwner(schoolId) && validTeacherData();
+        allow update: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId)) && validTeacherData();
+        allow delete: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
+      }
+
       match /classes/{className} {
         allow read:  if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
         allow write: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
 
-        // ── Students subcollection ─────────────────────
         match /students/{studentId} {
           allow read: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
-
-          allow create: if isLoggedIn() &&
-            isSchoolOwner(schoolId) &&
+          allow create: if isLoggedIn() && isSchoolOwner(schoolId) &&
             validStudentData() &&
             request.resource.data.class == className &&
             request.resource.data.schoolId == schoolId;
-
-          allow update: if isLoggedIn() &&
-            (isAdmin() || isSchoolOwner(schoolId)) &&
-            validStudentData();
-
+          allow update: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId)) && validStudentData();
           allow delete: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
         }
       }
+    }
+
+    match /deletion_logs/{logId} {
+      allow read:  if isAdmin();
+      allow write: if false;
     }
   }
 }
 ```
 
-4. Click **Publish**
+Click **Publish**.
 
 #### Storage Rules
 
-1. Go to **Storage → Rules** tab
-2. Delete any existing rules
-3. Copy & paste contents of `storage.rules` file:
+Go to **Storage → Rules** tab and paste contents of `storage.rules`:
 
 ```javascript
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    match /students/{schoolName}/{className}/{fileName} {
-      allow read: if request.auth != null;
+    match /student_photos/{schoolName}/{className}/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null &&
+        request.resource.size < 5 * 1024 * 1024 &&
+        request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null;
+    }
+
+    match /teacher_photos/{schoolName}/{fileName} {
+      allow read: if true;
       allow write: if request.auth != null &&
         request.resource.size < 5 * 1024 * 1024 &&
         request.resource.contentType.matches('image/.*');
@@ -370,92 +355,43 @@ service firebase.storage {
 }
 ```
 
-4. Click **Publish**
-
----
+Click **Publish**.
 
 ### Step 5: Create Admin Account
 
-You need one admin user to create schools.
-
-#### Option A: Using Firebase Console (Recommended)
-
 1. Go to **Firebase Console → Authentication → Users**
-2. Click **"Add user"**
-   - Email: `admin@yourdomain.com` (your choice)
-   - Password: Choose a strong password
-3. After creation, **copy the User UID** (long string like `AbCdEf123...`)
-
-4. Go to **Firestore Database**
-5. Create collection: `users` (if it doesn't exist)
-6. Add document:
-   - Document ID: **Paste the Admin's UID exactly**
-   - Fields:
-     ```
-     role: "admin"
-     email: "admin@yourdomain.com"
-     createdAt: (set to current timestamp)
-     ```
-7. Done! You can now login at `index.html`
-
-#### Option B: Using Code (Firebase Extensions or CLI)
-
-If you prefer command-line, use Firebase Admin SDK to create the admin user and set role.
-
----
+2. Click **"Add user"** with your desired email/password
+3. Copy the **User UID**
+4. Go to **Firestore Database → users collection**
+5. Create document with Document ID = Admin's UID:
+   ```
+   role: "admin"
+   email: "admin@yourdomain.com"
+   createdAt: (current timestamp)
+   ```
 
 ### Step 6: Test Locally
 
-#### Option A: Using Firebase Hosting (Easiest)
-
 ```bash
-# Install Firebase CLI
-npm install -g firebase-tools
-
-# Login to Firebase
-firebase login
-
-# Initialize in project folder
-firebase init
-
-# Choose:
-# - Hosting: Configure files for Firebase Hosting
-# - Firestore: Setup rules
-# - Storage: Setup rules
-
-# Deploy everything
-firebase deploy
-```
-
-Your app will be live at: `https://your-project.web.app`
-
-#### Option B: Using a Local Server
-
-Just for testing on your machine:
-
-```bash
-# Using Python (no install needed)
+# Using Python
 python -m http.server 3000
 
 # OR using Node.js
 npx serve .
 
-# Then open http://localhost:3000 in browser
+# Then open http://localhost:3000
 ```
-
----
 
 ### Step 7: Deploy to Production
 
-#### 1. Deploy Rules First (Security)
-
 ```bash
+# Install Firebase CLI
+npm install -g firebase-tools
+firebase login
+firebase init
+
+# Deploy rules first, then hosting
 firebase deploy --only firestore:rules,storage
-```
-
-#### 2. Deploy Hosting
-
-```bash
 firebase deploy --only hosting
 ```
 
@@ -468,34 +404,33 @@ firebase deploy --only hosting
 | Action | How To |
 |--------|--------|
 | **Login** | Go to `index.html`, enter admin email/password |
-| **Create School** | Admin Panel → "Add New School" → Enter school name, email, password |
-| **Share Credentials** | Give the generated email/password to school principal |
-| **View All Students** | Admin Panel → "View All Students" → See every student across all schools |
-| **Disable School** | In school list, toggle "Active" switch (prevents login) |
-| **Delete School** | Click delete icon (also deletes all student data) |
+| **Create School** | Admin Panel → "Add New School" → Enter details |
+| **View All Students** | Admin Panel → "View All Students" |
+| **Export Schools** | Admin Panel → "Export" button |
+| **Disable School** | Toggle "Active" switch in school list |
 
 ### 🏫 School Workflow
 
 | Action | How To |
 |--------|--------|
-| **First Login** | Use credentials from admin → auto-redirect to Dashboard |
-| **Create ID Card** | Dashboard → "Create New ID" → Fill form + upload photo → Save |
+| **Create Student ID** | Dashboard → "Create New ID" → Fill form → Save |
+| **Create Teacher ID** | Dashboard → "Create New ID" → Switch to Teacher/Staff tab → Fill form → Save |
 | **View Students** | Dashboard → "View Students" → Search/filter/edit/delete |
-| **Print ID Cards** | In View Students → Check students → "Print Selected" OR click 🖨️ on a card |
-| **Export Data** | In View Students → "Export CSV" → Downloads spreadsheet |
-| **Download Photos** | In View Students → "Download ZIP" → All student photos in one archive |
-| **Logout** | Click "Logout" in top-right corner |
+| **View Teachers** | Dashboard → "Teacher / Staff" → Search/edit/delete |
+| **Import Students** | Students page → "Import" → Upload CSV/Excel |
+| **Promote Students** | Students page → "Promote Students" tab → Select → Promote |
+| **Print Student IDs** | Students page → Select → "Print" |
+| **Print Teacher IDs** | Teacher page → Select → "Print" |
+| **Export Data** | Students page → "Export CSV" |
+| **Download Photos** | Students page → "Download ZIP" |
 
 ### 🖨️ Printing Guide
 
-1. Go to **View Students**
-2. Select students with checkboxes
-3. Click **"🖨️ Print Selected"**
-4. Print page opens with A4 layout (3 cards per row)
-5. Press **Ctrl+P** or click **"Print"** button
-6. Choose printer or **"Save as PDF"** to generate digital copies
-
-💡 **Tip:** Use high-quality photo paper (110lb+) for professional prints.
+1. Select students/teachers with checkboxes
+2. Click **"🖨️ Print"**
+3. Print page opens with A4 layout
+4. Press **Ctrl+P** or click **"Print"** button
+5. Choose **"Save as PDF"** for digital copies
 
 ---
 
@@ -503,29 +438,30 @@ firebase deploy --only hosting
 
 ### Data Isolation
 
-Every school's data is completely isolated:
+Each school's data is completely isolated:
 
-- Student records are stored under `schools/{schoolId}/classes/{className}/students/{studentId}`
-- Firestore rules prevent cross-school data access
-- Photos stored in `storage/students/{schoolId}/{className}/{filename}`
+- Students: `schools/{schoolId}/classes/{className}/students/{studentId}`
+- Teachers: `schools/{schoolId}/teachers/{teacherId}`
+- Pending Students: `schools/{schoolId}/pending_students/{studentId}`
+- Counters: `schools/{schoolId}/counters/{year}`
 
-### Admin Privileges
+### Validation Rules
 
-- Admin user is identified by `role: "admin"` in `users/{uid}` document
-- Admin can read/write any school's data
-- Only admin can create/disable/delete school accounts
+| Collection | Validated Fields |
+|-----------|-----------------|
+| **Students** | name, father, class, section, mobile (10-digit), schoolId |
+| **Teachers** | name, designation, fatherName, dob, mobile (10-digit) |
+| **Pending Students** | name, class |
+| **Counters** | count ≥ 0, teacherCount ≥ 0, no extra fields |
 
-### Password Security
+### Cloud Functions
 
-- Firebase handles password hashing (bcrypt)
-- Minimum 6 characters enforced
-- Rate limiting automatically applied by Firebase Auth
-
-### File Upload Security
-
-- Only image files allowed (`.jpg`, `.png`, `.gif`, `.webp`)
-- Max file size: 5MB per photo
-- Files scanned by Firebase for malware
+| Function | Trigger | Action |
+|----------|---------|--------|
+| `logDeletedSchool` | School document deleted | Logs to `deletion_logs` |
+| `logDeletedStudent` | Student document deleted | Logs to `deletion_logs` |
+| `logDeletedTeacher` | Teacher document deleted | Logs to `deletion_logs` |
+| `logDeletedPendingStudent` | Pending student deleted | Logs to `deletion_logs` |
 
 ---
 
@@ -538,19 +474,11 @@ Every school's data is completely isolated:
 | Safari | 14+ |
 | Edge | 90+ |
 
-**Note:** Requires JavaScript enabled. Cookies/local storage required for theme persistence.
-
 ---
 
 ## 📝 License
 
 MIT License — Free for personal and commercial use.
-
----
-
-## 🙋 Support
-
-For issues or feature requests, please open a GitHub issue.
 
 ---
 

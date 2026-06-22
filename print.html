@@ -9,152 +9,25 @@
   <title>Print ID Cards - RK Choice</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'dark');</script>
-
-    <style>
-      :root {
-        --bg-print: #f5f5f5;
-        --text-print: #333;
-        --toolbar-bg: white;
-        --a4-bg: white;
-        --id-card-bg: #fff;
-        --id-card-border: #e5e7eb;
-        --a4-shadow: 0 0 20px rgba(0,0,0,0.1);
-        --btn-color: #0891b2;
-        --btn-color-rgb: 8, 145, 178;
-      }
-      [data-theme="dark"] {
-        --bg-print: #0f172a;
-        --text-print: #fff;
-        --toolbar-bg: #1e293b;
-        --a4-bg: #1e293b;
-        --id-card-bg: #fff;      /* Keep ID cards white. */
-        --id-card-border: #ddd;
-        --a4-shadow: 0 0 20px rgba(0,0,0,0.4);
-      }
-      * { box-sizing: border-box; }
-      body { font-family: 'Poppins', sans-serif; background: var(--bg-print); margin: 0; padding: 10px; color: var(--text-print); transition: background 0.3s, color 0.3s; overflow-x: hidden; }
-      .toolbar { background: var(--toolbar-bg); padding: 12px; border-radius: 10px; margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-      [data-theme="dark"] .toolbar { box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
-      .toolbar h2 { margin: 0; color: #f59e0b; flex: 1 1 100%; font-size: 18px; }
-      button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; background: transparent; color: var(--btn-color); border: 1.5px solid var(--btn-color); border-radius: 10px; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; line-height: 1.2; min-height: 44px; white-space: nowrap; transition: color 0.22s ease, background-color 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease, transform 0.18s ease; box-shadow: 0 1px 2px rgba(var(--btn-color-rgb), 0.08); }
-      button:hover { background: var(--btn-color); color: #fff; transform: translateY(-1px); box-shadow: 0 8px 18px rgba(var(--btn-color-rgb), 0.22); }
-      button:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(var(--btn-color-rgb), 0.18), 0 8px 18px rgba(var(--btn-color-rgb), 0.16); }
-      button:active { transform: translateY(0); }
-      button.secondary { --btn-color: #64748b; --btn-color-rgb: 100, 116, 139; }
-      .btn-print { --btn-color: #0891b2; --btn-color-rgb: 8, 145, 178; }
-      .btn-download { --btn-color: #7c3aed; --btn-color-rgb: 124, 58, 237; }
-      .theme-toggle-print { --btn-color: #d97706; --btn-color-rgb: 217, 119, 6; min-width: 44px; padding: 8px 12px; font-size: 1.1rem; }
-      .a4-page { width: 100%; max-width: 210mm; min-height: 297mm; background: var(--a4-bg); margin: 0 auto; padding: 10mm; box-shadow: var(--a4-shadow); }
-      .cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-
-      /* ID cards keep a white background and dark text in every theme. */
-      .id-card { width: 100%; background: #fff !important; color: #333 !important; border: 1px solid #ddd; border-radius: 10px; padding: 8px; position: relative; overflow: hidden; page-break-inside: avoid; box-shadow: 0 2px 4px rgba(0,0,0,0.05); box-sizing: border-box; }
-      .id-card .header { background: #f59e0b !important; color: #000 !important; padding: 3px 8px; text-align: center; font-weight: 700; font-size: 11px; border-radius: 6px 6px 0 0; margin: -8px -8px 6px -8px; }
-      .id-card .body { display: flex; gap: 8px; align-items: flex-start; }
-      .id-card .photo { width: 55px; height: 55px; border-radius: 50%; border: 2px solid #f59e0b !important; object-fit: cover; object-position: center; flex-shrink: 0; background: #f0f0f0; }
-      .id-card .details { flex: 1; font-size: 9px; line-height: 1.3; min-width: 0; color: #333 !important; }
-      .id-card .details p { margin: 1px 0; display: flex; justify-content: space-between; gap: 4px; }
-      .id-card .details p span { text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 55%; color: #333 !important; }
-      .id-card .details strong { color: #666 !important; flex-shrink: 0; }
-      .id-card .id-number { font-size: 8px; text-align: center; margin-top: 4px; color: #888 !important; font-weight: 600; }
-      .id-card .qr { width: 40px; height: 40px; flex-shrink: 0; }
-
-      .loading-state { text-align: center; padding: 3rem; color: var(--text-print); }
-      .spinner { border: 3px solid #f3f3f3; border-top: 3px solid #f59e0b; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 1rem; }
-      @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-      /* Mobile responsive */
-      @media (max-width: 768px) {
-        body { padding: 8px; }
-        .toolbar { padding: 10px; gap: 6px; }
-        .toolbar h2 { font-size: 16px; flex: 1 1 100%; margin-bottom: 6px; }
-        button { font-size: 12px; padding: 8px 10px; min-height: 42px; flex: 1 1 auto; }
-        .theme-toggle-print { font-size: 1rem; min-width: 42px; }
-        .a4-page { width: 100%; max-width: 100%; padding: 5mm; min-height: auto; box-shadow: none; }
-        .cards-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
-        .id-card { font-size: 8px; padding: 6px; }
-        .id-card .header { font-size: 10px; padding: 2px 6px; }
-        .id-card .photo { width: 50px; height: 50px; }
-        .id-card .details { font-size: 8px; }
-        .id-card .qr { width: 35px; height: 35px; }
-      }
-      @media (max-width: 480px) {
-        body { padding: 5px; }
-        .toolbar { padding: 8px; gap: 5px; }
-        .toolbar h2 { font-size: 14px; }
-        button { font-size: 11px; padding: 6px 8px; min-height: 40px; gap: 4px; }
-        .theme-toggle-print { font-size: 0.9rem; min-width: 40px; padding: 6px 8px; }
-        .a4-page { padding: 3mm; }
-        .cards-grid { grid-template-columns: 1fr; gap: 5px; }
-        .id-card { font-size: 7.5px; padding: 5px; }
-        .id-card .header { font-size: 9px; }
-        .id-card .photo { width: 45px; height: 45px; }
-        .id-card .details { font-size: 7.5px; }
-        .id-card .qr { width: 32px; height: 32px; }
-      }
-
-      /* Print styles force a white background and dark text. */
-      @media print {
-        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-        body { background: white !important; padding: 0 !important; margin: 0 !important; color: #333 !important; }
-        .toolbar { display: none !important; }
-        .a4-page {
-          box-shadow: none !important;
-          margin: 0 !important;
-          padding: 5mm !important;
-          width: 210mm !important;
-          min-height: auto !important;
-          background: white !important;
-          box-sizing: border-box !important;
-        }
-        .cards-grid {
-          display: grid !important;
-          grid-template-columns: repeat(3, 1fr) !important;
-          gap: 4mm !important;
-          width: 100% !important;
-        }
-        .id-card {
-          background: white !important;
-          color: #333 !important;
-          border: 1px solid #ddd !important;
-          box-shadow: none !important;
-          page-break-inside: avoid !important;
-          break-inside: avoid !important;
-          width: 100% !important;
-          height: auto !important;
-          padding: 5px !important;
-          box-sizing: border-box !important;
-          overflow: hidden !important;
-          font-size: 9px !important;
-        }
-        .id-card .header { background: #f59e0b !important; color: #000 !important; font-size: 10px !important; padding: 3px 6px !important; }
-        .id-card .photo { width: 50px !important; height: 50px !important; }
-        .id-card .details { color: #333 !important; font-size: 8.5px !important; }
-        .id-card .details p span { color: #333 !important; }
-        .id-card .details strong { color: #666 !important; }
-        .id-card .id-number { color: #888 !important; font-size: 7px !important; }
-        .id-card .photo { border-color: #f59e0b !important; }
-        .id-card .qr { width: 35px !important; height: 35px !important; }
-        @page { size: A4 portrait !important; margin: 5mm !important; }
-      }
-    </style>
+  <link rel="stylesheet" href="src/styles/main.css?v=2.0">
+  <link rel="stylesheet" href="src/styles/views/_print.css?v=2.0">
 </head>
 <body>
 
    <div class="toolbar no-print">
-     <h2 style="cursor: pointer; margin: 0;" onclick="window.location.href='dashboard.html'">🖨️ Print ID Cards</h2>
+     <h2 class="cursor-pointer m-0" onclick="window.location.href='dashboard.html'">🖨️ Print ID Cards</h2>
      <button class="btn-print" onclick="window.print()">🖨️ Print</button>
      <button class="btn-download" onclick="saveToPDF()">📄 Save as PDF</button>
-     <button id="themeToggle" class="theme-toggle-print" onclick="toggleTheme()">🌙</button>
+     <button id="themeToggle" class="theme-toggle-print" onclick="window.themeManager && window.themeManager.toggleTheme()">🌙</button>
      <button class="secondary" onclick="history.length > 1 ? history.back() : window.close()">✕ Close</button>
    </div>
 
-  <div class="a4-page">
+  <div class="print-page">
     <div id="loading" class="loading-state">
       <div class="spinner"></div>
       <p>Loading student data...</p>
     </div>
-    <div id="cardsContainer" class="cards-grid" style="display: none;"></div>
+    <div id="cardsContainer" class="cards-grid d-none"></div>
   </div>
 
    <!-- Firebase SDK -->
@@ -162,21 +35,8 @@
    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-    <!-- Firebase Configuration -->
-    <script>
-      const firebaseConfig = {
-        apiKey: "AIzaSyCyUuz7QVLswGTs9RwdDNy1RSDYUKEyfIw",
-        authDomain: "my-id-card-app-b2bbc.firebaseapp.com",
-        projectId: "my-id-card-app-b2bbc",
-        storageBucket: "my-id-card-app-b2bbc.firebasestorage.app",
-        messagingSenderId: "335385118535",
-        appId: "1:335385118535:web:14033f686c0216a771ae62"
-      };
-      
-      if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-      }
-    </script>
+    <!-- Centralized Firebase Configuration -->
+    <script src="src/config/firebase-config.js?v=2.0"></script>
 
     <!-- Utils -->
     <script src="js/helpers.js?v=a94822a"></script>
@@ -187,48 +47,8 @@
     <!-- Print Controller -->
     <script src="js/controllers/print.controller.js?v=a94822a"></script>
 
-   <!-- Theme & PDF Functions -->
-   <script>
-     (function() {
-       const t = localStorage.getItem('theme') || 'dark';
-       document.documentElement.setAttribute('data-theme', t);
-       const btn = document.getElementById('themeToggle');
-       if (btn) btn.textContent = t === 'light' ? '☀️' : '🌙';
-     })();
-     
-     function toggleTheme() {
-       const current = document.documentElement.getAttribute('data-theme');
-       const next = current === 'light' ? 'dark' : 'light';
-       document.documentElement.setAttribute('data-theme', next);
-       localStorage.setItem('theme', next);
-       document.getElementById('themeToggle').textContent = next === 'light' ? '☀️' : '🌙';
-     }
-     
-     function saveToPDF() {
-       // Show instructions for better PDF output
-       const instructions = `
-📄 Save as PDF Instructions:
-
-1. Press Ctrl+P (or Cmd+P on Mac)
-2. Select "Save as PDF" as destination
-3. Set these options for best quality:
-   • Paper size: A4
-   • Margins: Default
-   • Scale: 100%
-   • Options: ✓ Background graphics
-   
-4. Click "Save" to download PDF
-
-Tip: Enable "Background graphics" for colored headers!`;
-       
-       alert(instructions);
-       
-       // Auto-trigger print dialog after 1 second
-       setTimeout(() => {
-         window.print();
-       }, 1000);
-     }
-   </script>
+   <!-- Centralized Theme System -->
+   <script src="src/js/theme.js?v=2.0"></script>
 
 </body>
 </html>

@@ -43,6 +43,7 @@ window.loadSchools = async function() {
      document.getElementById('activeSchools').textContent = schools.filter(s => s.active !== false).length;
      document.getElementById('inactiveSchools').textContent = schools.filter(s => s.active === false).length;
      document.getElementById('totalStudentsAll').textContent = '-';
+     document.getElementById('totalTeachersAll').textContent = '-';
 
     const tbody = document.getElementById('schoolsBody');
     tbody.innerHTML = '';
@@ -72,14 +73,17 @@ window.loadSchools = async function() {
       td3.innerHTML = `<strong id="count_${school.id}">...</strong>`;
 
       const td4 = document.createElement('td');
-      td4.style.cssText = 'font-size:12px;color:var(--text-muted)';
-      td4.textContent = school.createdAt ? new Date(school.createdAt).toLocaleDateString('en-IN') : '-';
+      td4.innerHTML = `<strong id="tcount_${school.id}">...</strong>`;
 
       const td5 = document.createElement('td');
-      td5.innerHTML = `<span class="badge ${active ? 'badge-active' : 'badge-inactive'}">${active ? 'Active' : 'Inactive'}</span>`;
+      td5.style.cssText = 'font-size:12px;color:var(--text-muted)';
+      td5.textContent = school.createdAt ? new Date(school.createdAt).toLocaleDateString('en-IN') : '-';
 
-       const td6 = document.createElement('td');
-       td6.className = 'actions-cell';
+      const td6 = document.createElement('td');
+      td6.innerHTML = `<span class="badge ${active ? 'badge-active' : 'badge-inactive'}">${active ? 'Active' : 'Inactive'}</span>`;
+
+       const td7 = document.createElement('td');
+       td7.className = 'actions-cell';
        
        const buttonGroup = document.createElement('div');
        buttonGroup.className = 'button-group';
@@ -88,6 +92,11 @@ window.loadSchools = async function() {
        btnView.className = 'btn-print';
        btnView.textContent = '👁️ View';
        btnView.addEventListener('click', () => window.viewStudents(school.id, school.schoolName || ''));
+
+       const btnEdit = document.createElement('button');
+       btnEdit.className = 'primary';
+       btnEdit.textContent = '✏️ Edit';
+       btnEdit.addEventListener('click', () => window.editSchool(school.id));
 
        const btnToggle = document.createElement('button');
        btnToggle.className = active ? 'warning' : 'success';
@@ -99,31 +108,54 @@ window.loadSchools = async function() {
        btnDel.textContent = '🗑️ Delete';
        btnDel.addEventListener('click', () => window.deleteSchool(school.id, school.schoolName || ''));
        
-       buttonGroup.append(btnView, btnToggle, btnDel);
-       td6.appendChild(buttonGroup);
+       buttonGroup.append(btnView, btnEdit, btnToggle, btnDel);
+       td7.appendChild(buttonGroup);
 
-      tr.append(td1, td2, td3, td4, td5, td6);
+
+      tr.append(td1, td2, td3, td4, td5, td6, td7);
       tbody.appendChild(tr);
     });
 
     document.getElementById('loadingSchools').style.display = 'none';
     document.getElementById('schoolsTable').style.display = 'table';
 
-    // Fetch student counts in the background.
+    // Fetch student and teacher counts in the background (parallelized per school).
     let total = 0;
+    let totalTeachers = 0;
     for (const school of schools) {
-      try {
-        const students = await window.dbGetAllStudents(school.id);
-        const count = students.length;
-        total += count;
-        const el = document.getElementById('count_' + school.id);
-        if (el) el.textContent = count;
-      } catch(e) {
-        const el = document.getElementById('count_' + school.id);
-        if (el) el.textContent = '0';
-      }
+      const [studentsResult, teachersResult] = await Promise.all([
+        (async () => {
+          try {
+            const students = await window.dbGetAllStudents(school.id);
+            const count = students.length;
+            const el = document.getElementById('count_' + school.id);
+            if (el) el.textContent = count;
+            return count;
+          } catch(e) {
+            const el = document.getElementById('count_' + school.id);
+            if (el) el.textContent = '0';
+            return 0;
+          }
+        })(),
+        (async () => {
+          try {
+            const teachers = await window.dbGetAllTeacherStaff(school.id);
+            const tcount = teachers.length;
+            const tel = document.getElementById('tcount_' + school.id);
+            if (tel) tel.textContent = tcount;
+            return tcount;
+          } catch(e) {
+            const tel = document.getElementById('tcount_' + school.id);
+            if (tel) tel.textContent = '0';
+            return 0;
+          }
+        })()
+      ]);
+      total += studentsResult;
+      totalTeachers += teachersResult;
     }
     document.getElementById('totalStudentsAll').textContent = total;
+    document.getElementById('totalTeachersAll').textContent = totalTeachers;
 
   } catch (err) {
     window.showToast('Schools load failed: ' + err.message, 'error');
@@ -135,15 +167,22 @@ window.loadSchools = async function() {
  * Open add school modal
  */
 window.openAddModal = function() {
-  document.getElementById('addModal').classList.add('open');
+  // Close edit modal first if open
+  if (typeof window.closeEditSchoolModal === 'function') {
+    window.closeEditSchoolModal();
+  }
+  var modal = document.getElementById('addModal');
+  if (modal) modal.classList.add('open');
 };
 
 /**
  * Close add school modal
  */
 window.closeAddModal = function() {
-  document.getElementById('addModal').classList.remove('open');
-  document.getElementById('addError').style.display = 'none';
+  var modal = document.getElementById('addModal');
+  if (modal) modal.classList.remove('open');
+  var err = document.getElementById('addError');
+  if (err) err.style.display = 'none';
 };
 
 /**
@@ -213,11 +252,29 @@ window.deleteSchool = async function(schoolId, schoolName) {
 
   try {
     const students = await window.dbGetAllStudents(schoolId);
+    // Deletion log (frontend) - so deletedBy me email aata rahe
+    try {
+      const user = firebase.auth().currentUser;
+      const deletedByEmail = user?.email || 'unknown_user_or_admin_operation';
+      await firebase.firestore().collection('deletion_logs').add({
+        collectionName: 'schools',
+        documentPath: `schools/${schoolId}`,
+        documentId: schoolId,
+        deletedData: { schoolId },
+        deletedAt: Date.now(),
+        deletedBy: deletedByEmail,
+        reason: 'School document deleted (frontend log)'
+      });
+    } catch (logErr) {
+      console.warn('Failed to write school deletion log:', logErr.message);
+    }
+
     await Promise.all(students.map(s =>
       window.dbStudents(schoolId, s.class).doc(s.docId || s.id).delete()
     ));
 
     await firebase.firestore().collection('schools').doc(schoolId).delete();
+
 
     window.showToast('School deleted successfully', 'success');
     window.loadSchools();
@@ -232,6 +289,110 @@ window.deleteSchool = async function(schoolId, schoolName) {
 window.viewStudents = function(schoolId, schoolName) {
   window.location.href = `admin-students.html?schoolId=${schoolId}&schoolName=${encodeURIComponent(schoolName)}`;
 };
+
+/**
+ * Open edit modal + prefill school data
+ */
+window.editSchool = async function(schoolId) {
+  try {
+    if (!schoolId) {
+      throw new Error('School ID is missing');
+    }
+
+    const editModal = document.getElementById('editModal');
+    const editError = document.getElementById('editError');
+    const editSchoolIdEl = document.getElementById('editSchoolId');
+    const editSchoolNameEl = document.getElementById('editSchoolName');
+    const editSchoolEmailEl = document.getElementById('editSchoolEmail');
+    const editSchoolCityEl = document.getElementById('editSchoolCity');
+
+    if (!editModal || !editSchoolIdEl || !editSchoolNameEl || !editSchoolEmailEl) {
+      throw new Error('Modal form elements not found in DOM');
+    }
+
+    const snap = await firebase.firestore().collection('schools').doc(schoolId).get();
+
+    if (!snap.exists) {
+      throw new Error('School not found in database');
+    }
+
+    const data = snap.data() || {};
+
+    editSchoolIdEl.value = schoolId;
+    editSchoolNameEl.value = data.schoolName || '';
+    editSchoolEmailEl.value = data.email || '';
+    if (editSchoolCityEl) {
+      editSchoolCityEl.value = data.city || '';
+    }
+
+    if (typeof window.closeAddModal === 'function') {
+      window.closeAddModal();
+    }
+
+    if (editError) {
+      editError.style.display = 'none';
+      editError.textContent = '';
+      editError.classList.remove('open');
+    }
+
+    editModal.classList.add('open');
+
+  } catch (err) {
+    const editError = document.getElementById('editError');
+    if (editError) {
+      editError.textContent = '❌ Error: ' + err.message;
+      editError.style.display = 'block';
+    }
+    window.showToast('⚠️ Edit failed: ' + err.message, 'error');
+  }
+};
+
+/**
+ * Update school details (only schoolName, email, city)
+ */
+window.updateSchool = async function(e) {
+  if (e && typeof e.preventDefault === 'function') {
+    e.preventDefault();
+  }
+
+  const schoolId = document.getElementById('editSchoolId')?.value || '';
+  const errEl = document.getElementById('editError');
+  try {
+    if (errEl) {
+      errEl.style.display = 'none';
+      errEl.textContent = '';
+    }
+
+    if (!schoolId) {
+      throw new Error('School ID is missing');
+    }
+
+    const schoolName = document.getElementById('editSchoolName')?.value.trim() || '';
+    const email = document.getElementById('editSchoolEmail')?.value.trim() || '';
+    const city = document.getElementById('editSchoolCity')?.value.trim() || '';
+
+    if (!schoolName) throw new Error('School Name is required');
+    if (!email) throw new Error('Email is required');
+
+    const updatePayload = {
+      schoolName,
+      email,
+      city
+    };
+
+    await firebase.firestore().collection('schools').doc(schoolId).update(updatePayload);
+    window.showToast('✅ School updated successfully', 'success');
+    document.getElementById('editModal').classList.remove('open');
+    window.loadSchools();
+  } catch (err) {
+    if (errEl) {
+      errEl.textContent = '❌ ' + err.message;
+      errEl.style.display = 'block';
+    }
+    window.showToast('Update failed: ' + err.message, 'error');
+  }
+};
+
 
 /**
  * Admin logout

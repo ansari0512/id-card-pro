@@ -8,18 +8,19 @@
   <meta name="referrer" content="no-referrer">
   <title>School Students - RK Choice Admin</title>
    <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'dark');</script>
-   <link rel="stylesheet" href="src/styles/main.css?v=2.0">
+    <link rel="stylesheet" href="src/styles/main.css?v=2.0">
+  <link rel="stylesheet" href="src/styles/views/_admin-students.css?v=2.0">
 </head>
 <body>
 
     <header class="topbar no-print">
-      <div style="min-width: 0; flex: 1;">
+      <div class="min-w-0 flex-1">
         <a href="admin-panel.html" class="logo-link">
           <div class="logo-icon">🎓</div>
-          <span id="pageTitle" style="font-weight:600; font-size:15px; white-space:nowrap; overflow:visible;">School Students</span>
+          <span id="pageTitle" class="font-semibold text-sm whitespace-normal">School Students</span>
         </a>
       </div>
-      <div class="topbar-right" style="flex-shrink:0;">
+      <div class="topbar-right flex-shrink-0">
         <a href="admin-panel.html"><button class="secondary">← Back</button></a>
       </div>
     </header>
@@ -28,23 +29,36 @@
 
    <main class="container container-pt">
 
-     <!-- Filter Controls -->
-     <div class="card">
-       <div class="filters filters-mb">
-         <!-- School filter - shown only in View All mode -->
-         <select id="schoolFilter" title="Select School" onchange="window.onSchoolFilterChange()" style="display:none;">
-           <option value="">All Schools</option>
-         </select>
-         <select id="classFilter" title="Select Class" onchange="window.loadAdminStudents()">
-           <option value="">All Classes</option>
-         </select>
-         <button onclick="window.clearAdminFilters()" class="secondary">Clear Filter</button>
-       </div>
-       <div class="flex gap-2 flex-wrap">
-         <button class="btn-csv" onclick="window.adminExportCSV()">📥 Export CSV</button>
-         <button class="btn-download" onclick="window.adminBulkDownload()">📦 Download ZIP</button>
-         <button class="btn-print" onclick="window.adminBulkPrint()">🖨️ Print All</button>
-       </div>
+     <!-- Filter + Actions Card -->
+     <div class="card admin-students-card">
+        <!-- Row 0: Data type selector -->
+        <div class="admin-students-filters-row" style="margin-bottom:0.5rem;">
+          <select id="dataTypeFilter" title="Select Data Type" onchange="window.onDataTypeChange()" class="">
+            <option value="students">Students</option>
+            <option value="teachers">Teachers / Staff</option>
+          </select>
+        </div>
+        <!-- Row 1: Filters -->
+        <div class="admin-students-filters-row">
+          <select id="schoolFilter" title="Select School" onchange="window.onSchoolFilterChange()" class="">
+            <option value="">All Schools</option>
+          </select>
+          <select id="classFilter" title="Select Class" onchange="window.loadAdminStudents()">
+            <option value="">All Classes</option>
+          </select>
+        </div>
+        <!-- Row 2: Actions -->
+        <div class="admin-students-actions-row">
+          <label class="action-btn select-all-label">
+            <input type="checkbox" id="selectAllChk" onchange="window.toggleSelectAll()">
+            <span id="selectAllText">Select All</span>
+          </label>
+          <span id="studentCount" class="action-btn student-count-badge">👥 0 Students</span>
+          <button onclick="window.clearAdminFilters()" class="secondary action-btn">Clear Filter</button>
+           <button class="btn-print action-btn" onclick="window.adminBulkPrint()">🖨️ Print</button>
+           <button class="btn-download action-btn" onclick="window.adminBulkDownload()">📦 Download ZIP</button>
+           <button class="btn-csv action-btn" onclick="window.adminExportStudentTeacherWorkbook()">📥 Export Data</button>
+        </div>
      </div>
 
      <div id="loading" class="text-center mt-3">
@@ -52,9 +66,9 @@
       <p class="text-muted mt-1">Loading students...</p>
     </div>
 
-    <div id="studentsGrid" class="students-grid" style="display:none;"></div>
+    <div id="studentsGrid" class="students-grid hidden"></div>
 
-    <div id="emptyState" class="empty-state" style="display:none;">
+    <div id="emptyState" class="empty-state hidden">
       <div class="empty-icon">📭</div>
       <h3>No Students Found</h3>
       <p>This school has not added any students yet.</p>
@@ -71,21 +85,8 @@
    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
-    <!-- Firebase Configuration -->
-    <script>
-      const firebaseConfig = {
-        apiKey: "AIzaSyCyUuz7QVLswGTs9RwdDNy1RSDYUKEyfIw",
-        authDomain: "my-id-card-app-b2bbc.firebaseapp.com",
-        projectId: "my-id-card-app-b2bbc",
-        storageBucket: "my-id-card-app-b2bbc.firebasestorage.app",
-        messagingSenderId: "335385118535",
-        appId: "1:335385118535:web:14033f686c0216a771ae62"
-      };
-      
-      if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-      }
-    </script>
+    <!-- Centralized Firebase Configuration -->
+    <script src="src/config/firebase-config.js?v=2.0"></script>
 
     <!-- Utils -->
     <script src="js/helpers.js?v=a94822a"></script>
@@ -93,26 +94,20 @@
     <!-- Auth Controller -->
     <script src="js/controllers/auth.controller.js?v=a94822a"></script>
 
-    <!-- Admin Students Controller -->
-    <script src="js/controllers/admin-students.controller.js?v=a94822a"></script>
+     <!-- Teacher/Staff Data Controller -->
+     <script src="js/controllers/teacher-staff-data.controller.js?v=2.0"></script>
 
-   <!-- Theme -->
-   <script>
-     (function() {
-       const t = localStorage.getItem('theme') || 'dark';
-       document.documentElement.setAttribute('data-theme', t);
-       const btn = document.getElementById('themeToggle');
-       if (btn) btn.textContent = t === 'light' ? '☀️' : '🌙';
-     })();
-     document.getElementById('themeToggle')?.addEventListener('click', function() {
-       const current = document.documentElement.getAttribute('data-theme');
-       const next = current === 'light' ? 'dark' : 'light';
-       document.documentElement.setAttribute('data-theme', next);
-       localStorage.setItem('theme', next);
-       this.textContent = next === 'light' ? '☀️' : '🌙';
-     });
-     window.initAdminStudents();
-   </script>
+     <!-- Admin Students Data Controller -->
+     <script src="js/controllers/admin-students-data.controller.js?v=2.0"></script>
+
+     <!-- Admin Students UI Controller -->
+     <script src="js/controllers/admin-students-ui.controller.js?v=2.0"></script>
+
+   <!-- Centralized Theme System -->
+   <script src="src/js/theme.js?v=2.0"></script>
+
+   <!-- Admin Students Init -->
+   <script>if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',function(){window.initAdminStudents();});}else{window.initAdminStudents();}</script>
 
 </body>
 </html>

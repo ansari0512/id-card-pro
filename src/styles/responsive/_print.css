@@ -1,0 +1,28 @@
+/* ==========================================
+   Print-Only Styles
+   ========================================== */
+
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .id-card {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .student-card {
+    page-break-inside: avoid;
+    margin-bottom: 0.5rem;
+  }
+
+  .students-grid {
+    display: block;
+  }
+}

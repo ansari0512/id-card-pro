@@ -10,9 +10,30 @@ build/
 .idea/
 *.swp
 *.swo
-package-lock.json
 yarn.lock
 firebase.js
 firebase.config.js
 js/firebase-config.js
 .firebase/
+firebase-debug.log
+
+# Playwright (contains test credentials)
+playwright.config.js
+tests/
+test-results/
+playwright-report/
+
+# Generated reports
+*_REPORT.md
+*_AUDIT_REPORT.md
+*_VERIFICATION.md
+*_PLAN.md
+UAT_REPORT.md
+TODO*.md
+
+# Data files
+*.xlsx
+*.zip
+
+# Functions
+functions/node_modules/

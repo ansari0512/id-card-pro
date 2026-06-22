@@ -1,0 +1,57 @@
+/* ==========================================
+   Responsive Breakpoints — SINGLE source
+   Two targets: Desktop (769px+), Mobile (≤768px)
+   ========================================== */
+
+/* Tablet (768px and below) */
+@media (max-width: 768px) {
+  /* Layout */
+  .section { margin-bottom: 2rem; }
+  .subsection { margin-bottom: 1.5rem; }
+
+  /* Messages */
+  .error-msg { font-size: 11px; }
+
+  /* Dashboard header */
+  .dashboard-header { margin-bottom: 2rem; padding: 1rem 0 0 0; }
+  .dashboard-header h1 { font-size: 1.75rem; word-break: break-word; overflow-wrap: break-word; }
+
+  /* Quick actions */
+  .actions-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+  .action-button { padding: 0.75rem; min-height: 80px; height: 80px; width: 100%; font-size: 12px; box-sizing: border-box; }
+  .action-button .icon { font-size: 1.4rem; }
+
+  /* Bulk buttons */
+  .bulk-buttons { gap: 0.5rem; }
+  .bulk-buttons button { flex: 1; min-width: 100px; padding: 10px 12px; font-size: 12px; }
+
+  /* Student grid */
+  .students-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+}
+
+/* Small screens (480px and below) */
+@media (max-width: 480px) {
+  /* Dashboard */
+  .dashboard-header { margin-bottom: 1.25rem; padding: 0.5rem 0.5rem 0 0.5rem; }
+  .dashboard-header h1 { font-size: 1.35rem; word-break: break-word; }
+  .dashboard-header p { font-size: 0.85rem; padding: 0 0.25rem; }
+  .actions-grid { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+  .action-button { padding: 0.625rem; min-height: 65px; height: 65px; gap: 0.3rem; font-size: 11px; }
+  .action-button .icon { font-size: 1.2rem; }
+  .action-button .label { font-size: 11px; line-height: 1.1; }
+  .bulk-buttons { flex-direction: column; gap: 0.5rem; }
+  .bulk-buttons button { width: 100%; min-width: unset; }
+  .students-grid { grid-template-columns: 1fr; gap: 1rem; }
+  .stats-grid { grid-template-columns: 1fr; gap: 0.75rem; }
+  .quick-actions-section { margin-bottom: 2rem; padding: 0 0.5rem; }
+  .quick-actions-section h2 { font-size: 1.1rem; margin-bottom: 1rem; }
+}
+
+/* Extra small screens (360px and below) */
+@media (max-width: 360px) {
+  .admin-welcome { text-align: center; }
+  .admin-stats-grid { grid-template-columns: 1fr; gap: 0.75rem; }
+  .admin-stat-card { padding: 1rem; }
+  .admin-schools-section { padding: 1rem; }
+  .modal { padding: 1.5rem; max-width: calc(100% - 1rem); }
+}

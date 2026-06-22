@@ -1,0 +1,73 @@
+/* ==========================================
+   Badge Styles — from utilities.css + students-layout.css
+   ========================================== */
+
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--primary);
+  color: white;
+  border-radius: 12px;
+  margin-left: 8px;
+}
+
+.badge-active {
+  background: #22c55e22;
+  color: #22c55e;
+}
+
+.badge-inactive {
+  background: #ef444422;
+  color: #ef4444;
+}
+
+[data-theme="light"] .badge-active {
+  background: #10b98122;
+  color: #047857;
+}
+
+[data-theme="light"] .badge-inactive {
+  background: #ef444422;
+  color: #dc2626;
+}
+
+.badge-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--error);
+  color: white;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  line-height: 1;
+}
+
+.student-count-badge {
+  display: none;
+  min-height: 44px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1.5px solid var(--btn-secondary);
+  color: var(--btn-secondary);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .badge-pill {
+    font-size: 9px;
+    padding: 1px 6px;
+  }
+}

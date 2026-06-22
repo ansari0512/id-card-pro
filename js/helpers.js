@@ -20,6 +20,32 @@ window.toProperCase = function(str) {
 };
 
 /**
+ * Apply proper case to input field (preserves cursor position) - SHARED IMPLEMENTATION
+ */
+window.commonApplyProperCase = function(input) {
+  const pos = input.selectionStart;
+  input.value = window.toProperCase(input.value);
+  input.setSelectionRange(pos, pos);
+};
+
+// Backward compatibility wrapper
+window.applyProperCase = function(input) {
+  return window.commonApplyProperCase && window.commonApplyProperCase(input);
+};
+
+/**
+ * Mock mode detector - checks if Firebase Firestore is available - SHARED IMPLEMENTATION
+ */
+window.commonIsMockMode = function() {
+  return !window.firebase?.firestore;
+};
+
+// Backward compatibility wrapper
+window.isMockMode = function() {
+  return window.commonIsMockMode && window.commonIsMockMode();
+};
+
+/**
  * Sanitize HTML (prevent XSS)
  */
 window.sanitize = function(str) {
@@ -57,27 +83,62 @@ window.showToast = function(msg, type = 'info') {
 };
 
 /**
- * Export data to CSV
+ * Shared CSV download engine - handles Blob creation, download trigger, and cleanup
+ * @param {Array<string>} headers - Column headers
+ * @param {Array<Array<string>>} rows - Data rows
+ * @param {string} filename - Download filename
+ * @param {Array<string>} [prefixRows] - Optional prefix rows (e.g. school name header)
+ */
+window.csvDownload = function(headers, rows, filename, prefixRows) {
+  const csvParts = [];
+  
+  // Add prefix rows (e.g. school name header line)
+  if (prefixRows && prefixRows.length) {
+    prefixRows.forEach(function(prefix) {
+      csvParts.push(
+        prefix.map(function(val) { return '"' + String(val).replace(/"/g, '""') + '"'; }).join(',')
+      );
+    });
+  }
+  
+  // Add header row
+  csvParts.push(
+    headers.map(function(h) { return '"' + String(h).replace(/"/g, '""') + '"'; }).join(',')
+  );
+  
+  // Add data rows
+  rows.forEach(function(row) {
+    csvParts.push(
+      row.map(function(val) { return '"' + String(val).replace(/"/g, '""') + '"'; }).join(',')
+    );
+  });
+
+  const csv = csvParts.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename || 'export_' + new Date().toISOString().slice(0,10) + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
+/**
+ * Export data to CSV (backward compatible wrapper using shared engine)
  */
 window.exportToCSV = function(data, filename) {
   if (!data || data.length === 0) return;
 
   const headers = Object.keys(data[0]);
-  const rows = data.map(row => headers.map(header => {
-    const value = row[header] || '';
-    return `"${String(value).replace(/"/g, '""')}"`;
-  }).join(','));
+  const rows = data.map(function(row) {
+    return headers.map(function(header) {
+      return row[header] || '';
+    });
+  });
 
-  const csv = [headers.join(','), ...rows].join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename || `export_${new Date().toISOString().slice(0,10)}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  window.csvDownload(headers, rows, filename);
 };
 
 /**
@@ -98,8 +159,75 @@ window.debounce = function(func, wait) {
 window.ALL_CLASSES = ['Nursery','LKG','UKG','KG','1','2','3','4','5','6','7','8','9','10','11','12'];
 
 /**
+ * Compress image using canvas (client-side)
+ * @param {File} imageFile - Original image file
+ * @param {number} maxWidth - Maximum width (default 800)
+ * @param {number} maxHeight - Maximum height (default 800)
+ * @param {number} quality - JPEG quality 0-1 (default 0.8)
+ * @returns {Promise<File>} Compressed image as File
+ */
+window.compressImage = function(imageFile, maxWidth = 800, maxHeight = 800, quality = 0.8) {
+  return new Promise((resolve, reject) => {
+    if (!imageFile.type.startsWith('image/')) {
+      resolve(imageFile); // Not an image, return as-is
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        // Calculate new dimensions maintaining aspect ratio
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width = Math.floor(width * ratio);
+          height = Math.floor(height * ratio);
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Convert to blob
+        canvas.toBlob(
+          function(blob) {
+            if (!blob) {
+              reject(new Error('Canvas to Blob conversion failed'));
+              return;
+            }
+            // Create a new File with same name but compressed
+            const compressedFile = new File([blob], imageFile.name, {
+              type: 'image/jpeg',
+              lastModified: Date.now()
+            });
+            resolve(compressedFile);
+          },
+          'image/jpeg',
+          quality
+        );
+      };
+      img.onerror = function() {
+        reject(new Error('Image loading failed'));
+      };
+      img.src = e.target.result;
+    };
+    reader.onerror = function() {
+      reject(new Error('File reading failed'));
+    };
+    reader.readAsDataURL(imageFile);
+  });
+};
+
+/**
  * Upload photo shared by id-form and student controller.
  * path: student_photos/{schoolName}/{className}/{studentName}_{studentId}.ext
+ * Now includes automatic compression for images > 500KB
+ * Max upload size: 3MB (enforced by form controllers)
  */
 window.uploadPhoto = async function(userId, studentId, file, className, studentName) {
   let schoolName = 'School';
@@ -110,12 +238,24 @@ window.uploadPhoto = async function(userId, studentId, file, className, studentN
 
   const cls     = (className   || 'Unknown').replace(/[^a-zA-Z0-9 _-]/g, '');
   const sName   = (studentName || studentId).replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
-  const ext     = file.type.includes('png') ? 'png' : 'jpg';
   const safeSch = schoolName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
 
+  // Compress image if it's an image and larger than 500KB
+  let finalFile = file;
+  if (file.type.startsWith('image/') && file.size > 500 * 1024) { // > 500KB
+    try {
+      // Compress to max 600px, quality 0.65
+      finalFile = await window.compressImage(file, 600, 600, 0.65);
+      console.log('Image compressed:', file.size, '→', finalFile.size, 'bytes');
+    } catch (err) {
+      console.warn('Compression failed, using original:', err.message);
+    }
+  }
+
+  const ext = finalFile.type.includes('png') ? 'png' : 'jpg';
   const path = `student_photos/${safeSch}/${cls}/${sName}_${studentId}.${ext}`;
   const storageRef = firebase.storage().ref(path);
-  const snapshot = await storageRef.put(file);
+  const snapshot = await storageRef.put(finalFile);
   return await snapshot.ref.getDownloadURL();
 };
 
@@ -165,12 +305,12 @@ window.generateStudentId = async function(schoolId) {
 
   const newSerial = await db.runTransaction(async tx => {
     const doc = await tx.get(counterRef);
-    const next = doc.exists ? doc.data().count + 1 : 1;
+    const next = doc.exists ? (Number(doc.data().count) || 0) + 1 : 1;
     tx.set(counterRef, { count: next });
     return next;
   });
 
-  return `${schoolCode}-${year}-${String(newSerial).padStart(4, '0')}`;
+  return `${schoolCode}-STU-${year}-${String(newSerial).padStart(4, '0')}`;
 };
 
 window.dbStudents = function(schoolId, className) {

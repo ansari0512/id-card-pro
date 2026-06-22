@@ -9,317 +9,17 @@
   <title>Dashboard - RK Choice</title>
   
   <link rel="stylesheet" href="src/styles/main.css?v=2.0">
+  <link rel="stylesheet" href="src/styles/views/_dashboard.css?v=2.0">
   <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'dark');</script>
   
-  <style>
-    /* Dashboard specific styles */
-    .dashboard-header {
-      text-align: center;
-      margin-bottom: 3rem;
-      padding: 2rem 0 0 0;
-    }
-
-    .dashboard-header h1 {
-      font-size: 2.25rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .dashboard-header p {
-      color: var(--text-muted);
-      font-size: 1rem;
-      margin: 0;
-    }
-
-    /* Stats Grid */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 3rem;
-    }
-
-    .stat-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.75rem;
-      text-align: center;
-      transition: var(--transition);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .stat-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, var(--primary), var(--info));
-      transform: scaleX(0);
-      transform-origin: left;
-      transition: var(--transition);
-    }
-
-    .stat-card:hover {
-      transform: translateY(-4px);
-      border-color: var(--primary);
-      box-shadow: 0 12px 24px rgba(59, 130, 246, 0.15);
-    }
-
-    .stat-card:hover::before {
-      transform: scaleX(1);
-    }
-
-    .stat-card .icon {
-      font-size: 2.5rem;
-      margin-bottom: 0.75rem;
-      display: block;
-    }
-
-    .stat-card .value {
-      font-size: 2rem;
-      font-weight: 700;
-      color: var(--primary);
-      margin-bottom: 0.5rem;
-    }
-
-    .stat-card .label {
-      font-size: 13px;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      font-weight: 500;
-    }
-
-    /* Quick Actions */
-    .quick-actions-section {
-      margin-bottom: 3rem;
-    }
-
-    .quick-actions-section h2 {
-      font-size: 1.25rem;
-      margin-bottom: 1.5rem;
-      color: var(--text);
-    }
-
-    .actions-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 1.25rem;
-    }
-
-    .action-button {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 0.75rem;
-      padding: 1.5rem;
-      background: transparent;
-      border-radius: var(--radius);
-      text-decoration: none;
-      cursor: pointer;
-      min-height: 160px;
-    }
-
-    .action-button.primary {
-      --btn-color: var(--btn-primary);
-      --btn-color-rgb: var(--btn-primary-rgb);
-    }
-
-    .action-button:hover {
-      transform: translateY(-4px);
-    }
-
-    .action-button .icon {
-      font-size: 2.25rem;
-    }
-
-    .action-button .label {
-      font-size: 13px;
-      font-weight: 600;
-      text-align: center;
-    }
-
-
-
-    /* Modal */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: var(--overlay-bg);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem;
-      animation: fadeIn 0.3s ease;
-    }
-
-    .modal-overlay.open {
-      display: flex;
-    }
-
-    .modal {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 2rem;
-      width: 100%;
-      max-width: 420px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-      animation: slideUp 0.3s ease;
-    }
-
-    .modal h3 {
-      margin-top: 0;
-      margin-bottom: 1.5rem;
-      color: var(--text);
-    }
-
-    .modal .form-group {
-      margin-bottom: 1.5rem;
-    }
-
-    .modal .form-group label {
-      font-weight: 500;
-      color: var(--text-muted);
-      font-size: 13px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .modal .modal-buttons {
-      display: flex;
-      gap: 1rem;
-      margin-top: 2rem;
-    }
-
-    .modal .modal-buttons button {
-      flex: 1;
-      padding: 12px;
-    }
-
-    .modal .info-text {
-      font-size: 13px;
-      color: var(--text-muted);
-      margin-bottom: 1rem;
-      background: rgba(0, 0, 0, 0.2);
-      padding: 10px 12px;
-      border-radius: 8px;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    @keyframes slideUp {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @media (max-width: 768px) {
-      .dashboard-header {
-        margin-bottom: 2rem;
-      }
-
-      .dashboard-header h1 {
-        font-size: 1.75rem;
-      }
-
-      .stats-grid {
-        gap: 1rem;
-        margin-bottom: 2rem;
-      }
-
-      .stat-card {
-        padding: 1.25rem;
-      }
-
-      .actions-grid {
-        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-        gap: 1rem;
-      }
-
-      .action-button {
-        padding: 1.25rem;
-        min-height: 140px;
-        font-size: 13px;
-      }
-
-      .action-button .icon {
-        font-size: 2rem;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .dashboard-header {
-        margin-bottom: 1.5rem;
-        padding: 1rem 0 0 0;
-      }
-
-      .dashboard-header h1 {
-        font-size: 1.5rem;
-      }
-
-      .stats-grid {
-        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-        gap: 0.75rem;
-        margin-bottom: 1.5rem;
-      }
-
-      .stat-card {
-        padding: 1rem;
-      }
-
-      .stat-card .value {
-        font-size: 1.75rem;
-      }
-
-      .stat-card .icon {
-        font-size: 2rem;
-        margin-bottom: 0.5rem;
-      }
-
-      .actions-grid {
-        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-        gap: 0.75rem;
-      }
-
-      .action-button {
-        padding: 1rem;
-        min-height: 120px;
-        gap: 0.5rem;
-        font-size: 12px;
-      }
-
-      .action-button .icon {
-        font-size: 1.75rem;
-      }
-
-      .modal {
-        padding: 1.5rem;
-        max-width: calc(100% - 1rem);
-      }
-    }
-  </style>
-</head>
+  </head>
 <body>
 
    <!-- Topbar -->
    <header class="topbar no-print">
      <div>
-       <a href="dashboard.html" style="display:flex;align-items:center;gap:0.5rem;text-decoration:none;color:inherit;">
-         <div style="font-size: 1.5rem;">🎓</div>
+       <a href="dashboard.html" class="d-flex align-center gap-0-5 no-underline">
+         <div class="logo-display">🎓</div>
          <span class="logo-text">RK Choice</span>
        </a>
      </div>
@@ -333,12 +33,12 @@
   <button class="theme-toggle no-print" id="themeToggle">🌙</button>
 
   <!-- Main Content -->
-  <main class="container" style="padding-top: 0;">
+  <main class="container container-padding-top-0">
     
     <!-- Welcome Message -->
     <div class="dashboard-header">
-      <p style="font-size:1rem;color:var(--text-muted);margin:0 0 0.25rem;">Welcome back! 👋</p>
-      <h1 id="schoolNameDisplay" style="margin:0 0 0.25rem;"></h1>
+      <p class="welcome-text">Welcome back! 👋</p>
+      <h1 id="schoolNameDisplay" class="school-name-display"></h1>
       <p>Manage student ID cards with ease</p>
     </div>
 
@@ -361,6 +61,12 @@
         <div class="value" id="pendingStudents">0</div>
         <div class="label">Pending Photos</div>
       </div>
+      
+      <div class="stat-card">
+        <span class="icon">🧑‍🏫</span>
+        <div class="value" id="totalStaff">0</div>
+        <div class="label">Staff Members</div>
+      </div>
     </div>
 
     <!-- Quick Actions Section -->
@@ -377,9 +83,14 @@
           <span class="label">View Students</span>
         </a>
         
-        <a href="print.html" class="action-button">
-          <span class="icon">🖨️</span>
-          <span class="label">Print IDs</span>
+        <button type="button" class="action-button" onclick="window.openImportModal()">
+          <span class="icon">📂</span>
+          <span class="label">Import Students</span>
+        </button>
+        
+        <a href="teacher-staff.html" class="action-button">
+          <span class="icon">🧑‍🏫</span>
+          <span class="label">Teacher / Staff</span>
         </a>
       </div>
     </div>
@@ -390,29 +101,73 @@
 
   </main>
 
+  <!-- Import CSV Modal -->
+  <div class="modal-overlay" id="importModal" onclick="if(event.target === this) window.closeImportModal()">
+      <div class="modal">
+      <h3>📂 Import Students from CSV</h3>
+      <p class="import-desc">First row = header (will be skipped). You can add photos later.</p>
+
+      <div style="display:none" aria-hidden="true">
+        <!-- accessibility placeholder -->
+      </div>
+
+      <div class="import-format-block">
+        <div>Required Excel Format</div>
+        <div>
+          A = Addition
+          B = Admission No.
+          C = Student Name
+          D = Roll No.
+          E = Date of Birth
+          F = Father's Name
+          G = Mother's Name
+          H = Blood Group
+          I = Class
+          J = Section
+          K = Mobile No.
+          L = Address
+          M = Other Info.
+        </div>
+      </div>
+
+      <div class="form-group form-group-mt">
+        <label for="importFile">Select File *</label>
+        <input type="file" id="importFile" accept=".csv,.xlsx,.xls" required title="Select CSV/Excel file for import">
+      </div>
+      <div id="importPreview" class="import-preview">
+        <p class="import-count">
+          Found: <strong id="importCount">0</strong> students
+        </p>
+      </div>
+      <div id="importError" class="import-error"></div>
+      <div class="modal-buttons modal-buttons-mt">
+        <button id="importBtn" class="success" onclick="window.importCSV()">
+          <span id="importBtnText">✅ Import</span>
+        </button>
+        <button class="secondary" onclick="window.closeImportModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
    <!-- Firebase SDK -->
    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-   <!-- Firebase Configuration -->
-   <script>
-     const firebaseConfig = {
-       apiKey: "AIzaSyCyUuz7QVLswGTs9RwdDNy1RSDYUKEyfIw",
-       authDomain: "my-id-card-app-b2bbc.firebaseapp.com",
-       projectId: "my-id-card-app-b2bbc",
-       storageBucket: "my-id-card-app-b2bbc.firebasestorage.app",
-       messagingSenderId: "335385118535",
-       appId: "1:335385118535:web:14033f686c0216a771ae62"
-     };
-     
-     if (!firebase.apps.length) {
-       firebase.initializeApp(firebaseConfig);
-     }
-   </script>
+   <!-- SheetJS for Excel support -->
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+   <!-- Centralized Firebase Configuration -->
+   <script src="src/config/firebase-config.js?v=2.0"></script>
 
    <!-- Utils -->
    <script src="js/helpers.js?v=a94822a"></script>
+
+   <!-- Common Functions -->
+   <script src="src/js/common-functions.js?v=2.0"></script>
+
+   <!-- Centralized Theme System -->
+   <script src="src/js/theme.js?v=2.0"></script>
 
    <!-- Auth Controller -->
    <script src="js/controllers/auth.controller.js?v=a94822a"></script>
@@ -420,24 +175,13 @@
    <!-- Dashboard Controller -->
    <script src="js/controllers/dashboard.controller.js?v=a94822a"></script>
 
-   <!-- Theme & Modal Handler -->
-   <script>
-     (function() {
-       const t = localStorage.getItem('theme') || 'dark';
-       document.documentElement.setAttribute('data-theme', t);
-       const btn = document.getElementById('themeToggle');
-       if (btn) btn.textContent = t === 'light' ? '☀️' : '🌙';
-     })();
-     
-     document.getElementById('themeToggle')?.addEventListener('click', function() {
-       const current = document.documentElement.getAttribute('data-theme');
-       const next = current === 'light' ? 'dark' : 'light';
-       document.documentElement.setAttribute('data-theme', next);
-       localStorage.setItem('theme', next);
-       this.textContent = next === 'light' ? '☀️' : '🌙';
-     });
+   <!-- Student Data Controller (for import functions) -->
+   <script src="js/controllers/student-data.controller.js?v=2.0"></script>
 
-     // Modal handlers - removed delete class modal functions
-   </script>
+   <!-- Student UI Controller (for import modal functions) -->
+   <script src="js/controllers/student-ui.controller.js?v=2.0"></script>
+
+   <!-- Dashboard Page Script -->
 </body>
 </html>
+

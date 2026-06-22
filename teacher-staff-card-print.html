@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <title>Print Teacher / Staff ID Cards - RK Choice</title>
+
+  <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'dark');</script>
+  <link rel="stylesheet" href="src/styles/main.css?v=2.0">
+  <link rel="stylesheet" href="src/styles/views/_print.css?v=2.0">
+</head>
+<body>
+
+  <div class="toolbar no-print">
+    <h2 class="cursor-pointer m-0" onclick="window.location.href='dashboard.html'">🖨️ Print Teacher/Staff ID Cards</h2>
+    <button class="btn-print" onclick="window.print()">🖨️ Print</button>
+    <button class="secondary" onclick="history.length>1?history.back():window.close()">✕ Close</button>
+  </div>
+
+  <div class="print-page">
+    <div id="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading teacher/staff data...</p>
+    </div>
+    <div id="cardsContainer" class="cards-grid d-none"></div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+
+  <script src="src/config/firebase-config.js?v=2.0"></script>
+  <script src="js/helpers.js?v=a94822a"></script>
+  <script src="js/controllers/auth.controller.js?v=a94822a"></script>
+
+  <script src="js/controllers/teacher-staff-data.controller.js?v=2.0"></script>
+  <script src="js/controllers/teacher-staff-print.controller.js?v=2.0"></script>
+  <script src="src/js/theme.js?v=2.0"></script>
+
+</body>
+</html>
+

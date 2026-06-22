@@ -1,0 +1,172 @@
+/* ==========================================
+   CSS Variables - Colors, Fonts, Spacing
+   Consolidated from variables.css + buttons.css + print.css + teacher-staff-print.css
+   ========================================== */
+
+:root {
+  /* Primary Colors */
+  --primary: #3b82f6;
+  --primary-dark: #2563eb;
+  --primary-light: #60a5fa;
+
+  /* Background Colors */
+  --bg-dark: #0f172a;
+  --bg-card: #1e293b;
+  --bg-card-hover: #263548;
+
+  /* Text Colors */
+  --text: #ffffff;
+  --text-muted: #94a3b8;
+
+  /* Border & Shadow */
+  --border: rgba(255, 255, 255, 0.12);
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.5);
+
+  /* Status Colors */
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --info: #0ea5e9;
+
+  /* Typography */
+  --font: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Layout */
+  --radius: 16px;
+  --modal-bg: #1e293b;
+  --overlay-bg: rgba(0, 0, 0, 0.75);
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Button Colors */
+  --btn-primary: #2563eb;
+  --btn-primary-rgb: 37, 99, 235;
+  --btn-secondary: #64748b;
+  --btn-secondary-rgb: 100, 116, 139;
+  --btn-success: #059669;
+  --btn-success-rgb: 5, 150, 105;
+  --btn-danger: #dc2626;
+  --btn-danger-rgb: 220, 38, 38;
+  --btn-warning: #d97706;
+  --btn-warning-rgb: 217, 119, 6;
+  --btn-info: #0891b2;
+  --btn-info-rgb: 8, 145, 178;
+  --btn-purple: #7c3aed;
+  --btn-purple-rgb: 124, 58, 237;
+  --btn-indigo: #4f46e5;
+  --btn-indigo-rgb: 79, 70, 229;
+  --btn-teal: #0d9488;
+  --btn-teal-rgb: 13, 148, 136;
+  --btn-pink: #db2777;
+  --btn-pink-rgb: 219, 39, 119;
+
+  /* Print-specific */
+  --bg-print: #f5f5f5;
+  --a4-bg: white;
+  --a4-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+  --text-print: #333;
+  --text-light: #888;
+  --toolbar-bg: white;
+  --toolbar-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --accent: #f59e0b;
+  --accent-rgb: 245, 158, 11;
+  --id-card-bg: #fff;
+  --id-card-text: #333;
+  --id-card-border: #ddd;
+  --id-card-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --id-card-photo-bg: #f0f0f0;
+  --btn-theme: #d97706;
+  --btn-theme-rgb: 217, 119, 6;
+  --spinner-track: #f3f3f3;
+
+  /* Toggle Colors (id-form-floating) */
+  --seg-bg: rgba(0, 0, 0, 0.06);
+  --seg-border: rgba(0, 0, 0, 0.08);
+  --seg-active-bg: rgba(8, 145, 178, 0.15);
+  --seg-active-border: rgba(8, 145, 178, 0.45);
+  --seg-active-text: #0891b2;
+  --seg-focus-shadow: rgba(8, 145, 178, 0.18);
+  --color-required: #ef4444;
+  --color-success: #22c55e;
+  --color-error: #ef4444;
+  --color-warning: #f59e0b;
+  --shadow-success: rgba(34, 197, 94, 0.12);
+  --shadow-error: rgba(239, 68, 68, 0.12);
+  --shadow-warning: rgba(245, 158, 11, 0.14);
+  --text-muted-fallback: #64748b;
+}
+
+/* ── Light Theme ──────────────────────────── */
+[data-theme="light"] {
+  --bg-dark: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f1f5f9;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --border: rgba(0, 0, 0, 0.08);
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.12);
+  --modal-bg: #ffffff;
+  --overlay-bg: rgba(0, 0, 0, 0.5);
+  --seg-bg: rgba(0, 0, 0, 0.03);
+  --seg-border: rgba(0, 0, 0, 0.12);
+}
+
+/* ── Dark Theme Overrides ─────────────────── */
+[data-theme="dark"] {
+  /* Brighter colors for dark mode visibility */
+  --btn-primary: #60a5fa;
+  --btn-primary-rgb: 96, 165, 250;
+  --btn-secondary: #94a3b8;
+  --btn-secondary-rgb: 148, 163, 184;
+  --btn-success: #34d399;
+  --btn-success-rgb: 52, 211, 153;
+  --btn-danger: #f87171;
+  --btn-danger-rgb: 248, 113, 113;
+  --btn-warning: #fbbf24;
+  --btn-warning-rgb: 251, 191, 36;
+  --btn-info: #22d3ee;
+  --btn-info-rgb: 34, 211, 238;
+  --btn-purple: #a78bfa;
+  --btn-purple-rgb: 167, 139, 250;
+  --btn-indigo: #818cf8;
+  --btn-indigo-rgb: 129, 140, 248;
+  --btn-teal: #2dd4bf;
+  --btn-teal-rgb: 45, 212, 191;
+  --btn-pink: #f472b6;
+  --btn-pink-rgb: 244, 114, 182;
+
+  /* Print dark overrides */
+  --bg-print: #0f172a;
+  --a4-bg: #1e293b;
+  --a4-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+  --text-print: #fff;
+  --toolbar-bg: #1e293b;
+  --toolbar-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --id-card-bg: #fff;        /* Keep ID cards white even in dark mode */
+  --id-card-border: #ddd;
+}
+
+/* Auto dark mode if system prefers it */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --bg-dark: #0f172a;
+    --bg-card: #1e293b;
+    --text: #ffffff;
+    --text-muted: #94a3b8;
+    --border: rgba(255, 255, 255, 0.12);
+  }
+}
+
+/* Auto light mode if system prefers it */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --bg-dark: #f8fafc;
+    --bg-card: #ffffff;
+    --text: #0f172a;
+    --text-muted: #64748b;
+    --border: rgba(0, 0, 0, 0.08);
+  }
+}

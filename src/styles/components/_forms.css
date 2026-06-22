@@ -1,0 +1,239 @@
+/* ==========================================
+   Form Styles
+   Consolidated from forms.css + id-form-floating.css form styles
+   ========================================== */
+
+/* Input Fields */
+input, select, textarea {
+  width: 100%;
+  padding: 10px 14px;
+  margin: 0;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  transition: var(--transition);
+  min-height: 40px;
+}
+
+/* Custom Select Dropdown */
+select {
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 40px;
+}
+
+[data-theme="light"] select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%231e293b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+}
+
+select option {
+  background: var(--bg-dark);
+  color: var(--text);
+  padding: 10px;
+}
+
+[data-theme="light"] select option {
+  background: white;
+  color: #1e293b;
+}
+
+/* Focus States */
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* Form Layout */
+.form {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+/* Floating Label Styles (from id-form-floating.css) */
+.float-field { position: relative; margin: 0; }
+.float-field input,
+.float-field select { width: 100%; }
+
+.float-label {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%) scale(1);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted, var(--text-muted-fallback));
+  pointer-events: none;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: transparent;
+  transition: transform 180ms ease, color 180ms ease, top 180ms ease, opacity 180ms ease, background-color 180ms ease;
+  opacity: 0.95;
+}
+
+.float-field input,
+.float-field select {
+  padding-top: 16px;
+  padding-bottom: 10px;
+}
+
+.float-field input:hover,
+.float-field select:hover {
+  border-color: var(--primary, var(--seg-active-text));
+  background-color: var(--bg-card-hover) !important;
+}
+
+.float-field input:focus,
+.float-field select:focus {
+  border-color: var(--primary, var(--seg-active-text)) !important;
+  box-shadow: 0 0 0 3px var(--seg-focus-shadow) !important;
+  background-color: var(--bg-card) !important;
+  outline: none;
+}
+
+/* Float label on focus/has-value */
+.float-field:focus-within .float-label,
+.float-field.has-value .float-label {
+  top: 10px;
+  transform: translateY(-65%) scale(0.85);
+  color: var(--primary, #0891b2);
+  background-color: var(--bg-card);
+}
+
+.float-label .req-star {
+  color: var(--color-required);
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+.float-field:focus-within input,
+.float-field:focus-within select,
+.float-field.has-value input,
+.float-field.has-value select {
+  padding-top: 22px;
+}
+
+/* Validation states */
+.float-field[data-state="success"] input,
+.float-field[data-state="success"] select {
+  border-color: var(--color-success) !important;
+  box-shadow: 0 0 0 3px var(--shadow-success);
+}
+
+.float-field[data-state="error"] input,
+.float-field[data-state="error"] select {
+  border-color: var(--color-error) !important;
+  box-shadow: 0 0 0 3px var(--shadow-error);
+}
+
+.float-field[data-state="warning"] input,
+.float-field[data-state="warning"] select {
+  border-color: var(--color-warning) !important;
+  box-shadow: 0 0 0 3px var(--shadow-warning);
+}
+
+.float-status {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  opacity: 0;
+  transition: opacity 140ms ease;
+  pointer-events: none;
+}
+
+.float-field[data-state] .float-status { opacity: 1; }
+.float-field[data-state="success"] .float-status::before { content: "✅"; }
+.float-field[data-state="error"] .float-status::before { content: "❌"; }
+.float-field[data-state="warning"] .float-status::before { content: "⚠️"; }
+
+.float-field.mt-photo { margin-top: 12px !important; }
+
+.float-label.static-top {
+  top: 0 !important;
+  transform: translateY(-50%) scale(0.85) !important;
+  background-color: var(--bg-card) !important;
+  opacity: 0.95 !important;
+  color: var(--text-muted) !important;
+  font-weight: 500 !important;
+}
+
+/* Mobile Form Adjustments */
+@media (max-width: 768px) {
+  .form {
+    max-width: 100%;
+    padding: 0;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
+  .form-group label {
+    font-size: 13px;
+    margin-bottom: 0.3rem;
+  }
+
+  input, select, textarea {
+    padding: 12px 14px;
+    font-size: 16px;
+    min-height: 44px;
+  }
+
+  .float-label { font-size: 13px; left: 12px; }
+  .float-field input,
+  .float-field select { padding-top: 22px; }
+  .float-status { right: 10px; }
+}
+
+@media (max-width: 480px) {
+  .form-group {
+    margin-bottom: 0.875rem;
+  }
+
+  input, select, textarea {
+    padding: 10px 12px;
+    font-size: 16px;
+    min-height: 42px;
+  }
+
+  .form-group label {
+    font-size: 12px;
+  }
+}

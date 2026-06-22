@@ -1,0 +1,46 @@
+/* ==========================================
+   Spinner & Loading States
+   Consolidated from utilities.css + print.css + responsive.css
+   ========================================== */
+
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.spinner-large {
+  width: 40px;
+  height: 40px;
+  border-width: 3px;
+  border: 3px solid var(--spinner-track);
+  border-top: 3px solid var(--accent);
+}
+
+.loading-state {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-print);
+}
+
+.loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--primary);
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@media (max-width: 480px) {
+  .loading-spinner {
+    width: 16px;
+    height: 16px;
+    border-width: 1.5px;
+  }
+}

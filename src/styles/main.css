@@ -1,29 +1,39 @@
 /* ==========================================
    RK Choice ID Card System - Main CSS
-   Professional Modular Architecture
+   Professional Modular Architecture v2.0
    ========================================== */
 
 /* Import Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
-/* Core Styles */
-@import 'variables.css';
-@import 'base.css';
+/* ── Base Styles ─────────────────────────── */
+@import 'base/_variables.css';
+@import 'base/_reset.css';
+@import 'base/_typography.css';
+@import 'base/_animations.css';
 
-/* Component Styles */
-@import 'buttons.css';
-@import 'forms.css';
-@import 'components.css';
-@import 'navigation.css';
-@import 'components/modal.css';
+/* ── Layout ──────────────────────────────── */
+@import 'layout/_grid.css';
+@import 'layout/_container.css';
+@import 'layout/_topbar.css';
 
-/* Utilities */
-@import 'utilities.css';
-@import 'performance.css';
+/* ── Components ──────────────────────────── */
+@import 'components/_buttons.css';
+@import 'components/_forms.css';
+@import 'components/_cards.css';
+@import 'components/_modals.css';
+@import 'components/_tabs.css';
+@import 'components/_badges.css';
+@import 'components/_spinner.css';
+@import 'components/_tables.css';
+@import 'components/_toast.css';
+@import 'components/_utilities.css';
 
-/* Page-specific imports */
-@import 'pages/dashboard.css';
-@import 'pages/login.css';
-@import 'pages/print.css';
-@import 'pages/admin.css';
-@import 'pages/students.css';
+/* ── Responsive ──────────────────────────── */
+@import 'responsive/_breakpoints.css';
+@import 'responsive/_layout.css';
+@import 'responsive/_components.css';
+@import 'responsive/_print.css';
+
+/* ── Views (Loaded per-page via <link>) ──── */
+/* Do NOT import views here. Each HTML page loads its own view CSS. */

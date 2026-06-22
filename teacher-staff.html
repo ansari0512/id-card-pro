@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <meta name="referrer" content="no-referrer">
+  <title>Teacher / Staff - RK Choice</title>
+  <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'dark');</script>
+  <link rel="stylesheet" href="src/styles/main.css?v=2.0">
+  <link rel="stylesheet" href="src/styles/views/_teacher-staff.css?v=2.0">
+</head>
+<body>
+
+  <header class="topbar no-print">
+    <div>
+      <a href="dashboard.html" class="logo-link">
+        <div class="logo-icon">🎓</div>
+        <span class="logo-text">Teacher / Staff Management</span>
+      </a>
+    </div>
+    <div class="topbar-right">
+      <a href="dashboard.html"><button class="secondary">← Back</button></a>
+    </div>
+  </header>
+
+  <button class="theme-toggle no-print" id="themeToggle">🌙</button>
+
+<main class="container container-padding-top-0">
+
+    <div class="page-header">
+      <div class="page-header-text">
+        <h1>Teacher / Staff ID Cards</h1>
+        <p class="desc">Manage teacher/staff records, print ID cards, and search fast</p>
+      </div>
+    </div>
+
+      <div class="tabs-nav">
+      <button id="tabTeachers" class="tab-btn active">
+        ✅ Teachers / Staff
+      </button>
+
+      <a href="id-form.html?type=teacher" class="link-reset">
+        <button class="tab-btn" type="button" id="createTeacherBtn">
+          ➕ Create Teacher / Staff
+        </button>
+      </a>
+    </div>
+
+
+    <div id="teachersTab" class="tab-content active">
+
+      <!-- Teacher Filter Bar -->
+      <div class="teacher-filter-bar">
+        <input type="text" id="teacherSearchInput" placeholder="🔍 Search by name, mobile or Teacher ID">
+        <button class="secondary btn-auto-width" id="clearTeacherFiltersBtn">Clear</button>
+      </div>
+
+      <!-- Teacher Action Bar -->
+      <div class="teacher-action-bar">
+        <label class="select-all-label">
+          <input type="checkbox" id="teacherSelectAllCheckbox">
+          <span>Select All</span>
+        </label>
+        <span id="teacherCount" class="student-count-badge"></span>
+        <button class="danger" id="bulkDeleteTeacherBtn">🗑️ Delete</button>
+      </div>
+
+      <div id="teacherLoading" class="text-center loading-padding">
+        <div class="spinner spinner-large"></div>
+        <p class="text-muted loading-text">Loading records...</p>
+      </div>
+
+      <div id="teacherGrid" class="students-grid hidden"></div>
+
+      <div id="teacherEmptyState" class="empty-state hidden">
+        <div class="empty-icon">📭</div>
+        <h3>No Records Found</h3>
+        <p>Create your first Teacher / Staff ID card.</p>
+        <a href="id-form.html"><button class="primary create-btn-margin">➕ Create Teacher / Staff</button></a>
+      </div>
+
+    </div>
+
+    <!-- Edit Teacher/Staff Modal -->
+    <div class="modal-overlay" id="teacherEditModal">
+      <div class="modal">
+        <h3>✏️ Edit Teacher / Staff</h3>
+        <form id="teacherEditForm">
+          <input type="hidden" id="teacherEditDocId">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="teacherEditName">Name *</label>
+              <input type="text" id="teacherEditName" required maxlength="50">
+            </div>
+            <div class="form-group">
+              <label for="teacherEditDesignation">Designation *</label>
+              <input type="text" id="teacherEditDesignation" required maxlength="50">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="teacherEditFather">Father's Name *</label>
+              <input type="text" id="teacherEditFather" required maxlength="50">
+            </div>
+            <div class="form-group">
+              <label for="teacherEditDob">D.O.B. *</label>
+              <input type="date" id="teacherEditDob" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="teacherEditBlood">Blood Group *</label>
+              <input type="text" id="teacherEditBlood" required maxlength="5" placeholder="e.g. A+">
+            </div>
+            <div class="form-group">
+              <label for="teacherEditMobile">Mobile *</label>
+              <input type="tel" id="teacherEditMobile" required maxlength="10" inputmode="numeric">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="teacherEditAddress">Address *</label>
+              <input type="text" id="teacherEditAddress" required maxlength="200">
+            </div>
+            <div class="form-group">
+              <label for="teacherEditOtherDetails">Other Details</label>
+              <input type="text" id="teacherEditOtherDetails" maxlength="200">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="teacherEditHusband">Husband's Name (Optional)</label>
+              <input type="text" id="teacherEditHusband" maxlength="50">
+            </div>
+            <div class="form-group">
+              <label for="teacherEditTeacherId">Teacher ID (Optional)</label>
+              <input type="text" id="teacherEditTeacherId" maxlength="60">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Photo</label>
+            <div class="photo-edit-container">
+              <img id="teacherEditPhotoPreview" src="assets/placeholder.png" class="edit-photo-preview" alt="Current photo">
+              <div class="photo-edit-info">
+                <div class="photo-edit-desc">Current photo. Click below to change.</div>
+                <label class="photo-edit-label">
+                  📷 Choose New Photo
+                  <input type="file" id="teacherEditPhoto" accept="image/*" class="hidden">
+                </label>
+                <div id="teacherEditPhotoName" class="photo-edit-name">No new photo selected</div>
+              </div>
+            </div>
+          </div>
+
+          <div id="teacherEditError" class="edit-error"></div>
+
+          <div class="modal-buttons">
+            <button type="submit" class="success" id="teacherEditSaveBtn">
+              <span class="btn-text">✅ Save Changes</span>
+            </button>
+            <button type="button" class="secondary" id="closeTeacherEditModalBtn">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+
+  <script src="src/config/firebase-config.js?v=2.0"></script>
+
+  <script src="js/helpers.js?v=a94822a"></script>
+  <script src="js/controllers/auth.controller.js?v=a94822a"></script>
+
+  <script src="src/js/theme.js?v=2.0"></script>
+
+  <script src="js/controllers/teacher-staff-data.controller.js?v=2.0"></script>
+  <script src="js/controllers/teacher-staff-ui.controller.js?v=2.0"></script>
+
+</body>
+</html>
+

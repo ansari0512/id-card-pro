@@ -25,7 +25,7 @@ window.initDashboard = function() {
     await window.loadStats(user);
 
     // Setup event listeners
-    window.setupDashboardListeners();
+    // (no longer needed - empty placeholder removed)
   });
 };
 
@@ -42,10 +42,6 @@ window.loadStats = async function(user) {
     const nameEl = document.getElementById('schoolNameDisplay');
     if (nameEl) nameEl.textContent = schoolName ? '🏫 ' + schoolName : 'Dashboard';
 
-    // Update the students page topbar if the element exists.
-    const topbarEl = document.getElementById('schoolNameTopbar');
-    if (topbarEl && schoolName) topbarEl.textContent = '🏫 ' + schoolName;
-
     const students = await window.dbGetAllStudents(user.uid);
     document.getElementById('totalStudents').textContent = students.length;
 
@@ -58,15 +54,15 @@ window.loadStats = async function(user) {
     const pendingSnap = await firebase.firestore().collection('schools').doc(user.uid).collection('pending_students').get();
     const pendingEl = document.getElementById('pendingStudents');
     if (pendingEl) pendingEl.textContent = pendingSnap.size;
+
+    // Staff count
+    const staffSnap = await firebase.firestore().collection('schools').doc(user.uid).collection('teachers').get();
+    const staffEl = document.getElementById('totalStaff');
+    if (staffEl) staffEl.textContent = staffSnap.size;
   } catch (e) {
     console.error('Stats load failed:', e);
   }
 };
-
-/**
- * Setup dashboard event listeners
- */
-window.setupDashboardListeners = function() {};
 
 /**
  * Export students CSV
@@ -92,19 +88,7 @@ window.exportStudents = async function() {
       s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-IN') : ''
     ]);
 
-    const csv = [headers, ...rows]
-      .map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))
-      .join('\n');
-
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `students_${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    window.csvDownload(headers, rows, 'students_' + new Date().toISOString().slice(0, 10) + '.csv');
 
     window.showToast(`Exported ${students.length} students`, 'success');
   } catch (e) {
@@ -135,80 +119,11 @@ window.confirmBulkDelete = async function() {
 };
 
 /**
- * Open delete by class modal
+ * Override switchTab to redirect to students page
+ * (Original importCSV calls this after successful import)
  */
-window.openDeleteClassModal = function() {
-  document.getElementById('deleteClassSelect').value = '';
-  document.getElementById('deleteClassCount').textContent = '';
-  document.getElementById('deleteClassModal').style.display = 'flex';
-};
-
-/**
- * Close delete by class modal
- */
-window.closeDeleteClassModal = function() {
-  document.getElementById('deleteClassModal').style.display = 'none';
-};
-
-/**
- * Attach the class selection change handler after DOMContentLoaded.
- */
-function attachDeleteClassListener() {
-  document.getElementById('deleteClassSelect')?.addEventListener('change', async function() {
-    const cls = this.value;
-    const countEl = document.getElementById('deleteClassCount');
-    if (!cls) { countEl.textContent = ''; return; }
-    try {
-      const user = firebase.auth().currentUser;
-      const students = await window.dbGetAllStudents(user.uid, { class: cls });
-      countEl.textContent = students.length > 0
-        ? `⚠️ ${students.length} student(s) will be deleted from Class ${cls}`
-        : `No students found in Class ${cls}`;
-      countEl.style.color = students.length > 0 ? '#ef4444' : 'var(--text-muted)';
-    } catch (e) {
-      countEl.textContent = 'Error loading count';
-    }
-  });
-}
-
-/**
- * Confirm delete by class
- */
-window.confirmDeleteByClass = async function() {
-  const cls = document.getElementById('deleteClassSelect').value;
-  if (!cls) {
-    window.showToast('Please select a class', 'error');
-    return;
-  }
-
-  try {
-    const user = firebase.auth().currentUser;
-    const students = await window.dbGetAllStudents(user.uid, { class: cls });
-    if (!students.length) {
-      window.showToast(`No students in Class ${cls}`, 'error');
-      return;
-    }
-
-    if (!confirm(`Delete all ${students.length} students from Class ${cls}?`)) return;
-
-    const btn = document.getElementById('confirmDeleteClassBtn');
-    const btnText = document.getElementById('deleteClassBtnText');
-    btn.disabled = true;
-    btnText.textContent = '⏳ Deleting...';
-
-    await Promise.all(students.map(s =>
-      window.dbStudents(user.uid, cls).doc(s.docId || s.id).delete()
-    ));
-
-    window.showToast(`✅ Deleted ${students.length} students from Class ${cls}`, 'success');
-    window.closeDeleteClassModal();
-    window.loadStats(user);
-  } catch (e) {
-    window.showToast('Delete failed: ' + e.message, 'error');
-  } finally {
-    btn.disabled = false;
-    btnText.textContent = '🗑️ Delete';
-  }
+window.switchTab = function(tab) {
+  window.location.href = 'students.html?tab=' + tab;
 };
 
 /**
@@ -226,5 +141,4 @@ window.logout = async function() {
 // Auto-init on page load
 document.addEventListener('DOMContentLoaded', function() {
   window.initDashboard();
-  attachDeleteClassListener();
 });

@@ -1,0 +1,95 @@
+/* ==========================================
+   Modal Styles — SINGLE source
+   CONSOLIDATED: modal.css + admin.css modal section removed
+   ========================================== */
+
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--overlay-bg);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-overlay.open {
+  display: flex;
+}
+
+.modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.3s ease;
+}
+
+.modal h3 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: var(--text);
+}
+
+.modal .form-group {
+  margin-bottom: 1.5rem;
+}
+
+.modal .form-group label {
+  font-weight: 500;
+  color: var(--text-muted);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.modal .modal-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.modal .modal-buttons button {
+  flex: 1;
+  padding: 12px;
+}
+
+.modal .info-text {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+
+.modal-wide {
+  max-width: 600px;
+}
+
+/* Mobile Modal Adjustments */
+@media (max-width: 768px) {
+  .modal-overlay { padding: 0.5rem; }
+  .modal { padding: 1.5rem; max-width: calc(100% - 1rem); border-radius: 12px; }
+  .modal h3 { font-size: 1.1rem; margin-bottom: 1.25rem; }
+  .modal .form-group { margin-bottom: 1.25rem; }
+  .modal .modal-buttons { gap: 0.75rem; margin-top: 1.5rem; }
+  .modal .modal-buttons button { padding: 11px; font-size: 13px; }
+}
+
+@media (max-width: 480px) {
+  .modal-overlay { padding: 0.25rem; align-items: flex-start; padding-top: 2rem; }
+  .modal { padding: 1.25rem; max-width: calc(100% - 0.5rem); border-radius: 10px; max-height: calc(100vh - 4rem); }
+  .modal h3 { font-size: 1rem; margin-bottom: 1rem; }
+  .modal .form-group { margin-bottom: 1rem; }
+  .modal .modal-buttons { flex-direction: column; gap: 0.5rem; margin-top: 1.25rem; }
+  .modal .modal-buttons button { width: 100%; padding: 12px; font-size: 14px; }
+  .modal .info-text { font-size: 12px; padding: 8px 10px; }
+}
