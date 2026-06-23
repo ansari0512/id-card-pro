@@ -55,9 +55,6 @@ window.renderTeacherStaff = function(list) {
           <div class="info-row"><span class="info-label">Blood:</span><span class="info-value">${t.bloodGroup || '-'}</span></div>
         </div>
         <div class="student-actions">
-          <button class="btn-print" onclick="window.open('teacher-staff-card-print.html?id=${t.id || ''}', '_blank', 'width=800,height=600')" title="Print">
-            🖨️ Print
-          </button>
           <button class="btn-edit" onclick="window.openTeacherEditModal('${t.docId || t.id}')" title="Edit">
             ✏️ Edit
           </button>
