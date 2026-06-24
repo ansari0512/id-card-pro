@@ -153,9 +153,13 @@ window.loadAdminStudents = async function() {
       if (window.adminAllClassStudents.length === 0) {
         window.adminAllClassStudents = await window.dbGetAllStudents(window.adminSchoolId);
       }
-      students = classFilter
-        ? window.adminAllClassStudents.filter(s => s.class === classFilter)
-        : window.adminAllClassStudents;
+      students = window.adminAllClassStudents;
+      if (classFilter) {
+        students = students.filter(s => s.class === classFilter);
+      }
+      if (sectionFilter) {
+        students = students.filter(s => s.section === sectionFilter);
+      }
       window.adminAllStudents = students;
       document.getElementById('loading').style.display = 'none';
 
