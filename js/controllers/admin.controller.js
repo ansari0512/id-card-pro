@@ -119,10 +119,8 @@ window.loadSchools = async function() {
     document.getElementById('loadingSchools').style.display = 'none';
     document.getElementById('schoolsTable').style.display = 'table';
 
-    // Fetch student and teacher counts in the background (parallelized per school).
-    let total = 0;
-    let totalTeachers = 0;
-    for (const school of schools) {
+    // Fetch student and teacher counts for all schools in parallel.
+    const counts = await Promise.all(schools.map(async (school) => {
       const [studentsResult, teachersResult] = await Promise.all([
         (async () => {
           try {
@@ -151,9 +149,11 @@ window.loadSchools = async function() {
           }
         })()
       ]);
-      total += studentsResult;
-      totalTeachers += teachersResult;
-    }
+      return { students: studentsResult, teachers: teachersResult };
+    }));
+
+    const total = counts.reduce((sum, c) => sum + c.students, 0);
+    const totalTeachers = counts.reduce((sum, c) => sum + c.teachers, 0);
     document.getElementById('totalStudentsAll').textContent = total;
     document.getElementById('totalTeachersAll').textContent = totalTeachers;
 

@@ -4,20 +4,6 @@
  */
 
 /**
- * Mock mode detector - delegates to shared implementation in helpers.js
- */
-window.isMockMode = function() {
-  return window.commonIsMockMode && window.commonIsMockMode();
-};
-
-/**
- * Apply proper case to input - delegates to shared implementation in helpers.js
- */
-window.applyProperCase = function(input) {
-  return window.commonApplyProperCase && window.commonApplyProperCase(input);
-};
-
-/**
  * Update ID card preview
  */
 window.updateIdPreview = function() {
@@ -88,8 +74,8 @@ window.uploadTeacherStaffPhoto = async function(schoolId, teacherId, file, teach
   const safeSchoolName = String(schoolName).replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
   const safeTeacherName = String(teacherName || teacherId).replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
   const ext = file.type.includes('png') ? 'png' : 'jpg';
-  // Storage rule match ke liye path teacher_photos se hi start karega
-  const path = `teacher_photos/${safeSchoolName}/${safeTeacherName}_${teacherId}.${ext}`;
+  // Path includes schoolId for storage rule school isolation: teacher_photos/{schoolId}/{schoolName}/{fileName}
+  const path = `teacher_photos/${schoolId}/${safeSchoolName}/${safeTeacherName}_${teacherId}.${ext}`;
   
   const storageRef = firebase.storage().ref().child(path);
   const snapshot = await storageRef.put(file, { contentType: file.type });
@@ -261,10 +247,26 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('photo').addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (!file) return;
+      
+      // Show loading state
+      const cardPhoto = document.getElementById('cardPhoto');
+      const placeholder = document.querySelector('#studentPreviewCard .student-photo-placeholder-text');
+      cardPhoto.style.opacity = '0.5';
+      if (placeholder) placeholder.textContent = 'Loading...';
+      
       const reader = new FileReader();
       reader.onload = ev => {
-        document.getElementById('cardPhoto').src = ev.target.result;
-        document.querySelector('#studentPreviewCard .student-photo-placeholder-text').style.display = 'none';
+        cardPhoto.src = ev.target.result;
+        cardPhoto.style.opacity = '1';
+        if (placeholder) placeholder.style.display = 'none';
+      };
+      reader.onerror = () => {
+        cardPhoto.style.opacity = '1';
+        if (placeholder) {
+          placeholder.textContent = 'Failed to load';
+          placeholder.style.display = 'block';
+        }
+        window.showToast('❌ Failed to load photo preview', 'error');
       };
       reader.readAsDataURL(file);
     });

@@ -34,8 +34,16 @@ window.switchTab = function(tab) {
   }
 };
 
-// Auto-switch tab based on URL parameter
+// Auth protection + auto-switch tab based on URL parameter
 document.addEventListener('DOMContentLoaded', function() {
+  // Enforce authentication
+  window.initAuth(async (user, role) => {
+    if (!user) {
+      window.location.href = 'index.html';
+      return;
+    }
+  });
+
   const urlParams = new URLSearchParams(window.location.search);
   const tabParam = urlParams.get('tab');
   

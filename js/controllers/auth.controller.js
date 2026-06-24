@@ -190,6 +190,26 @@ window.requireAuth = function(redirectUrl = 'index.html') {
 };
 
 /**
+ * Handle bfcache restore (browser back/forward navigation).
+ * pageshow fires every time the page is displayed, including from bfcache
+ * where the page is restored without re-executing scripts.
+ * This runs on all pages that load auth.controller.js.
+ */
+(function() {
+  // Use a flag to ensure this runs after initAuth sets window.currentUser,
+  // but also handles pages where initAuth wasn't called
+  window.addEventListener('pageshow', function(event) {
+    if (event.persisted) {
+      // Page was restored from bfcache — re-check auth
+      const user = firebase.auth().currentUser;
+      if (!user) {
+        window.location.href = 'index.html';
+      }
+    }
+  });
+})();
+
+/**
  * Require admin (redirect if not admin)
  */
 window.requireAdmin = function(redirectUrl = 'dashboard.html') {

@@ -253,7 +253,8 @@ window.uploadPhoto = async function(userId, studentId, file, className, studentN
   }
 
   const ext = finalFile.type.includes('png') ? 'png' : 'jpg';
-  const path = `student_photos/${safeSch}/${cls}/${sName}_${studentId}.${ext}`;
+  // Path includes userId for storage rule school isolation: student_photos/{schoolId}/{schoolName}/{className}/{fileName}
+  const path = `student_photos/${userId}/${safeSch}/${cls}/${sName}_${studentId}.${ext}`;
   const storageRef = firebase.storage().ref(path);
   const snapshot = await storageRef.put(finalFile);
   return await snapshot.ref.getDownloadURL();
@@ -321,26 +322,73 @@ window.dbStudents = function(schoolId, className) {
 };
 
 window.dbGetAllStudents = async function(schoolId, filters = {}) {
-  const targetClasses = filters.class ? [filters.class] : window.ALL_CLASSES;
-
-  const snapshots = await Promise.all(
-    targetClasses.map(cls => {
-      let q = window.dbStudents(schoolId, cls);
-      if (filters.section) q = q.where('section', '==', filters.section);
-      return q.get().then(snap =>
-        snap.docs.map(d => ({ docId: d.id, ...d.data() }))
-      ).catch(() => []);
-    })
-  );
-
-  let results = snapshots.flat().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-
-  if (filters.search) {
-    const q = filters.search.toLowerCase();
-    results = results.filter(s =>
-      s.name?.toLowerCase().includes(q) || s.id?.toLowerCase().includes(q)
+  // When a specific class filter is provided, use existing per-class query (backward compatible)
+  if (filters.class) {
+    const targetClasses = [filters.class];
+    const snapshots = await Promise.all(
+      targetClasses.map(cls => {
+        let q = window.dbStudents(schoolId, cls);
+        if (filters.section) q = q.where('section', '==', filters.section);
+        return q.get().then(snap =>
+          snap.docs.map(d => ({ docId: d.id, ...d.data() }))
+        ).catch(() => []);
+      })
     );
+
+    let results = snapshots.flat().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+    if (filters.search) {
+      const q = filters.search.toLowerCase();
+      results = results.filter(s =>
+        s.name?.toLowerCase().includes(q) || s.id?.toLowerCase().includes(q)
+      );
+    }
+
+    return results;
   }
 
-  return results;
+  // No class filter: use collection group query to fetch all students in a single query.
+  // Every student document is guaranteed to have schoolId (verified by integrity audit).
+  try {
+    let q = firebase.firestore().collectionGroup('students')
+      .where('schoolId', '==', schoolId);
+    if (filters.section) q = q.where('section', '==', filters.section);
+    const snap = await q.get();
+    let results = snap.docs.map(d => ({ docId: d.id, ...d.data() }));
+    results.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+    if (filters.search) {
+      const query = filters.search.toLowerCase();
+      results = results.filter(s =>
+        s.name?.toLowerCase().includes(query) || s.id?.toLowerCase().includes(query)
+      );
+    }
+
+    return results;
+  } catch (cgError) {
+    // Fallback: if collection group query fails (e.g. index not ready),
+    // fall back to existing ALL_CLASSES loop for uninterrupted service.
+    console.warn('CollectionGroup query failed, falling back to per-class queries:', cgError.message);
+    const targetClasses = window.ALL_CLASSES;
+    const snapshots = await Promise.all(
+      targetClasses.map(cls => {
+        let q = window.dbStudents(schoolId, cls);
+        if (filters.section) q = q.where('section', '==', filters.section);
+        return q.get().then(snap =>
+          snap.docs.map(d => ({ docId: d.id, ...d.data() }))
+        ).catch(() => []);
+      })
+    );
+
+    let results = snapshots.flat().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+    if (filters.search) {
+      const q = filters.search.toLowerCase();
+      results = results.filter(s =>
+        s.name?.toLowerCase().includes(q) || s.id?.toLowerCase().includes(q)
+      );
+    }
+
+    return results;
+  }
 };

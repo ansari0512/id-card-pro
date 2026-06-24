@@ -2,31 +2,45 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
 
-    // Helper: Extract school name from path and verify ownership
-    // Path format: student_photos/{schoolName}/{className}/{fileName}
-    // Path format: teacher_photos/{schoolName}/{fileName}
-    function isSchoolPhotoOwner() {
-      // Auth is required
-      return request.auth != null;
+    // ── STUDENT PHOTOS: New path with school ID isolation ────────────
+    // Path: student_photos/{schoolId}/{schoolName}/{className}/{fileName}
+    // schoolId = Firebase Auth UID of the school owner
+    // Only the owning school can read/write/delete
+    match /student_photos/{schoolId}/{schoolName}/{className}/{fileName} {
+      allow read:   if request.auth != null && request.auth.uid == schoolId;
+      allow write:  if request.auth != null &&
+                      request.auth.uid == schoolId &&
+                      request.resource.size < 5 * 1024 * 1024 &&
+                      request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null && request.auth.uid == schoolId;
     }
 
-    // Student photos: path = student_photos/{schoolName}/{className}/{fileName}
-    // We validate that the user is authenticated (school-level ownership is enforced
-    // at the application level via schoolId in Firebase Auth UID)
+    // ── STUDENT PHOTOS: Old path backward compatibility ─────────────
+    // Path: student_photos/{schoolName}/{className}/{fileName}
+    // Existing photos remain readable by any authenticated user
+    // No new uploads allowed to this path
     match /student_photos/{schoolName}/{className}/{fileName} {
-      allow read: if true;  // Public read is needed for ID card display
-      allow write: if request.auth != null &&
-        request.resource.size < 5 * 1024 * 1024 &&
-        request.resource.contentType.matches('image/.*');
+      allow read:   if request.auth != null;
+      allow write:  if false;
       allow delete: if request.auth != null;
     }
 
-    // Teacher photos: path = teacher_photos/{schoolName}/{fileName}
+    // ── TEACHER PHOTOS: New path with school ID isolation ────────────
+    // Path: teacher_photos/{schoolId}/{schoolName}/{fileName}
+    match /teacher_photos/{schoolId}/{schoolName}/{fileName} {
+      allow read:   if request.auth != null && request.auth.uid == schoolId;
+      allow write:  if request.auth != null &&
+                      request.auth.uid == schoolId &&
+                      request.resource.size < 5 * 1024 * 1024 &&
+                      request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null && request.auth.uid == schoolId;
+    }
+
+    // ── TEACHER PHOTOS: Old path backward compatibility ─────────────
+    // Path: teacher_photos/{schoolName}/{fileName}
     match /teacher_photos/{schoolName}/{fileName} {
-      allow read: if true;  // Public read for ID card display
-      allow write: if request.auth != null &&
-        request.resource.size < 5 * 1024 * 1024 &&
-        request.resource.contentType.matches('image/.*');
+      allow read:   if request.auth != null;
+      allow write:  if false;
       allow delete: if request.auth != null;
     }
   }

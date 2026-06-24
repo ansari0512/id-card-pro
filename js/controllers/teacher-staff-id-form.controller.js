@@ -9,10 +9,6 @@
     if (el) el.textContent = val;
   }
 
-window.applyProperCase = window.applyProperCase || function(input) {
-  return window.commonApplyProperCase && window.commonApplyProperCase(input);
-};
-
   window.updateTeacherStaffPreview = function() {
     setText('tsCardName', document.getElementById('tsName')?.value || 'Teacher Name');
     setText('tsCardDesignation', document.getElementById('tsDesignation')?.value || '-');
@@ -185,10 +181,26 @@ window.applyProperCase = window.applyProperCase || function(input) {
     document.getElementById('tsPhoto').addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (!file) return;
+      
+      // Show loading state
+      const cardPhoto = document.getElementById('tsCardPhoto');
+      const placeholder = document.querySelector('#teacherPreviewCard .student-photo-placeholder-text');
+      cardPhoto.style.opacity = '0.5';
+      if (placeholder) placeholder.textContent = 'Loading...';
+      
       const reader = new FileReader();
       reader.onload = ev => {
-        document.getElementById('tsCardPhoto').src = ev.target.result;
-        document.querySelector('#teacherPreviewCard .student-photo-placeholder-text').style.display = 'none';
+        cardPhoto.src = ev.target.result;
+        cardPhoto.style.opacity = '1';
+        if (placeholder) placeholder.style.display = 'none';
+      };
+      reader.onerror = () => {
+        cardPhoto.style.opacity = '1';
+        if (placeholder) {
+          placeholder.textContent = 'Failed to load';
+          placeholder.style.display = 'block';
+        }
+        window.showToast('❌ Failed to load photo preview', 'error');
       };
       reader.readAsDataURL(file);
     });

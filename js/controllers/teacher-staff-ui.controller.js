@@ -46,7 +46,7 @@ window.renderTeacherStaff = function(list) {
         <input type="checkbox" class="header-checkbox teacher-checkbox" data-id="${t.docId || t.id}" id="teacher-${t.docId || t.id}">
       </div>
       <div class="student-content">
-        <img class="student-photo" src="${t.photo || 'assets/placeholder.png'}" alt="${t.name || 'Teacher'}" onerror="this.src='assets/placeholder.png'">
+        <img class="student-photo" src="${t.photo || 'assets/placeholder.png'}" alt="${t.name || 'Teacher'}" onerror="this.src='assets/placeholder.png'" loading="lazy">
         <h3 class="student-name">${t.name || 'Unknown'}</h3>
         <div class="student-class">${t.designation || '-'} </div>
         <div class="student-info-grid">
@@ -90,6 +90,11 @@ window.renderTeacherStaff = function(list) {
   }
 };
 
+// Cache for teacher list to reduce Firestore reads
+window.teachersListCache = null;
+window.teachersListCacheTime = 0;
+const TEACHERS_CACHE_TTL = 5000; // 5 seconds cache
+
 window.loadTeacherStaff = async function() {
   if (window.isTeacherStaffLoading) return;
   window.isTeacherStaffLoading = true;
@@ -107,7 +112,25 @@ window.loadTeacherStaff = async function() {
     const schoolId = user.uid;
     const search = document.getElementById('teacherSearchInput')?.value?.trim() || '';
 
-    const list = await window.dbGetAllTeacherStaff(schoolId, { search });
+    // Use cache if available and fresh (only when no search)
+    const now = Date.now();
+    const cachedList = window.teachersListCache && 
+                       (now - window.teachersListCacheTime) < TEACHERS_CACHE_TTL &&
+                       !search
+                       ? window.teachersListCache : null;
+    
+    let list;
+    if (cachedList) {
+      list = cachedList;
+    } else {
+      list = await window.dbGetAllTeacherStaff(schoolId, { search });
+      // Cache only when not searching
+      if (!search) {
+        window.teachersListCache = list;
+        window.teachersListCacheTime = now;
+      }
+    }
+    
     window.allTeacherStaff = list;
 
     window.updateTeacherSelectedCount();

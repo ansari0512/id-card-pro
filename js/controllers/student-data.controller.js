@@ -15,13 +15,6 @@ window.selectedPromoteStudents = new Set();
 window.dropdownSelections = {};
 
 /**
- * Mock mode detector - delegates to shared implementation in helpers.js
- */
-window.isMockMode = function() {
-  return window.commonIsMockMode && window.commonIsMockMode();
-};
-
-/**
  * Get students
  */
 window.getStudents = async function(filters = {}) {

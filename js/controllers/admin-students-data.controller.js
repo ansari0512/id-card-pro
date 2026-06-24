@@ -12,6 +12,7 @@ window.adminMode = 'single'; // 'single' or 'all'
 window.adminDataType = 'students'; // 'students' or 'teachers'
 window.adminSchoolsList = []; // All schools used in View All mode
 window.adminAllClassStudents = []; // Single school mode mein sabhi students (bina class filter ke)
+window.adminAllStudentsFullSchoolCache = []; // View All mode mein selected school ka full dataset (no class/section filters)
 
 /**
  * Initialize admin students page
@@ -83,10 +84,13 @@ window.loadSchoolsDropdown = async function() {
 window.onDataTypeChange = function() {
   window.adminDataType = document.getElementById('dataTypeFilter').value;
   const classFilter = document.getElementById('classFilter');
+  const sectionFilter = document.getElementById('sectionFilter');
   if (window.adminDataType === 'teachers') {
-    if (classFilter) classFilter.style.display = 'none';
+    if (classFilter) { classFilter.style.display = 'none'; classFilter.value = ''; }
+    if (sectionFilter) { sectionFilter.style.display = 'none'; sectionFilter.value = ''; }
   } else {
     if (classFilter) classFilter.style.display = '';
+    if (sectionFilter) sectionFilter.style.display = '';
   }
   window.selectedStudentIds.clear();
   window.loadAdminStudents();
@@ -107,7 +111,8 @@ window.loadAdminStudents = async function() {
 
   try {
     const classFilter = document.getElementById('classFilter').value;
-    const filters = classFilter ? { class: classFilter } : {};
+    const sectionFilter = document.getElementById('sectionFilter') ? document.getElementById('sectionFilter').value : '';
+    const filters = classFilter || sectionFilter ? { ...(classFilter ? { class: classFilter } : {}), ...(sectionFilter ? { section: sectionFilter } : {}) } : {};
 
     let students = [];
 
@@ -115,7 +120,12 @@ window.loadAdminStudents = async function() {
       const selectedSchool = document.getElementById('schoolFilter').value;
 
       if (selectedSchool) {
+        // Filtered dataset (class/section)
         students = await window.dbGetAllStudents(selectedSchool, filters);
+
+        // Full dataset cache (no class/section filters) -> used by UI dropdowns in View All mode
+        window.adminAllStudentsFullSchoolCache = await window.dbGetAllStudents(selectedSchool, {});
+
         const school = window.adminSchoolsList.find(s => s.id === selectedSchool);
         if (school) {
           document.getElementById('pageTitle').textContent = '🏫 School: ' + (school.schoolName || 'School') + ' — Students';
@@ -154,7 +164,7 @@ window.loadAdminStudents = async function() {
         countEl.textContent = '\uD83D\uDC65 ' + students.length + ' Students';
         countEl.style.display = 'flex';
       }
-      window.updateClassFilter(window.adminAllClassStudents, classFilter);
+      window.updateClassAndSectionFilters(window.adminAllClassStudents, classFilter, document.getElementById('sectionFilter') ? document.getElementById('sectionFilter').value : '');
 
       if (students.length === 0) {
         document.getElementById('emptyState').style.display = 'block';
@@ -295,6 +305,7 @@ window.adminExportStudentTeacherWorkbook = async function() {
 
     const selectedSchool = document.getElementById('schoolFilter').value;
     const selectedClass = document.getElementById('classFilter').value;
+    const selectedSection = document.getElementById('sectionFilter') ? document.getElementById('sectionFilter').value : '';
     const schoolsSnap = await firebase.firestore().collection('schools').get();
     let schools = schoolsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
     if (!schools.length) {
@@ -310,7 +321,10 @@ window.adminExportStudentTeacherWorkbook = async function() {
 
     for (const school of schools) {
       try {
-        const students = await window.dbGetAllStudents(school.id, selectedClass ? { class: selectedClass } : {});
+        const students = await window.dbGetAllStudents(
+          school.id,
+          (selectedClass || selectedSection) ? { ...(selectedClass ? { class: selectedClass } : {}), ...(selectedSection ? { section: selectedSection } : {}) } : {}
+        );
         students.forEach(s => allStudents.push({ ...s, _schoolName: school.schoolName || school.email || '' }));
       } catch (e) {}
       try {
@@ -397,32 +411,6 @@ window.adminExportSelectedStudents = async function(selectedStudents) {
   await window.adminExportSelectedRecords(selectedStudents, 'student');
 };
 
-// Backward compatibility: keep old CSV export button working
-window.adminExportCSV = async function() {
-  if (window.adminAllStudents.length === 0) {
-    window.showToast('No students to export', 'error');
-    return;
-  }
-  let schoolName = window.adminMode === 'all' ? 'All Schools' : 'School';
-  if (window.adminSchoolId) {
-    try {
-      const doc = await firebase.firestore().collection('schools').doc(window.adminSchoolId).get();
-      if (doc.exists) schoolName = doc.data().schoolName || 'School';
-    } catch(e) {}
-  }
-  const headers = ['Student ID', 'Name', 'Father Name', 'Class', 'Section', 'Mobile', 'Address', 'School', 'Added On'];
-  const rows = window.adminAllStudents.map(s => [
-    s.id||'', s.name||'', s.father||'', s.class||'',
-    s.section||'', s.mobile||'', s.address||'',
-    s._schoolName || schoolName,
-    s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-IN') : ''
-  ]);
-  const prefixRow = ['School: ' + schoolName + ' (Downloaded: ' + new Date().toLocaleDateString('en-IN') + ')'];
-  const short = schoolName.split(/\s+/).map(function(w) { return w[0].toUpperCase(); }).join('').slice(0,6);
-  window.csvDownload(headers, rows, short + '_students_' + new Date().toISOString().slice(0,10) + '.csv', [prefixRow]);
-  window.showToast('Exported ' + window.adminAllStudents.length + ' students', 'success');
-};
-
 /**
  * Download ZIP (photos + CSV) — ALWAYS includes Students AND Teachers/Staff.
  * Reuses the same fresh Firebase load as the full Export function.
@@ -437,6 +425,7 @@ window.adminBulkDownload = async function() {
     // --- Same fresh load as Export, with the same school/class filters ---
     var selectedSchool = document.getElementById('schoolFilter').value;
     var selectedClass = document.getElementById('classFilter').value;
+    var selectedSection = document.getElementById('sectionFilter') ? document.getElementById('sectionFilter').value : '';
     const schoolsSnap = await firebase.firestore().collection('schools').get();
     var schools = schoolsSnap.docs.map(function(d) { return { id: d.id, ...d.data() }; });
     if (!schools.length) {
@@ -453,7 +442,10 @@ window.adminBulkDownload = async function() {
     for (var si = 0; si < schools.length; si++) {
       var school = schools[si];
       try {
-        var lst = await window.dbGetAllStudents(school.id, selectedClass ? { class: selectedClass } : {});
+        var lst = await window.dbGetAllStudents(
+          school.id,
+          (selectedClass || selectedSection) ? { ...(selectedClass ? { class: selectedClass } : {}), ...(selectedSection ? { section: selectedSection } : {}) } : {}
+        );
         lst.forEach(function(s) { allStudents.push({ ...s, _schoolName: school.schoolName || school.email || '', _schoolId: school.id }); });
       } catch(e) {}
       try {

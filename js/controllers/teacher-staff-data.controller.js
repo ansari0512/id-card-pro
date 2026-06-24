@@ -6,10 +6,6 @@ window.allTeacherStaff = [];
 window.selectedTeacherStaff = new Set();
 window.isTeacherStaffLoading = false;
 
-window.isMockModeTeacherStaff = function() {
-  return window.commonIsMockMode && window.commonIsMockMode();
-};
-
 // Firestore collection layout:
 // schools/{schoolId}/teachers/{teacherDocId}
 // where teacherDocId is generated Teacher/Staff ID (tId)
@@ -21,7 +17,7 @@ window.dbTeachersCollection = function(schoolId) {
 window.dbGetAllTeacherStaff = async function(schoolId, filters = {}) {
   const qSearch = (filters.search || '').trim().toLowerCase();
 
-  if (window.isMockModeTeacherStaff()) {
+  if (window.isMockMode()) {
     const list = JSON.parse(localStorage.getItem('mock_teachers') || '[]');
     let results = list.filter(x => x.schoolId === schoolId);
     if (qSearch) {
@@ -51,13 +47,33 @@ window.dbGetAllTeacherStaff = async function(schoolId, filters = {}) {
 };
 
 window.dbTeacherById = async function(schoolId, teacherDocId) {
-  if (window.isMockModeTeacherStaff()) {
+  if (window.isMockMode()) {
     const list = JSON.parse(localStorage.getItem('mock_teachers') || '[]');
     return list.find(x => x.docId === teacherDocId) || null;
   }
 
   const doc = await window.dbTeachersCollection(schoolId).doc(teacherDocId).get();
   return doc.exists ? { docId: doc.id, ...doc.data() } : null;
+};
+
+// Teacher photo upload (used by teacher edit flow)
+// Defined here because teacher-staff.html does not load id-form.controller.js
+window.uploadTeacherPhoto = async function(schoolId, teacherId, file, teacherName, designation) {
+  let schoolName = 'School';
+  try {
+    const doc = await firebase.firestore().collection('schools').doc(schoolId).get();
+    if (doc.exists) schoolName = doc.data().schoolName || 'School';
+  } catch (e) {}
+
+  const safeSchoolName = String(schoolName).replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
+  const safeTeacherName = String(teacherName || teacherId).replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
+  const ext = file.type.includes('png') ? 'png' : 'jpg';
+  // Path includes schoolId for storage rule school isolation: teacher_photos/{schoolId}/{schoolName}/{fileName}
+  const path = `teacher_photos/${schoolId}/${safeSchoolName}/${safeTeacherName}_${teacherId}.${ext}`;
+
+  const storageRef = firebase.storage().ref().child(path);
+  const snapshot = await storageRef.put(file, { contentType: file.type });
+  return await snapshot.ref.getDownloadURL();
 };
 
 window.deleteTeacherStaff = async function(docId) {

@@ -6,6 +6,11 @@
 // Store dropdown selections globally to persist across renders
 window.dropdownSelections = window.dropdownSelections || {};
 
+// Cache for student list to reduce Firestore reads
+window.studentsListCache = null;
+window.studentsListCacheTime = 0;
+const STUDENTS_CACHE_TTL = 5000; // 5 seconds cache
+
 // ── COMPLETE STUDENTS ──────────────────────────────────────
 
 /**
@@ -37,7 +42,32 @@ window.loadStudents = async function() {
       search: search || ''
     };
 
-    const students = await window.getStudents(filters);
+    // Use cache only if filters haven't changed
+    const now = Date.now();
+    const cacheKey = JSON.stringify({ class: classVal, section: sectionVal });
+    const cachedData = window.studentsListCache?.key === cacheKey && 
+                       (now - window.studentsListCacheTime) < STUDENTS_CACHE_TTL
+                       ? window.studentsListCache.data : null;
+    
+    let students;
+    if (cachedData && !search) {
+      // Use cached data for class/section filters, but always apply search client-side
+      students = cachedData;
+      if (search) {
+        students = students.filter(s =>
+          (s.name || '').toLowerCase().includes(search) ||
+          (s.id || '').toLowerCase().includes(search)
+        );
+      }
+    } else {
+      students = await window.getStudents(filters);
+      // Cache the full unfiltered result for this class/section combo
+      if (!search) {
+        window.studentsListCache = { key: cacheKey, data: students };
+        window.studentsListCacheTime = now;
+      }
+    }
+    
     window.allStudents = students;
 
     loading.style.display = 'none';
@@ -85,7 +115,7 @@ window.renderStudents = function(students) {
         <input type="checkbox" class="header-checkbox student-checkbox" data-id="${student.docId || student.id}" id="student-${student.docId || student.id}">
       </div>
       <div class="student-content">
-        <img class="student-photo" src="${student.photo || 'assets/placeholder.png'}" alt="${student.name}" onerror="this.src='assets/placeholder.png'">
+        <img class="student-photo" src="${student.photo || 'assets/placeholder.png'}" alt="${student.name}" onerror="this.src='assets/placeholder.png'" loading="lazy">
         <h3 class="student-name">${student.name || 'Unknown'}</h3>
         <div class="student-class">${student.class || '-'} - ${student.section || '-'}</div>
         
@@ -262,13 +292,6 @@ window.deleteSingle = async function(docId) {
 
 
 
-
-/**
- * Apply proper case to input - delegates to shared implementation in helpers.js
- */
-window.applyProperCase = function(input) {
-  return window.commonApplyProperCase && window.commonApplyProperCase(input);
-};
 
 // ── PENDING STUDENTS ───────────────────────────────────────
 

@@ -4,6 +4,9 @@
  */
 
 window.dashboardUser = null;
+window.dashboardStatsCache = null;
+window.dashboardStatsCacheTime = 0;
+const DASHBOARD_CACHE_TTL = 30000; // 30 seconds cache
 
 /**
  * Initialize dashboard
@@ -22,11 +25,35 @@ window.initDashboard = function() {
 
     window.dashboardUser = user;
     document.getElementById('userEmail').textContent = user.email;
-    await window.loadStats(user);
-
-    // Setup event listeners
-    // (no longer needed - empty placeholder removed)
+    
+    // Use cached stats if available and fresh
+    const now = Date.now();
+    if (window.dashboardStatsCache && (now - window.dashboardStatsCacheTime) < DASHBOARD_CACHE_TTL) {
+      window.applyDashboardStats(window.dashboardStatsCache);
+    } else {
+      await window.loadStats(user);
+    }
   });
+};
+
+/**
+ * Apply cached stats to dashboard
+ */
+window.applyDashboardStats = function(stats) {
+  const nameEl = document.getElementById('schoolNameDisplay');
+  if (nameEl && stats.schoolName) nameEl.textContent = '🏫 ' + stats.schoolName;
+  
+  const totalEl = document.getElementById('totalStudents');
+  if (totalEl) totalEl.textContent = stats.totalStudents;
+  
+  const activeEl = document.getElementById('activeStudents');
+  if (activeEl) activeEl.textContent = stats.withPhotos;
+  
+  const pendingEl = document.getElementById('pendingStudents');
+  if (pendingEl) pendingEl.textContent = stats.pendingCount;
+  
+  const staffEl = document.getElementById('totalStaff');
+  if (staffEl) staffEl.textContent = stats.staffCount;
 };
 
 /**
@@ -43,22 +70,29 @@ window.loadStats = async function(user) {
     if (nameEl) nameEl.textContent = schoolName ? '🏫 ' + schoolName : 'Dashboard';
 
     const students = await window.dbGetAllStudents(user.uid);
-    document.getElementById('totalStudents').textContent = students.length;
-
-    // With photos count
+    const totalStudents = students.length;
     const withPhotos = students.filter(s => s.photo).length;
-    const activeEl = document.getElementById('activeStudents');
-    if (activeEl) activeEl.textContent = withPhotos;
 
     // Pending count
     const pendingSnap = await firebase.firestore().collection('schools').doc(user.uid).collection('pending_students').get();
-    const pendingEl = document.getElementById('pendingStudents');
-    if (pendingEl) pendingEl.textContent = pendingSnap.size;
+    const pendingCount = pendingSnap.size;
 
     // Staff count
     const staffSnap = await firebase.firestore().collection('schools').doc(user.uid).collection('teachers').get();
-    const staffEl = document.getElementById('totalStaff');
-    if (staffEl) staffEl.textContent = staffSnap.size;
+    const staffCount = staffSnap.size;
+
+    // Cache the stats
+    window.dashboardStatsCache = {
+      schoolName,
+      totalStudents,
+      withPhotos,
+      pendingCount,
+      staffCount
+    };
+    window.dashboardStatsCacheTime = Date.now();
+
+    // Apply to UI
+    window.applyDashboardStats(window.dashboardStatsCache);
   } catch (e) {
     console.error('Stats load failed:', e);
   }

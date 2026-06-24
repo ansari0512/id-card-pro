@@ -6,6 +6,9 @@
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta http-equiv="X-Frame-Options" content="DENY">
   <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Create ID Card - RK Choice</title>
    <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'dark');</script>
     <link rel="stylesheet" href="src/styles/main.css?v=2.0">
@@ -438,6 +441,10 @@
     <!-- UI-only helpers (floating labels + form toggle) -->
     <script src="js/controllers/id-form.ui.js?v=1.0"></script>
 
+  <!-- Auth Protection -->
+  <script>
+    if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',function(){window.initAuth(async(user,role)=>{if(!user){window.location.href='index.html';}});});}else{window.initAuth(async(user,role)=>{if(!user){window.location.href='index.html';}});}
+  </script>
 
    <!-- Centralized Theme System -->
    <script src="src/js/theme.js?v=2.0"></script>

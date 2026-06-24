@@ -16,9 +16,20 @@ window.onSchoolFilterChange = function() {
 /**
  * Dynamically update the class filter with available classes only.
  */
-window.updateClassFilter = function(students, selectedClass) {
+window.updateClassAndSectionFilters = function(students, selectedClass, selectedSection) {
   const classOrder = ['Nursery','LKG','UKG','KG','1','2','3','4','5','6','7','8','9','10','11','12'];
-  const availableClasses = [...new Set(students.map(s => s.class).filter(Boolean))]
+
+  // Class dropdown should be built from the full (single-school) dataset, not from the filtered `students` array.
+  // In single-school mode, loadAdminStudents keeps window.adminAllClassStudents as the full set for that school.
+  const sourceForClasses = (window.adminMode === 'all')
+    ? ((window.adminAllStudentsFullSchoolCache && window.adminAllStudentsFullSchoolCache.length > 0)
+      ? window.adminAllStudentsFullSchoolCache
+      : students)
+    : ((window.adminAllClassStudents && window.adminAllClassStudents.length > 0)
+      ? window.adminAllClassStudents
+      : students);
+
+  const availableClasses = [...new Set(sourceForClasses.map(s => s.class).filter(Boolean))]
     .sort((a, b) => {
       const ai = classOrder.indexOf(a);
       const bi = classOrder.indexOf(b);
@@ -28,15 +39,49 @@ window.updateClassFilter = function(students, selectedClass) {
       return ai - bi;
     });
 
-  const select = document.getElementById('classFilter');
-  select.innerHTML = '<option value="">All Classes</option>';
-  availableClasses.forEach(cls => {
-    const opt = document.createElement('option');
-    opt.value = cls;
-    opt.textContent = isNaN(cls) ? cls : 'Class ' + cls;
-    if (cls === selectedClass) opt.selected = true;
-    select.appendChild(opt);
-  });
+  const classSelect = document.getElementById('classFilter');
+  if (classSelect) {
+    classSelect.innerHTML = '<option value="">All Classes</option>';
+    availableClasses.forEach(cls => {
+      const opt = document.createElement('option');
+      opt.value = cls;
+      opt.textContent = isNaN(cls) ? cls : 'Class ' + cls;
+      if (cls === selectedClass) opt.selected = true;
+      classSelect.appendChild(opt);
+    });
+  }
+
+  // Build sections list based on selected class
+  const sectionSelect = document.getElementById('sectionFilter');
+  if (sectionSelect) {
+    const baseList = selectedClass ? students.filter(s => s.class === selectedClass) : students;
+    const availableSections = [...new Set(baseList.map(s => s.section).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
+
+    sectionSelect.innerHTML = '<option value="">All Sections</option>';
+    availableSections.forEach(sec => {
+      const opt = document.createElement('option');
+      opt.value = sec;
+      opt.textContent = sec;
+      if (sec === selectedSection) opt.selected = true;
+      sectionSelect.appendChild(opt);
+    });
+  }
+
+  // FIX: class dropdown must never shrink; keep ALL class options always
+  // (so selecting a class doesn't remove other classes)
+  if (classSelect && selectedClass) {
+    // When we have full student list for selected school, `students` already contains all classes.
+    // However, in single-school mode with caching, we pass only current filtered students.
+    // Therefore we rebuild classSelect from the global student list when possible.
+    // If not possible, fall back to keeping current options.
+  }
+};
+
+// Backward compatibility wrapper
+window.updateClassFilter = function(students, selectedClass) {
+  const sectionEl = document.getElementById('sectionFilter');
+  const selectedSection = sectionEl ? sectionEl.value : '';
+  window.updateClassAndSectionFilters(students, selectedClass, selectedSection);
 };
 
 /**

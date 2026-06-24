@@ -24,6 +24,7 @@ service cloud.firestore {
              request.resource.data.class is string &&
              request.resource.data.class.size() > 0 &&
              request.resource.data.section is string &&
+             request.resource.data.section.size() > 0 &&
              request.resource.data.mobile is string &&
              request.resource.data.mobile.matches('^[0-9]{10}$') &&
              request.resource.data.schoolId is string &&
@@ -110,7 +111,8 @@ service cloud.firestore {
 
           allow update: if isLoggedIn() &&
             (isAdmin() || isSchoolOwner(schoolId)) &&
-            validStudentData();
+            validStudentData() &&
+            request.resource.data.schoolId == resource.data.schoolId;
 
           allow delete: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
         }

@@ -6,6 +6,9 @@
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta http-equiv="X-Frame-Options" content="DENY">
   <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>School Students - RK Choice Admin</title>
    <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'dark');</script>
     <link rel="stylesheet" href="src/styles/main.css?v=2.0">
@@ -31,22 +34,25 @@
 
      <!-- Filter + Actions Card -->
      <div class="card admin-students-card">
-        <!-- Row 0: Data type selector -->
-        <div class="admin-students-filters-row" style="margin-bottom:0.5rem;">
-          <select id="dataTypeFilter" title="Select Data Type" onchange="window.onDataTypeChange()" class="">
-            <option value="students">Students</option>
-            <option value="teachers">Teachers / Staff</option>
-          </select>
-        </div>
-        <!-- Row 1: Filters -->
-        <div class="admin-students-filters-row">
-          <select id="schoolFilter" title="Select School" onchange="window.onSchoolFilterChange()" class="">
-            <option value="">All Schools</option>
-          </select>
-          <select id="classFilter" title="Select Class" onchange="window.loadAdminStudents()">
-            <option value="">All Classes</option>
-          </select>
-        </div>
+         <!-- Row 1: Data type + School -->
+         <div class="admin-students-filters-row" style="margin-bottom:0.5rem;">
+           <select id="dataTypeFilter" title="Select Data Type" onchange="window.onDataTypeChange()" class="">
+             <option value="students">Students</option>
+             <option value="teachers">Teachers / Staff</option>
+           </select>
+           <select id="schoolFilter" title="Select School" onchange="window.onSchoolFilterChange()" class="">
+             <option value="">All Schools</option>
+           </select>
+         </div>
+         <!-- Row 2: Class + Section -->
+         <div class="admin-students-filters-row">
+           <select id="classFilter" title="Select Class" onchange="window.loadAdminStudents()">
+             <option value="">All Classes</option>
+           </select>
+           <select id="sectionFilter" title="Select Section" onchange="window.loadAdminStudents()" class="">
+             <option value="">All Sections</option>
+           </select>
+         </div>
         <!-- Row 2: Actions -->
         <div class="admin-students-actions-row">
           <label class="action-btn select-all-label">
