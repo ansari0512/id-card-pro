@@ -245,38 +245,112 @@ window.toggleStatus = async function(schoolId, currentActive) {
 };
 
 /**
- * Delete school
+ * Soft delete school - moves school + students + teachers to deleted collections
  */
 window.deleteSchool = async function(schoolId, schoolName) {
-  if (!confirm(`Are you sure you want to delete "${schoolName}"? This action cannot be undone.`)) return;
+  if (!confirm(`Are you sure you want to delete "${schoolName}"?\n\nSchool, all students, and teachers will be moved to deleted items. You can restore them later from Deleted Cards.`)) return;
 
   try {
+    const user = firebase.auth().currentUser;
+    const deletedByEmail = user?.email || 'unknown_user_or_admin_operation';
+    const now = Date.now();
+
+    // 1. Get school data
+    const schoolSnap = await firebase.firestore().collection('schools').doc(schoolId).get();
+    if (!schoolSnap.exists) {
+      window.showToast('School not found', 'error');
+      return;
+    }
+    const schoolData = schoolSnap.data();
+
+    // 2. Get all students
     const students = await window.dbGetAllStudents(schoolId);
-    // Deletion log (frontend) - so deletedBy me email aata rahe
-    try {
-      const user = firebase.auth().currentUser;
-      const deletedByEmail = user?.email || 'unknown_user_or_admin_operation';
-      await firebase.firestore().collection('deletion_logs').add({
-        collectionName: 'schools',
-        documentPath: `schools/${schoolId}`,
-        documentId: schoolId,
-        deletedData: { schoolId },
-        deletedAt: Date.now(),
+
+    // 3. Get all teachers/staff
+    const teachers = await window.dbGetAllTeacherStaff(schoolId);
+
+    // 4. Move school to deleted_schools
+    await firebase.firestore().collection('deleted_schools').doc(schoolId).set({
+      ...schoolData,
+      schoolId: schoolId,
+      deletedAt: now,
+      deletedBy: deletedByEmail,
+      deletedByRole: 'admin',
+      deleteReason: 'Deleted by admin'
+    });
+
+    // 5. Move all students to deleted_students
+    const studentBatch = firebase.firestore().batch();
+    let batchCount = 0;
+    const BATCH_LIMIT = 500;
+
+    for (const student of students) {
+      const studentRef = window.dbStudents(schoolId, student.class).doc(student.docId || student.id);
+      const deletedStudentRef = firebase.firestore().collection('deleted_students').doc(student.docId || student.id);
+
+      const deletedStudentData = {
+        ...student,
+        schoolId: schoolId,
+        schoolName: schoolName,
+        originalDocId: student.docId || student.id,
+        originalClass: student.class,
+        originalPath: `schools/${schoolId}/classes/${student.class}/students/${student.docId || student.id}`,
+        deletedAt: now,
         deletedBy: deletedByEmail,
-        reason: 'School document deleted (frontend log)'
-      });
-    } catch (logErr) {
-      console.warn('Failed to write school deletion log:', logErr.message);
+        deletedByRole: 'admin',
+        deleteReason: 'School deleted by admin'
+      };
+
+      studentBatch.set(deletedStudentRef, deletedStudentData);
+      studentBatch.delete(studentRef);
+      batchCount += 2;
+
+      if (batchCount >= BATCH_LIMIT) {
+        await studentBatch.commit();
+        batchCount = 0;
+      }
+    }
+    if (batchCount > 0) {
+      await studentBatch.commit();
     }
 
-    await Promise.all(students.map(s =>
-      window.dbStudents(schoolId, s.class).doc(s.docId || s.id).delete()
-    ));
+    // 6. Move all teachers to deleted_teachers
+    const teacherBatch = firebase.firestore().batch();
+    batchCount = 0;
 
+    for (const teacher of teachers) {
+      const teacherRef = firebase.firestore().collection('schools').doc(schoolId).collection('teachers').doc(teacher.docId || teacher.id);
+      const deletedTeacherRef = firebase.firestore().collection('deleted_teachers').doc(teacher.docId || teacher.id);
+
+      const deletedTeacherData = {
+        ...teacher,
+        schoolId: schoolId,
+        schoolName: schoolName,
+        originalDocId: teacher.docId || teacher.id,
+        originalPath: `schools/${schoolId}/teachers/${teacher.docId || teacher.id}`,
+        deletedAt: now,
+        deletedBy: deletedByEmail,
+        deletedByRole: 'admin',
+        deleteReason: 'School deleted by admin'
+      };
+
+      teacherBatch.set(deletedTeacherRef, deletedTeacherData);
+      teacherBatch.delete(teacherRef);
+      batchCount += 2;
+
+      if (batchCount >= BATCH_LIMIT) {
+        await teacherBatch.commit();
+        batchCount = 0;
+      }
+    }
+    if (batchCount > 0) {
+      await teacherBatch.commit();
+    }
+
+    // 7. Delete original school document
     await firebase.firestore().collection('schools').doc(schoolId).delete();
 
-
-    window.showToast('School deleted successfully', 'success');
+    window.showToast(`School "${schoolName}" moved to deleted items`, 'success');
     window.loadSchools();
   } catch (err) {
     window.showToast('Delete failed: ' + err.message, 'error');

@@ -159,15 +159,6 @@ window.loadDeletedStudents = async function() {
 
     const snapshot = await query.get();
     let students = snapshot.docs.map(d => ({ ...d.data(), docId: d.id }));
-    
-    // Debug: Log all students to verify docIds
-    console.log('Query returned', students.length, 'students');
-    console.log('All docIds:', students.map(s => ({ id: s.id, docId: s.docId })));
-    
-    // Debug: Log full first student object
-    if (students.length > 0) {
-      console.log('Full first student object:', JSON.stringify(students[0], null, 2));
-    }
 
     // Apply search filters client-side
     if (searchName) {
@@ -348,16 +339,10 @@ window.restoreStudent = async function(docId) {
   if (!user) throw new Error('Not authenticated');
 
   try {
-    console.log('Attempting to restore student with docId:', docId);
-    
     // Get deleted student document
     const deletedDoc = await firebase.firestore().collection('deleted_students').doc(docId).get();
-    console.log('Document exists:', deletedDoc.exists);
     
     if (!deletedDoc.exists) {
-      // Try to find the document to see what's in the collection
-      const allDocs = await firebase.firestore().collection('deleted_students').limit(5).get();
-      console.log('Sample documents in deleted_students:', allDocs.docs.map(d => d.id));
       throw new Error('Deleted student not found');
     }
 
@@ -402,26 +387,6 @@ window.restoreStudent = async function(docId) {
     batch.delete(deletedDoc.ref);
 
     await batch.commit();
-
-    // Audit log
-    await firebase.firestore().collection('deletion_logs').add({
-      type: 'restore',
-      collectionName: 'deleted_students',
-      documentPath: `deleted_students/${docId}`,
-      documentId: docId,
-      originalData: {
-        id: studentData.id,
-        name: studentData.name,
-        class: studentData.originalClass,
-        schoolId: studentData.schoolId
-      },
-      restoredTo: `schools/${studentData.schoolId}/classes/${studentData.originalClass}/students/${studentData.originalDocId}`,
-      deletedAt: studentData.deletedAt,
-      actionBy: user.email,
-      actionAt: Date.now(),
-      actionRole: 'admin',
-      reason: 'Student restored by admin'
-    });
 
     return true;
   } catch (error) {
@@ -478,26 +443,6 @@ window.restoreTeacher = async function(docId) {
 
     await batch.commit();
 
-    // Audit log
-    await firebase.firestore().collection('deletion_logs').add({
-      type: 'restore',
-      collectionName: 'deleted_teachers',
-      documentPath: `deleted_teachers/${docId}`,
-      documentId: docId,
-      originalData: {
-        id: teacherData.id,
-        name: teacherData.name,
-        designation: teacherData.designation,
-        schoolId: teacherData.schoolId
-      },
-      restoredTo: `schools/${teacherData.schoolId}/teachers/${teacherData.originalDocId}`,
-      deletedAt: teacherData.deletedAt,
-      actionBy: user.email,
-      actionAt: Date.now(),
-      actionRole: 'admin',
-      reason: 'Teacher restored by admin'
-    });
-
     return true;
   } catch (error) {
     console.error('Restore failed:', error);
@@ -506,7 +451,7 @@ window.restoreTeacher = async function(docId) {
 };
 
 /**
- * Restore single school
+ * Restore single school - also restores all associated students and teachers
  */
 window.restoreSchool = async function(schoolId) {
   const user = firebase.auth().currentUser;
@@ -524,6 +469,8 @@ window.restoreSchool = async function(schoolId) {
     delete restoreData.deletedBy;
     delete restoreData.deletedByRole;
     delete restoreData.originalPath;
+    delete restoreData.schoolId;
+    delete restoreData.deleteReason;
 
     const batch = firebase.firestore().batch();
 
@@ -531,28 +478,65 @@ window.restoreSchool = async function(schoolId) {
     const schoolRef = firebase.firestore().collection('schools').doc(schoolId);
     batch.set(schoolRef, restoreData);
 
+    // Restore all deleted students for this school
+    const studentsSnapshot = await firebase.firestore()
+      .collection('deleted_students')
+      .where('schoolId', '==', schoolId)
+      .get();
+
+    for (const studentDoc of studentsSnapshot.docs) {
+      const studentData = studentDoc.data();
+      const restoreStudentData = { ...studentData };
+      delete restoreStudentData.deletedAt;
+      delete restoreStudentData.deletedBy;
+      delete restoreStudentData.deletedByRole;
+      delete restoreStudentData.originalDocId;
+      delete restoreStudentData.originalPath;
+      delete restoreStudentData.originalClass;
+      delete restoreStudentData.schoolName;
+      delete restoreStudentData.deleteReason;
+
+      const originalRef = firebase.firestore().collection('schools')
+        .doc(schoolId)
+        .collection('classes')
+        .doc(studentData.originalClass)
+        .collection('students')
+        .doc(studentData.originalDocId);
+
+      batch.set(originalRef, restoreStudentData);
+      batch.delete(studentDoc.ref);
+    }
+
+    // Restore all deleted teachers for this school
+    const teachersSnapshot = await firebase.firestore()
+      .collection('deleted_teachers')
+      .where('schoolId', '==', schoolId)
+      .get();
+
+    for (const teacherDoc of teachersSnapshot.docs) {
+      const teacherData = teacherDoc.data();
+      const restoreTeacherData = { ...teacherData };
+      delete restoreTeacherData.deletedAt;
+      delete restoreTeacherData.deletedBy;
+      delete restoreTeacherData.deletedByRole;
+      delete restoreTeacherData.originalDocId;
+      delete restoreTeacherData.originalPath;
+      delete restoreTeacherData.schoolName;
+      delete restoreTeacherData.deleteReason;
+
+      const originalRef = firebase.firestore().collection('schools')
+        .doc(schoolId)
+        .collection('teachers')
+        .doc(teacherData.originalDocId);
+
+      batch.set(originalRef, restoreTeacherData);
+      batch.delete(teacherDoc.ref);
+    }
+
     // Delete from deleted_schools
     batch.delete(deletedDoc.ref);
 
     await batch.commit();
-
-    // Audit log
-    await firebase.firestore().collection('deletion_logs').add({
-      type: 'restore',
-      collectionName: 'deleted_schools',
-      documentPath: `deleted_schools/${schoolId}`,
-      documentId: schoolId,
-      originalData: {
-        schoolName: schoolData.schoolName,
-        email: schoolData.email
-      },
-      restoredTo: `schools/${schoolId}`,
-      deletedAt: schoolData.deletedAt,
-      actionBy: user.email,
-      actionAt: Date.now(),
-      actionRole: 'admin',
-      reason: 'School restored by admin'
-    });
 
     return true;
   } catch (error) {
@@ -592,25 +576,6 @@ window.permanentDeleteStudent = async function(docId) {
       await firebase.firestore().collection('deleted_students').doc(docId).delete();
     }
 
-    // Audit log
-    await firebase.firestore().collection('deletion_logs').add({
-      type: 'permanent_delete',
-      collectionName: 'deleted_students',
-      documentPath: `deleted_students/${docId}`,
-      documentId: docId,
-      originalData: {
-        id: studentData.id,
-        name: studentData.name,
-        schoolId: studentData.schoolId
-      },
-      deletedAt: studentData.deletedAt,
-      actionBy: user.email,
-      actionAt: Date.now(),
-      actionRole: 'admin',
-      reason: 'Student permanently deleted by admin',
-      photoDeleted: !!studentData.photo
-    });
-
     return true;
   } catch (error) {
     console.error('Permanent delete failed:', error);
@@ -643,25 +608,6 @@ window.permanentDeleteTeacher = async function(docId) {
     // Delete from deleted_teachers
     await deletedDoc.ref.delete();
 
-    // Audit log
-    await firebase.firestore().collection('deletion_logs').add({
-      type: 'permanent_delete',
-      collectionName: 'deleted_teachers',
-      documentPath: `deleted_teachers/${docId}`,
-      documentId: docId,
-      originalData: {
-        id: teacherData.id,
-        name: teacherData.name,
-        schoolId: teacherData.schoolId
-      },
-      deletedAt: teacherData.deletedAt,
-      actionBy: user.email,
-      actionAt: Date.now(),
-      actionRole: 'admin',
-      reason: 'Teacher permanently deleted by admin',
-      photoDeleted: !!teacherData.photo
-    });
-
     return true;
   } catch (error) {
     console.error('Permanent delete failed:', error);
@@ -670,7 +616,7 @@ window.permanentDeleteTeacher = async function(docId) {
 };
 
 /**
- * Permanent delete single school
+ * Permanent delete single school - also deletes Firebase Auth user and users doc
  */
 window.permanentDeleteSchool = async function(schoolId) {
   const user = firebase.auth().currentUser;
@@ -681,6 +627,7 @@ window.permanentDeleteSchool = async function(schoolId) {
     if (!deletedDoc.exists) throw new Error('Deleted school not found');
 
     const schoolData = deletedDoc.data();
+    const schoolUid = schoolData.uid || schoolId;
 
     // Delete all deleted students for this school
     const studentsSnapshot = await firebase.firestore()
@@ -718,25 +665,27 @@ window.permanentDeleteSchool = async function(schoolId) {
       await teacherDoc.ref.delete();
     }
 
-    // Delete school document
-    await deletedDoc.ref.delete();
+    // Delete Firebase Auth user (so school can never login again) via Cloud Function
+    try {
+      const deleteAuthUser = firebase.functions().httpsCallable('permanentDeleteSchool');
+      const result = await deleteAuthUser({ schoolUid: schoolUid });
+      if (result.data.success) {
+        console.log('Auth user deleted successfully for school:', schoolUid);
+      }
+    } catch (e) {
+      console.warn('Could not delete Firebase Auth user via Cloud Function:', e.message);
+      // Fallback: still continue with data deletion
+    }
 
-    // Audit log
-    await firebase.firestore().collection('deletion_logs').add({
-      type: 'permanent_delete',
-      collectionName: 'deleted_schools',
-      documentPath: `deleted_schools/${schoolId}`,
-      documentId: schoolId,
-      originalData: {
-        schoolName: schoolData.schoolName,
-        email: schoolData.email
-      },
-      deletedAt: schoolData.deletedAt,
-      actionBy: user.email,
-      actionAt: Date.now(),
-      actionRole: 'admin',
-      reason: 'School permanently deleted by admin'
-    });
+    // Delete users collection document
+    try {
+      await firebase.firestore().collection('users').doc(schoolUid).delete();
+    } catch (e) {
+      console.warn('Could not delete users doc:', e.message);
+    }
+
+    // Delete school document from deleted_schools
+    await deletedDoc.ref.delete();
 
     return true;
   } catch (error) {
@@ -822,20 +771,6 @@ window.bulkRestoreStudents = async function(docIds) {
     await batch.commit();
   }
 
-  // Audit log
-  const successCount = results.filter(r => r.success).length;
-  await firebase.firestore().collection('deletion_logs').add({
-    type: 'bulk_restore',
-    collectionName: 'deleted_students',
-    documentPath: 'bulk_restore',
-    documentId: 'bulk_' + Date.now(),
-    originalData: { count: docIds.length, success: successCount },
-    actionBy: user.email,
-    actionAt: Date.now(),
-    actionRole: 'admin',
-    reason: `Bulk restore ${successCount}/${docIds.length} students`
-  });
-
   return results;
 };
 
@@ -871,20 +806,6 @@ window.bulkPermanentDeleteStudents = async function(docIds) {
       results.push({ docId, success: false, error: error.message });
     }
   }
-
-  // Audit log
-  const successCount = results.filter(r => r.success).length;
-  await firebase.firestore().collection('deletion_logs').add({
-    type: 'bulk_permanent_delete',
-    collectionName: 'deleted_students',
-    documentPath: 'bulk_permanent_delete',
-    documentId: 'bulk_' + Date.now(),
-    originalData: { count: docIds.length, success: successCount },
-    actionBy: user.email,
-    actionAt: Date.now(),
-    actionRole: 'admin',
-    reason: `Bulk permanent delete ${successCount}/${docIds.length} students`
-  });
 
   return results;
 };
@@ -961,20 +882,6 @@ window.bulkRestoreTeachers = async function(docIds) {
     await batch.commit();
   }
 
-  // Audit log
-  const successCount = results.filter(r => r.success).length;
-  await firebase.firestore().collection('deletion_logs').add({
-    type: 'bulk_restore',
-    collectionName: 'deleted_teachers',
-    documentPath: 'bulk_restore',
-    documentId: 'bulk_' + Date.now(),
-    originalData: { count: docIds.length, success: successCount },
-    actionBy: user.email,
-    actionAt: Date.now(),
-    actionRole: 'admin',
-    reason: `Bulk restore ${successCount}/${docIds.length} teachers`
-  });
-
   return results;
 };
 
@@ -1010,20 +917,6 @@ window.bulkPermanentDeleteTeachers = async function(docIds) {
       results.push({ docId, success: false, error: error.message });
     }
   }
-
-  // Audit log
-  const successCount = results.filter(r => r.success).length;
-  await firebase.firestore().collection('deletion_logs').add({
-    type: 'bulk_permanent_delete',
-    collectionName: 'deleted_teachers',
-    documentPath: 'bulk_permanent_delete',
-    documentId: 'bulk_' + Date.now(),
-    originalData: { count: docIds.length, success: successCount },
-    actionBy: user.email,
-    actionAt: Date.now(),
-    actionRole: 'admin',
-    reason: `Bulk permanent delete ${successCount}/${docIds.length} teachers`
-  });
 
   return results;
 };

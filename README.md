@@ -142,7 +142,7 @@ id-card-pro/
 │       └── print-choice-modal.controller.js   # Print choice modal on dashboard
 │
 ├── 🗂️ functions/
-│   ├── index.js                   # Cloud Functions (deletion logging)
+│   ├── index.js                   # Cloud Functions
 │   └── package.json               # Functions dependencies
 │
 ├── 🗂️ assets/
@@ -317,11 +317,6 @@ service cloud.firestore {
         }
       }
     }
-
-    match /deletion_logs/{logId} {
-      allow read:  if isAdmin();
-      allow write: if false;
-    }
   }
 }
 ```
@@ -458,10 +453,7 @@ Each school's data is completely isolated:
 
 | Function | Trigger | Action |
 |----------|---------|--------|
-| `logDeletedSchool` | School document deleted | Logs to `deletion_logs` |
-| `logDeletedStudent` | Student document deleted | Logs to `deletion_logs` |
-| `logDeletedTeacher` | Teacher document deleted | Logs to `deletion_logs` |
-| `logDeletedPendingStudent` | Pending student deleted | Logs to `deletion_logs` |
+| `permanentDeleteSchool` | Called from admin panel | Deletes Firebase Auth user + users doc for permanent school deletion |
 
 ---
 

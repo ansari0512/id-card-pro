@@ -113,29 +113,6 @@ window.deleteTeacherStaff = async function(docId) {
   batch.delete(window.dbTeachersCollection(user.uid).doc(docId));
   await batch.commit();
 
-  // Audit log
-  try {
-    await firebase.firestore().collection('deletion_logs').add({
-      type: 'deletion',
-      collectionName: 'deleted_teachers',
-      documentPath: `deleted_teachers/${deletedRef.id}`,
-      documentId: deletedRef.id,
-      originalData: {
-        id: teacher?.id,
-        name: teacher?.name,
-        designation: teacher?.designation,
-        schoolId: user.uid
-      },
-      deletedAt: Date.now(),
-      actionBy: user?.email || 'unknown_user_or_admin_operation',
-      actionAt: Date.now(),
-      actionRole: 'school',
-      reason: 'Teacher/Staff deleted by school'
-    });
-  } catch (logErr) {
-    console.warn('Failed to write deletion log:', logErr.message);
-  }
-
   return true;
 };
 

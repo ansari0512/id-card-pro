@@ -87,30 +87,6 @@ window.deleteStudent = async function(studentId, studentClass) {
 
   await batch.commit();
 
-  // Audit log
-  try {
-    await firebase.firestore().collection('deletion_logs').add({
-      type: 'deletion',
-      collectionName: 'deleted_students',
-      documentPath: `deleted_students/${deletedRef.id}`,
-      documentId: deletedRef.id,
-      originalData: {
-        id: student?.id,
-        name: student?.name,
-        class: cls,
-        section: student?.section,
-        schoolId: user.uid
-      },
-      deletedAt: Date.now(),
-      actionBy: user?.email || 'unknown_user_or_admin_operation',
-      actionAt: Date.now(),
-      actionRole: 'school',
-      reason: 'Student deleted by school'
-    });
-  } catch (logErr) {
-    console.warn('Failed to write deletion log:', logErr.message);
-  }
-
   return true;
 };
 
@@ -262,29 +238,6 @@ window.bulkDelete = async function() {
       batch.delete(window.dbStudents(user.uid, cls).doc(docId));
       await batch.commit();
 
-      // Audit log
-      try {
-        await firebase.firestore().collection('deletion_logs').add({
-          type: 'deletion',
-          collectionName: 'deleted_students',
-          documentPath: `deleted_students/${deletedRef.id}`,
-          documentId: deletedRef.id,
-          originalData: {
-            id: student?.id,
-            name: student?.name,
-            class: cls,
-            section: student?.section,
-            schoolId: user.uid
-          },
-          deletedAt: Date.now(),
-          actionBy: user?.email || 'unknown_user_or_admin_operation',
-          actionAt: Date.now(),
-          actionRole: 'school',
-          reason: 'Student deleted by school (bulk)'
-        });
-      } catch (logErr) {
-        console.warn('Failed to write deletion log:', logErr.message);
-      }
     });
 
     await Promise.all(deletePromises);
@@ -540,29 +493,6 @@ window.bulkDeletePending = async function() {
       batch.delete(pendingDoc.ref);
       await batch.commit();
 
-      // Audit log
-      try {
-        await firebase.firestore().collection('deletion_logs').add({
-          type: 'deletion',
-          collectionName: 'deleted_pending_students',
-          documentPath: `deleted_pending_students/${deletedRef.id}`,
-          documentId: deletedRef.id,
-          originalData: {
-            id: pendingData?.id,
-            name: pendingData?.name,
-            class: pendingData?.class,
-            section: pendingData?.section,
-            schoolId: user.uid
-          },
-          deletedAt: Date.now(),
-          actionBy: user?.email || 'unknown_user_or_admin_operation',
-          actionAt: Date.now(),
-          actionRole: 'school',
-          reason: 'Pending student deleted by school (bulk)'
-        });
-      } catch (logErr) {
-        console.warn('Failed to write deletion log:', logErr.message);
-      }
     });
 
     await Promise.all(deletePromises);
@@ -618,29 +548,6 @@ window.deletePending = async function(docId) {
     batch.delete(pendingDoc.ref);
     await batch.commit();
 
-    // Audit log
-    try {
-      await firebase.firestore().collection('deletion_logs').add({
-        type: 'deletion',
-        collectionName: 'deleted_pending_students',
-        documentPath: `deleted_pending_students/${deletedRef.id}`,
-        documentId: deletedRef.id,
-        originalData: {
-          id: pendingData?.id,
-          name: pendingData?.name,
-          class: pendingData?.class,
-          section: pendingData?.section,
-          schoolId: user.uid
-        },
-        deletedAt: Date.now(),
-        actionBy: user?.email || 'unknown_user_or_admin_operation',
-        actionAt: Date.now(),
-        actionRole: 'school',
-        reason: 'Pending student deleted by school'
-      });
-    } catch (logErr) {
-      console.warn('Failed to write deletion log:', logErr.message);
-    }
 
     window.showToast('Deleted', 'success');
     window.loadPendingStudents();

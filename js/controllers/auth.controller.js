@@ -42,6 +42,35 @@ window.initAuth = function(onChange) {
 };
 
 /**
+ * Check if a school user is allowed to login (school doc exists and is active).
+ * Throws an error if the school is deleted or disabled.
+ */
+window.checkSchoolAccess = async function(uid) {
+  try {
+    const schoolDoc = await firebase.firestore().collection('schools').doc(uid).get();
+    if (!schoolDoc.exists) {
+      await firebase.auth().signOut();
+      throw new Error('School account has been deleted. Contact admin.');
+    }
+    const schoolData = schoolDoc.data();
+    if (schoolData.active === false) {
+      await firebase.auth().signOut();
+      throw new Error('School account is disabled. Contact admin.');
+    }
+    return true;
+  } catch (error) {
+    // Re-throw if it's already our custom error
+    if (error.message === 'School account has been deleted. Contact admin.' ||
+        error.message === 'School account is disabled. Contact admin.') {
+      throw error;
+    }
+    // If Firestore read fails, still allow login (graceful fallback)
+    console.warn('checkSchoolAccess: Could not verify school status:', error.message);
+    return true;
+  }
+};
+
+/**
  * Login with email/password
  */
 window.login = async function(email, password) {
@@ -49,6 +78,12 @@ window.login = async function(email, password) {
     const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
     const user = userCredential.user;
     const role = await window.fetchUserRole(user);
+    
+    // If the user is a school, check if their account exists and is active
+    if (role === 'school') {
+      await window.checkSchoolAccess(user.uid);
+    }
+    
     window.currentUser = user;
     window.currentRole = role;
     return { user, role };

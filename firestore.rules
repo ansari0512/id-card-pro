@@ -89,7 +89,7 @@ service cloud.firestore {
       // ── Teachers subcollection ──────────────────────────
       match /teachers/{teacherId} {
         allow read: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
-        allow create: if isLoggedIn() && isSchoolOwner(schoolId) && validTeacherData();
+        allow create: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId)) && validTeacherData();
         allow update: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId)) && validTeacherData();
         allow delete: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
       }
@@ -104,7 +104,7 @@ service cloud.firestore {
           allow read: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
 
           allow create: if isLoggedIn() &&
-            isSchoolOwner(schoolId) &&
+            (isAdmin() || isSchoolOwner(schoolId)) &&
             validStudentData() &&
             request.resource.data.class == className &&
             request.resource.data.schoolId == schoolId;
@@ -117,12 +117,6 @@ service cloud.firestore {
           allow delete: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
         }
       }
-    }
-
-    // ── Deletion Logs (Auto-logged by Cloud Functions) ────────
-    match /deletion_logs/{logId} {
-      allow read:  if isAdmin();
-      allow write: if false;
     }
 
     // ── Deleted Students (Recycle Bin) ────────────────────────
