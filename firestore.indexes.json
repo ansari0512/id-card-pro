@@ -1,4 +1,36 @@
 {
-  "indexes": [],
+  "indexes": [
+    {
+      "collectionGroup": "deleted_students",
+      "fields": [
+        { "fieldPath": "schoolId", "order": "ASCENDING" },
+        { "fieldPath": "originalClass", "order": "ASCENDING" },
+        { "fieldPath": "section", "order": "ASCENDING" },
+        { "fieldPath": "deletedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "deleted_students",
+      "fields": [
+        { "fieldPath": "schoolId", "order": "ASCENDING" },
+        { "fieldPath": "originalClass", "order": "ASCENDING" },
+        { "fieldPath": "deletedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "deleted_students",
+      "fields": [
+        { "fieldPath": "schoolId", "order": "ASCENDING" },
+        { "fieldPath": "deletedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "deleted_teachers",
+      "fields": [
+        { "fieldPath": "schoolId", "order": "ASCENDING" },
+        { "fieldPath": "deletedAt", "order": "DESCENDING" }
+      ]
+    }
+  ],
   "fieldOverrides": []
 }

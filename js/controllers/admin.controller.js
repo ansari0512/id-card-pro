@@ -395,9 +395,19 @@ window.updateSchool = async function(e) {
 
 
 /**
- * Admin logout
- */
-window.adminLogout = async function() {
-   await firebase.auth().signOut();
-   window.location.href = 'index.html';
-};
+  * Admin logout
+  */
+ window.adminLogout = async function() {
+    await firebase.auth().signOut();
+    window.location.href = 'index.html';
+ };
+
+// Deleted Cards navigation
+document.addEventListener('DOMContentLoaded', function() {
+  const deletedCardsBtn = document.getElementById('deletedCardsBtn');
+  if (deletedCardsBtn) {
+    deletedCardsBtn.addEventListener('click', function() {
+      window.location.href = 'deleted-cards.html';
+    });
+  }
+});

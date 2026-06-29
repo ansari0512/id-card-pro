@@ -55,33 +55,62 @@ window.deleteStudent = async function(studentId, studentClass) {
   const cls = studentClass || student?.class;
   if (!cls) throw new Error('Student class not found');
   
-  try {
-    // Delete photo from storage first (non-blocking)
-    if (student?.photo) {
-      await window.deletePhoto(student.photo);
+  // Soft delete: move to deleted_students collection
+  const deletedRef = firebase.firestore().collection('deleted_students').doc();
+  
+  // Get school name (try from student data first, then fetch from school doc)
+  let schoolName = student?.schoolName;
+  if (!schoolName) {
+    try {
+      const schoolDoc = await firebase.firestore().collection('schools').doc(user.uid).get();
+      if (schoolDoc.exists) schoolName = schoolDoc.data().schoolName || 'Unknown School';
+    } catch (e) {
+      schoolName = 'Unknown School';
     }
-  } catch (error) {
-    console.warn('Photo cleanup failed, continuing with student deletion:', error.message);
   }
   
-  // Frontend deletion log (so deletedBy me email aata rahe)
+  const deletedData = {
+    ...student,
+    schoolName: schoolName || 'Unknown School',
+    deletedAt: Date.now(),
+    deletedBy: user?.email || 'unknown_user_or_admin_operation',
+    deletedByRole: 'school',
+    originalDocId: studentId,
+    originalPath: `schools/${user.uid}/classes/${cls}/students/${studentId}`,
+    originalClass: cls
+  };
+
+  // Batch: create deleted copy, then delete original
+  const batch = firebase.firestore().batch();
+  batch.set(deletedRef, deletedData);
+  batch.delete(window.dbStudents(user.uid, cls).doc(studentId));
+
+  await batch.commit();
+
+  // Audit log
   try {
-    const deletedByEmail = user?.email || 'unknown_user_or_admin_operation';
     await firebase.firestore().collection('deletion_logs').add({
-      collectionName: 'schools/classes/students',
-      documentPath: `schools/${user.uid}/classes/${cls}/students/${studentId}`,
-      documentId: studentId,
-      deletedData: { studentId },
+      type: 'deletion',
+      collectionName: 'deleted_students',
+      documentPath: `deleted_students/${deletedRef.id}`,
+      documentId: deletedRef.id,
+      originalData: {
+        id: student?.id,
+        name: student?.name,
+        class: cls,
+        section: student?.section,
+        schoolId: user.uid
+      },
       deletedAt: Date.now(),
-      deletedBy: deletedByEmail,
-      reason: 'Student document deleted (frontend log)'
+      actionBy: user?.email || 'unknown_user_or_admin_operation',
+      actionAt: Date.now(),
+      actionRole: 'school',
+      reason: 'Student deleted by school'
     });
   } catch (logErr) {
-    console.warn('Failed to write student deletion log:', logErr.message);
+    console.warn('Failed to write deletion log:', logErr.message);
   }
 
-  // Delete student record
-  await window.dbStudents(user.uid, cls).doc(studentId).delete();
   return true;
 };
 
@@ -194,31 +223,71 @@ window.bulkDelete = async function() {
   const user = firebase.auth().currentUser;
 
   try {
-    // Frontend deletion logs (bulk)
-    const deletedByEmail = user?.email || 'unknown_user_or_admin_operation';
-    try {
-      await Promise.all(docIds.map(async (docId) => {
-        const student = window.allStudents.find(s => (s.docId || s.id) === docId);
-        const cls = student?.class;
-        await firebase.firestore().collection('deletion_logs').add({
-          collectionName: 'schools/classes/students',
-          documentPath: cls ? `schools/${user.uid}/classes/${cls}/students/${docId}` : `schools/${user.uid}/classes/unknown/students/${docId}`,
-          documentId: docId,
-          deletedData: { studentId: docId, class: cls || null },
-          deletedAt: Date.now(),
-          deletedBy: deletedByEmail,
-          reason: 'Student documents deleted (bulk frontend log)'
-        });
-      }));
-    } catch (logErr) {
-      console.warn('Failed to write bulk student deletion logs:', logErr.message);
-    }
-
-    await Promise.all(docIds.map(async docId => {
+    // Soft delete: move each student to deleted_students
+    const deletePromises = docIds.map(async docId => {
       const student = window.allStudents.find(s => (s.docId || s.id) === docId);
-      if (student?.photo) await window.deletePhoto(student.photo);
-      return window.dbStudents(user.uid, student?.class).doc(docId).delete();
-    }));
+      if (!student) return;
+      
+      const cls = student.class;
+      if (!cls) return;
+
+      // Create deleted record with auto-ID
+      const deletedRef = firebase.firestore().collection('deleted_students').doc();
+      
+      // Get school name (try from student data first, then fetch from school doc)
+      let schoolName = student?.schoolName;
+      if (!schoolName) {
+        try {
+          const schoolDoc = await firebase.firestore().collection('schools').doc(user.uid).get();
+          if (schoolDoc.exists) schoolName = schoolDoc.data().schoolName || 'Unknown School';
+        } catch (e) {
+          schoolName = 'Unknown School';
+        }
+      }
+      
+      const deletedData = {
+        ...student,
+        schoolName: schoolName || 'Unknown School',
+        deletedAt: Date.now(),
+        deletedBy: user?.email || 'unknown_user_or_admin_operation',
+        deletedByRole: 'school',
+        originalDocId: docId,
+        originalPath: `schools/${user.uid}/classes/${cls}/students/${docId}`,
+        originalClass: cls
+      };
+
+      // Batch: create deleted copy, delete original
+      const batch = firebase.firestore().batch();
+      batch.set(deletedRef, deletedData);
+      batch.delete(window.dbStudents(user.uid, cls).doc(docId));
+      await batch.commit();
+
+      // Audit log
+      try {
+        await firebase.firestore().collection('deletion_logs').add({
+          type: 'deletion',
+          collectionName: 'deleted_students',
+          documentPath: `deleted_students/${deletedRef.id}`,
+          documentId: deletedRef.id,
+          originalData: {
+            id: student?.id,
+            name: student?.name,
+            class: cls,
+            section: student?.section,
+            schoolId: user.uid
+          },
+          deletedAt: Date.now(),
+          actionBy: user?.email || 'unknown_user_or_admin_operation',
+          actionAt: Date.now(),
+          actionRole: 'school',
+          reason: 'Student deleted by school (bulk)'
+        });
+      } catch (logErr) {
+        console.warn('Failed to write deletion log:', logErr.message);
+      }
+    });
+
+    await Promise.all(deletePromises);
 
     window.showToast(`Deleted ${docIds.length} students`, 'success');
     window.selectedStudents.clear();
@@ -447,7 +516,57 @@ window.bulkDeletePending = async function() {
   const user = firebase.auth().currentUser;
   const ids = Array.from(window.selectedPending);
   try {
-    await Promise.all(ids.map(docId => window.dbPending(user.uid).doc(docId).delete()));
+    // Soft delete: move each pending student to deleted_pending_students
+    const deletePromises = ids.map(async docId => {
+      const pendingDoc = await window.dbPending(user.uid).doc(docId).get();
+      if (!pendingDoc.exists) return;
+      
+      const pendingData = pendingDoc.data();
+
+      // Create deleted record with auto-ID
+      const deletedRef = firebase.firestore().collection('deleted_pending_students').doc();
+      const deletedData = {
+        ...pendingData,
+        deletedAt: Date.now(),
+        deletedBy: user?.email || 'unknown_user_or_admin_operation',
+        deletedByRole: 'school',
+        originalDocId: docId,
+        originalPath: `schools/${user.uid}/pending_students/${docId}`
+      };
+
+      // Batch: create deleted copy, delete original
+      const batch = firebase.firestore().batch();
+      batch.set(deletedRef, deletedData);
+      batch.delete(pendingDoc.ref);
+      await batch.commit();
+
+      // Audit log
+      try {
+        await firebase.firestore().collection('deletion_logs').add({
+          type: 'deletion',
+          collectionName: 'deleted_pending_students',
+          documentPath: `deleted_pending_students/${deletedRef.id}`,
+          documentId: deletedRef.id,
+          originalData: {
+            id: pendingData?.id,
+            name: pendingData?.name,
+            class: pendingData?.class,
+            section: pendingData?.section,
+            schoolId: user.uid
+          },
+          deletedAt: Date.now(),
+          actionBy: user?.email || 'unknown_user_or_admin_operation',
+          actionAt: Date.now(),
+          actionRole: 'school',
+          reason: 'Pending student deleted by school (bulk)'
+        });
+      } catch (logErr) {
+        console.warn('Failed to write deletion log:', logErr.message);
+      }
+    });
+
+    await Promise.all(deletePromises);
+
     window.showToast(`${ids.length} students deleted`, 'success');
     window.selectedPending.clear();
     window.loadPendingStudents();
@@ -478,31 +597,57 @@ window.deletePending = async function(docId) {
   const user = firebase.auth().currentUser;
 
   try {
-    // Frontend deletion log (pending)
-    const deletedByEmail = user?.email || 'unknown_user_or_admin_operation';
-    let pendingData = null;
-    try {
-      const snap = await window.dbPending(user.uid).doc(docId).get();
-      pendingData = snap.exists ? snap.data() : null;
-    } catch(e) {}
+    const pendingDoc = await window.dbPending(user.uid).doc(docId).get();
+    if (!pendingDoc.exists) return;
+    const pendingData = pendingDoc.data();
 
-    await firebase.firestore().collection('deletion_logs').add({
-      collectionName: 'schools/pending_students',
-      documentPath: `schools/${user.uid}/pending_students/${docId}`,
-      documentId: docId,
-      deletedData: pendingData ? { ...pendingData } : { studentId: docId },
+    // Soft delete: move to deleted_pending_students
+    const deletedRef = firebase.firestore().collection('deleted_pending_students').doc();
+    const deletedData = {
+      ...pendingData,
       deletedAt: Date.now(),
-      deletedBy: deletedByEmail,
-      reason: 'Pending student document deleted (frontend log)'
-    });
-  } catch (logErr) {
-    console.warn('Failed to write pending deletion log:', logErr.message);
-  }
+      deletedBy: user?.email || 'unknown_user_or_admin_operation',
+      deletedByRole: 'school',
+      originalDocId: docId,
+      originalPath: `schools/${user.uid}/pending_students/${docId}`
+    };
 
-  await window.dbPending(user.uid).doc(docId).delete();
-  window.showToast('Deleted', 'success');
-  window.loadPendingStudents();
-  window.updatePendingBadge();
+    // Batch: create deleted copy, delete original
+    const batch = firebase.firestore().batch();
+    batch.set(deletedRef, deletedData);
+    batch.delete(pendingDoc.ref);
+    await batch.commit();
+
+    // Audit log
+    try {
+      await firebase.firestore().collection('deletion_logs').add({
+        type: 'deletion',
+        collectionName: 'deleted_pending_students',
+        documentPath: `deleted_pending_students/${deletedRef.id}`,
+        documentId: deletedRef.id,
+        originalData: {
+          id: pendingData?.id,
+          name: pendingData?.name,
+          class: pendingData?.class,
+          section: pendingData?.section,
+          schoolId: user.uid
+        },
+        deletedAt: Date.now(),
+        actionBy: user?.email || 'unknown_user_or_admin_operation',
+        actionAt: Date.now(),
+        actionRole: 'school',
+        reason: 'Pending student deleted by school'
+      });
+    } catch (logErr) {
+      console.warn('Failed to write deletion log:', logErr.message);
+    }
+
+    window.showToast('Deleted', 'success');
+    window.loadPendingStudents();
+    window.updatePendingBadge();
+  } catch(e) {
+    window.showToast('Delete failed: ' + e.message, 'error');
+  }
 };
 
 // Parse CSV or Excel

@@ -124,5 +124,47 @@ service cloud.firestore {
       allow read:  if isAdmin();
       allow write: if false;
     }
+
+    // ── Deleted Students (Recycle Bin) ────────────────────────
+    match /deleted_students/{studentId} {
+      // Admin: full access
+      allow read, write, delete: if isAdmin();
+      
+      // School: can ONLY create (soft delete), cannot read/restore/permanent delete
+      allow create: if isLoggedIn() && 
+        request.auth.uid == request.resource.data.schoolId &&
+        request.resource.data.deletedByRole == 'school';
+      
+      // List allowed for admin only
+      allow list: if isAdmin();
+    }
+
+    // ── Deleted Teachers (Recycle Bin) ────────────────────────
+    match /deleted_teachers/{teacherId} {
+      // Admin: full access
+      allow read, write, delete: if isAdmin();
+      
+      // School: can ONLY create (soft delete)
+      allow create: if isLoggedIn() && 
+        request.auth.uid == request.resource.data.schoolId &&
+        request.resource.data.deletedByRole == 'school';
+      
+      // List allowed for admin only
+      allow list: if isAdmin();
+    }
+
+    // ── Deleted Pending Students (Recycle Bin) ─────────────────
+    match /deleted_pending_students/{studentId} {
+      // Admin: full access
+      allow read, write, delete: if isAdmin();
+      
+      // School: can ONLY create (soft delete)
+      allow create: if isLoggedIn() && 
+        request.auth.uid == request.resource.data.schoolId &&
+        request.resource.data.deletedByRole == 'school';
+      
+      // List allowed for admin only
+      allow list: if isAdmin();
+    }
   }
 }

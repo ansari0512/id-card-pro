@@ -81,32 +81,61 @@ window.deleteTeacherStaff = async function(docId) {
   if (!user) throw new Error('Authentication required');
 
   const teacher = window.allTeacherStaff.find(t => (t.docId || t.id) === docId);
+  if (!teacher) throw new Error('Teacher not found');
 
-  try {
-    if (teacher?.photo) {
-      await window.deletePhoto(teacher.photo);
+  // Soft delete: move to deleted_teachers collection
+  const deletedRef = firebase.firestore().collection('deleted_teachers').doc();
+  
+  // Get school name (try from teacher data first, then fetch from school doc)
+  let schoolName = teacher?.schoolName;
+  if (!schoolName) {
+    try {
+      const schoolDoc = await firebase.firestore().collection('schools').doc(user.uid).get();
+      if (schoolDoc.exists) schoolName = schoolDoc.data().schoolName || 'Unknown School';
+    } catch (e) {
+      schoolName = 'Unknown School';
     }
-  } catch (e) {
-    console.warn('Photo delete failed:', e.message);
   }
+  
+  const deletedData = {
+    ...teacher,
+    schoolName: schoolName || 'Unknown School',
+    deletedAt: Date.now(),
+    deletedBy: user?.email || 'unknown_user_or_admin_operation',
+    deletedByRole: 'school',
+    originalDocId: docId,
+    originalPath: `schools/${user.uid}/teachers/${docId}`
+  };
 
-  // frontend deletion log
+  // Batch: create deleted copy, delete original
+  const batch = firebase.firestore().batch();
+  batch.set(deletedRef, deletedData);
+  batch.delete(window.dbTeachersCollection(user.uid).doc(docId));
+  await batch.commit();
+
+  // Audit log
   try {
-    const deletedByEmail = user?.email || 'unknown_user_or_admin_operation';
     await firebase.firestore().collection('deletion_logs').add({
-      collectionName: 'schools/classes/teachers',
-      documentPath: `schools/${user.uid}/teachers/${docId}`,
-      documentId: docId,
-      deletedData: { teacherId: docId },
+      type: 'deletion',
+      collectionName: 'deleted_teachers',
+      documentPath: `deleted_teachers/${deletedRef.id}`,
+      documentId: deletedRef.id,
+      originalData: {
+        id: teacher?.id,
+        name: teacher?.name,
+        designation: teacher?.designation,
+        schoolId: user.uid
+      },
       deletedAt: Date.now(),
-      deletedBy: deletedByEmail,
-      reason: 'Teacher/Staff document deleted (frontend log)'
+      actionBy: user?.email || 'unknown_user_or_admin_operation',
+      actionAt: Date.now(),
+      actionRole: 'school',
+      reason: 'Teacher/Staff deleted by school'
     });
   } catch (logErr) {
-    console.warn('Failed to write teacher deletion log:', logErr.message);
+    console.warn('Failed to write deletion log:', logErr.message);
   }
 
-  await window.dbTeachersCollection(user.uid).doc(docId).delete();
   return true;
 };
 

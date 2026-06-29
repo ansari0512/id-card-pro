@@ -4,15 +4,14 @@ service firebase.storage {
 
     // ── STUDENT PHOTOS: New path with school ID isolation ────────────
     // Path: student_photos/{schoolId}/{schoolName}/{className}/{fileName}
-    // schoolId = Firebase Auth UID of the school owner
-    // Only the owning school can read/write/delete
+    // Any authenticated user can upload (app logic controls access)
+    // Size: max 5MB, Type: images only
     match /student_photos/{schoolId}/{schoolName}/{className}/{fileName} {
-      allow read:   if request.auth != null && request.auth.uid == schoolId;
+      allow read:   if request.auth != null;
       allow write:  if request.auth != null &&
-                      request.auth.uid == schoolId &&
-                      request.resource.size < 5 * 1024 * 1024 &&
-                      request.resource.contentType.matches('image/.*');
-      allow delete: if request.auth != null && request.auth.uid == schoolId;
+                     request.resource.size < 5 * 1024 * 1024 &&
+                     request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null;
     }
 
     // ── STUDENT PHOTOS: Old path backward compatibility ─────────────
@@ -27,13 +26,14 @@ service firebase.storage {
 
     // ── TEACHER PHOTOS: New path with school ID isolation ────────────
     // Path: teacher_photos/{schoolId}/{schoolName}/{fileName}
+    // Any authenticated user can upload (app logic controls access)
+    // Size: max 5MB, Type: images only
     match /teacher_photos/{schoolId}/{schoolName}/{fileName} {
-      allow read:   if request.auth != null && request.auth.uid == schoolId;
+      allow read:   if request.auth != null;
       allow write:  if request.auth != null &&
-                      request.auth.uid == schoolId &&
-                      request.resource.size < 5 * 1024 * 1024 &&
-                      request.resource.contentType.matches('image/.*');
-      allow delete: if request.auth != null && request.auth.uid == schoolId;
+                     request.resource.size < 5 * 1024 * 1024 &&
+                     request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null;
     }
 
     // ── TEACHER PHOTOS: Old path backward compatibility ─────────────

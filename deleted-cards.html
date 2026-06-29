@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Deleted Cards - RK Choice Admin</title>
+   <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'dark');</script>
+    <link rel="stylesheet" href="src/styles/main.css?v=2.0">
+  <link rel="stylesheet" href="src/styles/views/_admin-students.css?v=2.0">
+</head>
+<body>
+
+    <header class="topbar no-print">
+      <div class="min-w-0 flex-1">
+        <a href="admin-panel.html" class="logo-link">
+          <div class="logo-icon">🎓</div>
+          <span id="pageTitle" class="font-semibold text-sm whitespace-normal">Deleted Cards</span>
+        </a>
+      </div>
+      <div class="topbar-right flex-shrink-0">
+        <a href="admin-panel.html"><button class="secondary">← Back</button></a>
+      </div>
+    </header>
+
+  <button class="theme-toggle no-print" id="themeToggle">🌙</button>
+
+   <main class="container container-pt">
+
+      <!-- Tabs -->
+      <div class="tabs-nav">
+        <button id="tabStudents" class="tab-btn active" onclick="window.switchDeletedTab('students')">
+          👨‍🎓 Students
+        </button>
+        <button id="tabTeachers" class="tab-btn" onclick="window.switchDeletedTab('teachers')">
+          👨‍🏫 Teachers
+        </button>
+        <button id="tabSchools" class="tab-btn" onclick="window.switchDeletedTab('schools')">
+          🏫 Schools
+        </button>
+      </div>
+
+      <!-- Students Tab -->
+      <div id="studentsTab" class="tab-content active">
+        <div class="card admin-students-card">
+          <div class="admin-students-filters-row" style="margin-bottom:0.5rem;">
+            <select id="studentSchoolFilter" title="Select School" onchange="window.onDeletedStudentSchoolChange()" class="">
+              <option value="">All Schools</option>
+            </select>
+          </div>
+          <div class="admin-students-filters-row">
+            <select id="studentClassFilter" title="Select Class" onchange="window.onDeletedStudentClassChange()" class="">
+              <option value="">All Classes</option>
+            </select>
+            <select id="studentSectionFilter" title="Select Section" onchange="window.loadDeletedStudents()" class="">
+              <option value="">All Sections</option>
+            </select>
+          </div>
+          <div class="admin-students-actions-row">
+            <label class="action-btn select-all-label">
+              <input type="checkbox" id="studentSelectAllChk" onchange="window.toggleDeletedStudentSelectAll()">
+              <span>Select All</span>
+            </label>
+            <span id="deletedStudentCount" class="action-btn student-count-badge">👨‍🎓 0 Deleted Students</span>
+            <button class="secondary action-btn" onclick="window.clearDeletedStudentFilters()">Clear Filter</button>
+            <button class="success action-btn" id="restoreStudentBtn" onclick="window.bulkRestoreSelectedStudents()">🔄 Restore Selected</button>
+            <button class="danger action-btn" id="permanentDeleteStudentBtn" onclick="window.bulkPermanentDeleteSelectedStudents()">🗑️ Permanent Delete</button>
+          </div>
+        </div>
+
+        <div id="deletedStudentsLoading" class="text-center mt-3">
+          <div class="spinner spinner-large"></div>
+          <p class="text-muted mt-1">Loading deleted students...</p>
+        </div>
+
+        <div id="deletedStudentsGrid" class="students-grid hidden"></div>
+
+        <div id="deletedStudentsEmpty" class="empty-state hidden">
+          <div class="empty-icon">📭</div>
+          <h3>No Deleted Students</h3>
+          <p>Deleted student records will appear here.</p>
+        </div>
+
+        <!-- Pagination -->
+        <div id="deletedStudentsPagination" class="pagination-container hidden">
+          <button class="secondary" id="deletedStudentsPrevBtn" onclick="window.deletedStudentsPrevPage()">← Previous</button>
+          <span id="deletedStudentsPageInfo" class="pagination-info">Page 1</span>
+          <button class="secondary" id="deletedStudentsNextBtn" onclick="window.deletedStudentsNextPage()">Next →</button>
+        </div>
+      </div>
+
+      <!-- Teachers Tab -->
+      <div id="teachersTab" class="tab-content">
+        <div class="card admin-students-card">
+          <div class="admin-students-filters-row" style="margin-bottom:0.5rem;">
+            <select id="teacherSchoolFilter" title="Select School" onchange="window.onDeletedTeacherSchoolChange()" class="">
+              <option value="">All Schools</option>
+            </select>
+          </div>
+          <div class="admin-students-actions-row">
+            <label class="action-btn select-all-label">
+              <input type="checkbox" id="teacherSelectAllChk" onchange="window.toggleDeletedTeacherSelectAll()">
+              <span>Select All</span>
+            </label>
+            <span id="deletedTeacherCount" class="action-btn student-count-badge">👨‍🏫 0 Deleted Teachers</span>
+            <button class="secondary action-btn" onclick="window.clearDeletedTeacherFilters()">Clear Filter</button>
+            <button class="success action-btn" id="restoreTeacherBtn" onclick="window.bulkRestoreSelectedTeachers()">🔄 Restore Selected</button>
+            <button class="danger action-btn" id="permanentDeleteTeacherBtn" onclick="window.bulkPermanentDeleteSelectedTeachers()">🗑️ Permanent Delete</button>
+          </div>
+        </div>
+
+        <div id="deletedTeachersLoading" class="text-center mt-3">
+          <div class="spinner spinner-large"></div>
+          <p class="text-muted mt-1">Loading deleted teachers...</p>
+        </div>
+
+        <div id="deletedTeachersGrid" class="students-grid hidden"></div>
+
+        <div id="deletedTeachersEmpty" class="empty-state hidden">
+          <div class="empty-icon">📭</div>
+          <h3>No Deleted Teachers</h3>
+          <p>Deleted teacher records will appear here.</p>
+        </div>
+
+        <!-- Pagination -->
+        <div id="deletedTeachersPagination" class="pagination-container hidden">
+          <button class="secondary" id="deletedTeachersPrevBtn" onclick="window.deletedTeachersPrevPage()">← Previous</button>
+          <span id="deletedTeachersPageInfo" class="pagination-info">Page 1</span>
+          <button class="secondary" id="deletedTeachersNextBtn" onclick="window.deletedTeachersNextPage()">Next →</button>
+        </div>
+      </div>
+
+      <!-- Schools Tab -->
+      <div id="schoolsTab" class="tab-content">
+        <div class="card admin-students-card">
+          <div class="admin-students-actions-row">
+            <span id="deletedSchoolCount" class="action-btn student-count-badge">🏫 0 Deleted Schools</span>
+            <button class="secondary action-btn" onclick="window.loadDeletedSchools()">🔄 Refresh</button>
+          </div>
+        </div>
+
+        <div id="deletedSchoolsLoading" class="text-center mt-3">
+          <div class="spinner spinner-large"></div>
+          <p class="text-muted mt-1">Loading deleted schools...</p>
+        </div>
+
+        <div id="deletedSchoolsGrid" class="students-grid hidden"></div>
+
+        <div id="deletedSchoolsEmpty" class="empty-state hidden">
+          <div class="empty-icon">📭</div>
+          <h3>No Deleted Schools</h3>
+          <p>Deleted school records will appear here.</p>
+        </div>
+      </div>
+
+   </main>
+
+   <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+
+    <!-- Centralized Firebase Configuration -->
+    <script src="src/config/firebase-config.js?v=2.0"></script>
+
+    <!-- Utils -->
+   <script src="js/helpers.js?v=a94822a"></script>
+
+   <!-- Auth Controller -->
+   <script src="js/controllers/auth.controller.js?v=a94822a"></script>
+
+   <!-- Admin Controller -->
+   <script src="js/controllers/admin.controller.js?v=a94822a"></script>
+
+   <!-- Deleted Cards Data Controller -->
+   <script src="js/controllers/deleted-cards-data.controller.js?v=2.0"></script>
+
+   <!-- Deleted Cards UI Controller -->
+   <script src="js/controllers/deleted-cards-ui.controller.js?v=2.0"></script>
+
+   <!-- Centralized Theme System -->
+   <script src="src/js/theme.js?v=2.0"></script>
+
+   <!-- Deleted Cards Init -->
+   <script>if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',function(){window.initDeletedCardsPage();});}else{window.initDeletedCardsPage();}</script>
+
+</body>
+</html>
