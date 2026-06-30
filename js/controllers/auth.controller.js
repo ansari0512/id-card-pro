@@ -71,11 +71,26 @@ window.checkSchoolAccess = async function(uid) {
 };
 
 /**
- * Login with email/password
+ * Resolve login input to Firebase auth email.
+ * If input contains "@", use as-is (backward compatible with old email logins).
+ * Otherwise, treat as Login ID: trim, uppercase, append @rkchoice.com.
  */
-window.login = async function(email, password) {
+window.resolveAuthEmail = function(input) {
+  const trimmed = (input || '').trim();
+  if (trimmed.includes('@')) {
+    return { isEmail: true, authEmail: trimmed, loginId: null };
+  }
+  const loginId = trimmed.toUpperCase();
+  return { isEmail: false, authEmail: loginId + '@rkchoice.com', loginId };
+};
+
+/**
+ * Login with Login ID or Email
+ */
+window.login = async function(input, password) {
   try {
-    const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+    const { isEmail, authEmail, loginId } = window.resolveAuthEmail(input);
+    const userCredential = await firebase.auth().signInWithEmailAndPassword(authEmail, password);
     const user = userCredential.user;
     const role = await window.fetchUserRole(user);
     
@@ -89,40 +104,57 @@ window.login = async function(email, password) {
     return { user, role };
   } catch (error) {
     const code = error.code || '';
+    const inputForLookup = (input || '').trim();
 
     // Old Firebase error codes (still work on some projects)
     if (code === 'auth/user-not-found' || code === 'auth/invalid-email') {
-      throw new Error('User not found in database');
+      // Try to give a more helpful message based on whether this was a login ID or email
+      if (inputForLookup.includes('@')) {
+        throw new Error('User not found in database');
+      } else {
+        throw new Error('User not found in database');
+      }
     }
     if (code === 'auth/wrong-password') {
       throw new Error('Invalid Password');
     }
 
     // Firebase v9+ combines both errors into one code
-    // We check Firestore to find out if email exists
     if (code === 'auth/invalid-login-credentials' || code === 'auth/invalid-credential') {
       try {
-        // Check if any user document has this email in Firestore
-        const usersSnap = await firebase.firestore()
-          .collection('users')
-          .where('email', '==', email)
-          .limit(1)
-          .get();
+        if (inputForLookup.includes('@')) {
+          // Email login: check users collection by email field
+          const usersSnap = await firebase.firestore()
+            .collection('users')
+            .where('email', '==', inputForLookup)
+            .limit(1)
+            .get();
 
-        if (usersSnap.empty) {
-          // No matching email was found in Firestore.
-          throw new Error('User not found in database');
+          if (usersSnap.empty) {
+            throw new Error('User not found in database');
+          } else {
+            throw new Error('Invalid Password');
+          }
         } else {
-          // Email exists, so the password is incorrect.
-          throw new Error('Invalid Password');
+          // Login ID login: check schools collection by loginId
+          const loginIdUpper = inputForLookup.toUpperCase();
+          const schoolsSnap = await firebase.firestore()
+            .collection('schools')
+            .where('loginId', '==', loginIdUpper)
+            .limit(1)
+            .get();
+
+          if (schoolsSnap.empty) {
+            throw new Error('User not found in database');
+          } else {
+            throw new Error('Invalid Password');
+          }
         }
       } catch (firestoreError) {
-        // Re-throw expected validation errors.
         if (firestoreError.message === 'User not found in database' ||
             firestoreError.message === 'Invalid Password') {
           throw firestoreError;
         }
-        // If the Firestore lookup fails, return the generic user-not-found message.
         throw new Error('User not found in database');
       }
     }
@@ -153,26 +185,36 @@ window.logout = async function() {
 
 /**
  * Admin creates school account (secondary app - doesn't logout admin)
+ * Accepts loginId and contactEmail instead of a plain email.
+ * Generates authEmail = loginId + "@rkchoice.com" for Firebase Auth only.
+ * authEmail is NEVER stored in Firestore.
  */
-window.createSchoolAccount = async function(email, password, schoolData) {
+window.createSchoolAccount = async function(loginId, contactEmail, password, schoolData) {
+  const loginIdUpper = (loginId || '').trim().toUpperCase();
+  const authEmail = loginIdUpper + '@rkchoice.com';
+  
   const secondaryApp = window.firebase.initializeApp(window.firebase.app().options, 'secondary_' + Date.now());
   const secondaryAuth = secondaryApp.auth();
   const currentUser = firebase.auth().currentUser;
 
   try {
-    const cred = await secondaryAuth.createUserWithEmailAndPassword(email, password);
+    const cred = await secondaryAuth.createUserWithEmailAndPassword(authEmail, password);
     const uid = cred.user.uid;
 
+    // Store contactEmail (not authEmail) in users doc
     await firebase.firestore().collection('users').doc(uid).set({
       role: 'school',
-      email,
+      loginId: loginIdUpper,
+      contactEmail: contactEmail,
       createdAt: Date.now(),
       createdBy: currentUser ? currentUser.uid : null
     });
 
+    // Store loginId and contactEmail in schools doc (not authEmail)
     await firebase.firestore().collection('schools').doc(uid).set({
       ...schoolData,
-      email,
+      loginId: loginIdUpper,
+      contactEmail: contactEmail,
       uid,
       createdAt: Date.now(),
       active: true

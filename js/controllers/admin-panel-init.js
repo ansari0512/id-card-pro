@@ -90,6 +90,11 @@
     document.getElementById('newSchoolCity')?.addEventListener('input', function() {
       window.applyProperCase(this);
     });
+
+    // Login ID availability check on input
+    document.getElementById('newSchoolLoginId')?.addEventListener('input', function() {
+      window.checkLoginIdAvailability();
+    });
   }
 
   document.addEventListener('DOMContentLoaded', safeBind);

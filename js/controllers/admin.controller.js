@@ -186,7 +186,59 @@ window.closeAddModal = function() {
 };
 
 /**
- * Create new school
+ * Validate Login ID format
+ */
+window.validateLoginId = function(loginId) {
+  const trimmed = (loginId || '').trim();
+  if (trimmed.length < 4) return { valid: false, error: 'Login ID must be at least 4 characters' };
+  if (trimmed.length > 20) return { valid: false, error: 'Login ID must not exceed 20 characters' };
+  if (!/^[A-Za-z0-9\-_]+$/.test(trimmed)) return { valid: false, error: 'Login ID can only contain letters, numbers, hyphen (-), and underscore (_)' };
+  return { valid: true, error: null };
+};
+
+/**
+ * Check Login ID availability in real-time
+ */
+window.checkLoginIdAvailability = async function() {
+  const input = document.getElementById('newSchoolLoginId');
+  const availability = document.getElementById('loginIdAvailability');
+  const rawValue = input.value.trim();
+  const loginId = rawValue.toUpperCase();
+  
+  // Auto-convert to uppercase while typing
+  if (input.value !== rawValue.toUpperCase()) {
+    input.value = rawValue.toUpperCase();
+  }
+
+  const validation = window.validateLoginId(loginId);
+  if (!validation.valid) {
+    availability.style.display = 'none';
+    return;
+  }
+
+  try {
+    const snapshot = await firebase.firestore()
+      .collection('schools')
+      .where('loginId', '==', loginId)
+      .limit(1)
+      .get();
+
+    if (!snapshot.empty) {
+      availability.style.display = 'block';
+      availability.style.color = 'var(--color-error, #e74c3c)';
+      availability.textContent = '❌ Login ID "' + loginId + '" already exists';
+    } else {
+      availability.style.display = 'block';
+      availability.style.color = 'var(--color-success, #2ecc71)';
+      availability.textContent = '✔ Login ID "' + loginId + '" is available';
+    }
+  } catch (e) {
+    availability.style.display = 'none';
+  }
+};
+
+/**
+ * Create new school with Login ID
  */
 window.createSchool = async function(e) {
   e.preventDefault();
@@ -197,15 +249,36 @@ window.createSchool = async function(e) {
   errEl.style.display = 'none';
 
   const name = document.getElementById('newSchoolName').value.trim();
+  const loginIdRaw = document.getElementById('newSchoolLoginId').value.trim();
+  const loginId = loginIdRaw.toUpperCase();
   const email = document.getElementById('newSchoolEmail').value.trim();
   const password = document.getElementById('newSchoolPassword').value;
   const city = document.getElementById('newSchoolCity').value.trim();
+
+  // Validate Login ID
+  const validation = window.validateLoginId(loginId);
+  if (!validation.valid) {
+    errEl.textContent = validation.error;
+    errEl.style.display = 'block';
+    return;
+  }
 
   btn.disabled = true;
   btnText.textContent = '⏳ Creating...';
 
   try {
-    await window.createSchoolAccount(email, password, {
+    // Check uniqueness
+    const dupCheck = await firebase.firestore()
+      .collection('schools')
+      .where('loginId', '==', loginId)
+      .limit(1)
+      .get();
+
+    if (!dupCheck.empty) {
+      throw new Error('Login ID "' + loginId + '" is already taken. Please choose another.');
+    }
+
+    await window.createSchoolAccount(loginId, email, password, {
       schoolName: name,
       city,
       active: true
@@ -214,6 +287,8 @@ window.createSchool = async function(e) {
     window.showToast(`✅ Account created for "${name}"!`, 'success');
     window.closeAddModal();
     document.getElementById('addSchoolForm').reset();
+    const availabilityEl = document.getElementById('loginIdAvailability');
+    if (availabilityEl) availabilityEl.style.display = 'none';
     window.loadSchools();
   } catch (err) {
     const errMap = {

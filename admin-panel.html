@@ -143,10 +143,15 @@
            <input type="text" id="newSchoolName" placeholder="e.g. Delhi Public School" required maxlength="100">
         </div>
         <div class="form-group">
-          <label>Login Email *</label>
-
+          <label>Login ID *</label>
+          <input type="text" id="newSchoolLoginId" placeholder="e.g. HF001" required maxlength="20" minlength="4" pattern="[A-Za-z0-9\-_]+" autocomplete="off">
+          <small class="form-helper-text">4-20 characters, letters, numbers, hyphen (-), underscore (_). Auto-converted to UPPERCASE.</small>
+          <div id="loginIdAvailability" class="form-helper-text" style="display:none;"></div>
+        </div>
+        <div class="form-group">
+          <label>Contact Email *</label>
           <input type="email" id="newSchoolEmail" placeholder="school@example.com" required>
-          <small class="form-helper-text">This will be the school's login email</small>
+          <small class="form-helper-text">Email for communication. Not used for login.</small>
         </div>
         <div class="form-group">
           <label>Password *</label>
@@ -154,8 +159,7 @@
         </div>
         <div class="form-group">
           <label>City / Location</label>
-          <input type="text" id="newSchoolCity" placeholder="e.g. New Delhi" maxlength="50"
-            >
+          <input type="text" id="newSchoolCity" placeholder="e.g. New Delhi" maxlength="50">
         </div>
         <div id="addError" class="form-error-message"></div>
         <div class="form-buttons-container">
