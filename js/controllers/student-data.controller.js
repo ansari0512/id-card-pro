@@ -406,8 +406,9 @@ window.loadPendingStudents = async function() {
     } else {
       if (filtersBar) filtersBar.style.display = 'flex';
       if (emptyState) { emptyState.classList.add('hidden'); emptyState.style.display = 'none'; }
-      // Populate dropdown with available classes (only once when loading)
+      // Populate dropdowns with available classes and sections
       window.populateClassDropdown(students, 'pendingClassFilter');
+      window.populateSectionDropdown(students, 'pendingSectionFilter');
       window.renderPendingStudents(students);
       const pendingGrid = document.getElementById('pendingGrid');
       pendingGrid.classList.remove('hidden');
@@ -424,22 +425,24 @@ window.loadPendingStudents = async function() {
 window.populateClassDropdown = function(students, dropdownId) {
   const dropdown = document.getElementById(dropdownId);
   if (!dropdown) return;
-  
-  // Get unique classes from students
-  const availableClasses = [...new Set(students.map(s => s.class).filter(Boolean))];
-  
+
+  const availableClasses = [...new Set(students
+    .map(s => window.normalizeClassValue(s.class))
+    .filter(Boolean)
+  )];
+
   // Store current selection before clearing
   const currentValue = dropdown.value || window.dropdownSelections[dropdownId] || '';
-  
+
   // Clear and rebuild options
   dropdown.innerHTML = '';
-  
+
   // Add "All Classes" option
   const allOption = document.createElement('option');
   allOption.value = '';
   allOption.textContent = 'All Classes';
   dropdown.appendChild(allOption);
-  
+
   // Add available classes in order
   const classOrder = ['Nursery','LKG','UKG','KG','1','2','3','4','5','6','7','8','9','10','11','12'];
   classOrder.forEach(cls => {
@@ -450,11 +453,15 @@ window.populateClassDropdown = function(students, dropdownId) {
       dropdown.appendChild(option);
     }
   });
-  
+
   // Restore previous selection if still available
-  if (currentValue && (currentValue === '' || availableClasses.includes(currentValue))) {
-    dropdown.value = currentValue;
-    window.dropdownSelections[dropdownId] = currentValue;
+  const preferredValue = availableClasses.includes(currentValue)
+    ? currentValue
+    : (availableClasses.includes(window.normalizeClassValue(currentValue)) ? window.normalizeClassValue(currentValue) : '');
+
+  if (currentValue === '' || preferredValue) {
+    dropdown.value = preferredValue || '';
+    window.dropdownSelections[dropdownId] = preferredValue || '';
   }
 };
 
@@ -507,17 +514,19 @@ window.bulkDeletePending = async function() {
 };
 
 // Update pending badge count
-window.updatePendingBadge = async function() {
+window.updatePendingBadge = async function(countOverride) {
   try {
     const user = firebase.auth().currentUser;
     if (!user) return;
-    const snap = await window.dbPending(user.uid).get();
-    const count = snap.size;
     const badge = document.getElementById('pendingBadge');
-    if (badge) {
-      badge.textContent = count;
-      badge.style.display = count > 0 ? 'inline' : 'none';
-    }
+    if (!badge) return;
+
+    const count = typeof countOverride === 'number'
+      ? countOverride
+      : (await window.dbPending(user.uid).get()).size;
+
+    badge.textContent = count;
+    badge.style.display = count > 0 ? 'inline' : 'none';
   } catch(e) {}
 };
 
@@ -793,13 +802,30 @@ window.uploadPendingPhoto = async function() {
     // Upload photo
     const photoUrl = await window.uploadPhoto(user.uid, s.id, file, s.class, s.name);
 
-    // Add to complete students
-    await window.dbStudents(user.uid, s.class).add({
-      id: s.id, uid: user.uid, schoolId: user.uid,
-      name: s.name, father: s.father || '', class: s.class,
-      section: s.section || '', mobile: s.mobile || '0000000000', address: s.address || '',
-      photo: photoUrl, createdAt: s.createdAt, updatedAt: Date.now()
-    });
+    // Convert all CSV values to string to avoid .trim() crash on numbers from Firestore
+    const safeStr = v => String(v == null ? '' : v).trim();
+
+    // Add to complete students — ensure all required fields pass Firestore rules validation
+    const completeData = {
+      id: safeStr(s.id),
+      uid: user.uid,
+      schoolId: user.uid,
+      name: safeStr(s.name),
+      father: safeStr(s.father) || '-',
+      class: window.normalizeClassValue(s.class),
+      section: safeStr(s.section) || '-',
+      mobile: safeStr(s.mobile) || '0000000000',
+      address: safeStr(s.address),
+      photo: photoUrl,
+      createdAt: s.createdAt,
+      updatedAt: Date.now()
+    };
+
+    if (!completeData.name || !completeData.class) {
+      throw new Error('Student name and class are required');
+    }
+
+    await window.dbStudents(user.uid, completeData.class).add(completeData);
 
     // Delete from pending
     await window.dbPending(user.uid).doc(docId).delete();
@@ -807,9 +833,14 @@ window.uploadPendingPhoto = async function() {
     window.showToast('✅ Student completed successfully!', 'success');
     window.closePhotoUploadModal();
     window.updatePendingBadge();
-    window.loadPendingStudents();
+    window.studentsListCache = null;
+    window.studentsListCacheTime = 0;
+    // Refresh complete tab data and switch to it so user sees the student
+    window.loadStudents();
+    window.switchTab('complete');
   } catch(e) {
-    errEl.textContent = e.message;
+    console.error('Photo upload failed:', e.code, e.message);
+    errEl.textContent = e.message || 'Failed to complete student. Check console for details.';
     errEl.style.display = 'block';
   } finally {
     btn.disabled = false;

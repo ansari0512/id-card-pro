@@ -158,6 +158,55 @@ window.debounce = function(func, wait) {
 
 window.ALL_CLASSES = ['Nursery','LKG','UKG','KG','1','2','3','4','5','6','7','8','9','10','11','12'];
 
+window.normalizeClassValue = function(val) {
+  const raw = String(val == null ? '' : val).trim();
+  if (!raw) return '';
+
+  const classMatch = raw.match(/^class\s*(\d+)$/i);
+  if (classMatch && classMatch[1]) return classMatch[1];
+
+  const compact = raw.toUpperCase().replace(/[.\s-]+/g, '');
+  if (!compact) return '';
+
+  const romanMap = {
+    I: '1',
+    II: '2',
+    III: '3',
+    IV: '4',
+    V: '5',
+    VI: '6',
+    VII: '7',
+    VIII: '8',
+    IX: '9',
+    X: '10',
+    XI: '11',
+    XII: '12'
+  };
+
+  if (romanMap[compact]) return romanMap[compact];
+
+  const aliasMap = {
+    LKG: 'LKG',
+    UKG: 'UKG',
+    KG: 'KG'
+  };
+
+  if (aliasMap[compact]) return aliasMap[compact];
+
+  if (/^\d+$/.test(compact)) return compact;
+
+  return compact;
+};
+
+window.getClassQueryVariants = function(val) {
+  const raw = String(val == null ? '' : val).trim();
+  if (!raw) return [];
+
+  const normalized = window.normalizeClassValue(raw);
+  const variants = [raw, normalized].filter(Boolean);
+  return [...new Set(variants)];
+};
+
 /**
  * Compress image using canvas (client-side)
  * @param {File} imageFile - Original image file
@@ -322,13 +371,21 @@ window.dbStudents = function(schoolId, className) {
 };
 
 window.dbGetAllStudents = async function(schoolId, filters = {}) {
+  const sectionFilter = filters.section ? String(filters.section).trim() : '';
+  const classFilter = filters.class ? window.normalizeClassValue(filters.class) : '';
+
   // When a specific class filter is provided, use existing per-class query (backward compatible)
-  if (filters.class) {
-    const targetClasses = [filters.class];
+  if (classFilter) {
+    const targetClasses = [...new Set([
+      filters.class,
+      classFilter,
+      ...window.getClassQueryVariants(filters.class)
+    ].filter(Boolean))];
+
     const snapshots = await Promise.all(
       targetClasses.map(cls => {
         let q = window.dbStudents(schoolId, cls);
-        if (filters.section) q = q.where('section', '==', filters.section);
+        if (sectionFilter) q = q.where('section', '==', sectionFilter);
         return q.get().then(snap =>
           snap.docs.map(d => ({ docId: d.id, ...d.data() }))
         ).catch(() => []);
@@ -336,6 +393,13 @@ window.dbGetAllStudents = async function(schoolId, filters = {}) {
     );
 
     let results = snapshots.flat().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+    const deduped = new Map();
+    results.forEach(student => {
+      const key = student.docId || student.id;
+      if (key && !deduped.has(key)) deduped.set(key, student);
+    });
+    results = Array.from(deduped.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
     if (filters.search) {
       const q = filters.search.toLowerCase();
@@ -352,7 +416,7 @@ window.dbGetAllStudents = async function(schoolId, filters = {}) {
   try {
     let q = firebase.firestore().collectionGroup('students')
       .where('schoolId', '==', schoolId);
-    if (filters.section) q = q.where('section', '==', filters.section);
+    if (sectionFilter) q = q.where('section', '==', sectionFilter);
     const snap = await q.get();
     let results = snap.docs.map(d => ({ docId: d.id, ...d.data() }));
     results.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));

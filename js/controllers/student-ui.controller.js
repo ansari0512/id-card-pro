@@ -48,10 +48,29 @@ window.loadStudents = async function() {
     const cachedData = window.studentsListCache?.key === cacheKey && 
                        (now - window.studentsListCacheTime) < STUDENTS_CACHE_TTL
                        ? window.studentsListCache.data : null;
-    
+
     let students;
-    if (cachedData && !search) {
-      // Use cached data for class/section filters, but always apply search client-side
+    let dropdownSource = null;
+
+    if (classVal || sectionVal) {
+      dropdownSource = await window.getStudents({});
+      const normalizedClassVal = window.normalizeClassValue(classVal);
+      students = dropdownSource.filter(s => {
+        const studentClass = window.normalizeClassValue(s.class || '');
+        const studentSection = String(s.section || '');
+        const matchesClass = !normalizedClassVal || studentClass === normalizedClassVal;
+        const matchesSection = !sectionVal || studentSection === sectionVal;
+        return matchesClass && matchesSection;
+      });
+
+      if (search) {
+        students = students.filter(s =>
+          (s.name || '').toLowerCase().includes(search) ||
+          (s.id || '').toLowerCase().includes(search)
+        );
+      }
+    } else if (cachedData && !search) {
+      // Use cached data for no class/section filter, and always apply search client-side
       students = cachedData;
       if (search) {
         students = students.filter(s =>
@@ -67,7 +86,7 @@ window.loadStudents = async function() {
         window.studentsListCacheTime = now;
       }
     }
-    
+
     window.allStudents = students;
 
     loading.style.display = 'none';
@@ -82,9 +101,9 @@ window.loadStudents = async function() {
     if (students.length === 0) {
       empty.style.display = 'block';
     } else {
-      // Populate class dropdown with available classes
-      window.populateClassDropdown(students, 'classFilter');
-      window.populateSectionDropdown(students, 'sectionFilter');
+      // Populate class dropdown with available classes (unfiltered source when filters are active)
+      window.populateClassDropdown(dropdownSource || students, 'classFilter');
+      window.populateSectionDropdown(dropdownSource || students, 'sectionFilter');
       window.renderStudents(students);
       grid.style.display = 'grid';
       grid.classList.remove('hidden');
@@ -211,6 +230,8 @@ window.clearFilters = function() {
   document.getElementById('searchInput').value = '';
   document.getElementById('classFilter').value = '';
   document.getElementById('sectionFilter').value = '';
+  window.dropdownSelections['classFilter'] = '';
+  window.dropdownSelections['sectionFilter'] = '';
   
   const selectAll = document.getElementById('selectAllCheckbox');
   if (selectAll) {
@@ -298,7 +319,9 @@ window.deleteSingle = async function(docId) {
 // Update pending selection count & checkboxes state
 window.updatePendingSelectedCount = function() {
   const count = window.selectedPending.size;
-  const total = window.allPendingStudents.length;
+  const total = typeof window.filteredPendingStudentsCount === 'number'
+    ? window.filteredPendingStudentsCount
+    : window.allPendingStudents.length;
 
   const studentCountEl = document.getElementById('pendingStudentCount');
   if (studentCountEl) {
@@ -357,8 +380,11 @@ window.renderPendingStudents = function(students) {
 
   // Filter students (no row-level validation; only UI filtering)
   const filteredStudents = students.filter(s => {
-    const matchClass = !classVal || s.class === classVal;
-    const matchSection = !sectionVal || s.section === sectionVal;
+    // Convert both sides to string to handle number vs string type mismatch from Firestore
+    const studentClass = String(s.class == null ? '' : s.class);
+    const studentSection = String(s.section == null ? '' : s.section);
+    const matchClass = !classVal || window.normalizeClassValue(studentClass) === window.normalizeClassValue(classVal);
+    const matchSection = !sectionVal || studentSection === sectionVal;
     if (!matchClass || !matchSection) return false;
 
     if (!search) return true;
@@ -367,6 +393,8 @@ window.renderPendingStudents = function(students) {
     return name.includes(search) || sid.includes(search);
   });
 
+  window.filteredPendingStudentsCount = filteredStudents.length;
+  window.updatePendingBadge(filteredStudents.length);
 
   filteredStudents.forEach(s => {
     const card = document.createElement('div');
@@ -455,6 +483,7 @@ window.renderPendingStudents = function(students) {
 
 // Clear pending filters
 window.clearPendingFilters = function() {
+  document.getElementById('pendingSearchInput').value = '';
   document.getElementById('pendingClassFilter').value = '';
   document.getElementById('pendingSectionFilter').value = '';
   
@@ -509,7 +538,7 @@ window.loadPromoteStudentsTable = async function() {
   promoteLoading.style.display = 'block';
   promoteGrid.style.display = 'none';
   emptyPromoteState.style.display = 'none';
-  promoteActionsBar.style.display = 'none';
+  promoteActionsBar.style.display = 'flex';
 
   try {
     const user = firebase.auth().currentUser;
@@ -523,8 +552,21 @@ window.loadPromoteStudentsTable = async function() {
       section: sectionFilter || ''
     };
 
-
-    let students = await window.getStudents(filters);
+    let dropdownSource = null;
+    let students;
+    if (classFilter || sectionFilter) {
+      dropdownSource = await window.getStudents({});
+      const normalizedClassFilter = window.normalizeClassValue(classFilter);
+      students = dropdownSource.filter(s => {
+        const studentClass = window.normalizeClassValue(s.class || '');
+        const studentSection = String(s.section || '');
+        const matchesClass = !normalizedClassFilter || studentClass === normalizedClassFilter;
+        const matchesSection = !sectionFilter || studentSection === sectionFilter;
+        return matchesClass && matchesSection;
+      });
+    } else {
+      students = await window.getStudents(filters);
+    }
 
     if (search) {
       students = students.filter(s => {
@@ -535,13 +577,13 @@ window.loadPromoteStudentsTable = async function() {
     }
 
     window.allPromoteStudents = students;
+    window.filteredPromoteStudentsCount = students.length;
     window.selectedPromoteStudents.clear();
-
 
     // Update count badge
     const countEl = document.getElementById('promoteStudentCount');
     if (countEl) {
-      countEl.textContent = `👥 ${students.length} Students`;
+      countEl.textContent = `👥 ${window.filteredPromoteStudentsCount} Students`;
     }
 
 
@@ -549,10 +591,9 @@ window.loadPromoteStudentsTable = async function() {
 
     if (students.length === 0) {
       emptyPromoteState.style.display = 'block';
-      promoteActionsBar.style.display = 'none';
     } else {
-      window.populateClassDropdown(students, 'promoteClassFilter');
-      window.populateSectionDropdown(students, 'promoteSectionFilter');
+      window.populateClassDropdown(dropdownSource || students, 'promoteClassFilter');
+      window.populateSectionDropdown(dropdownSource || students, 'promoteSectionFilter');
       
       window.renderPromoteTable(students);
       promoteGrid.classList.remove('hidden');
@@ -648,7 +689,9 @@ window.promoteToggleAllRows = function(checked) {
  */
 window.updatePromoteCounts = function() {
   const selectedCount = window.selectedPromoteStudents.size;
-  const totalCount = window.allPromoteStudents.length;
+  const totalCount = typeof window.filteredPromoteStudentsCount === 'number'
+    ? window.filteredPromoteStudentsCount
+    : window.allPromoteStudents.length;
 
   const studentCountEl = document.getElementById('promoteStudentCount');
   if (studentCountEl) {
@@ -675,8 +718,11 @@ window.updatePromoteCounts = function() {
  * Clear filters
  */
 window.clearPromoteFilters = function() {
+  document.getElementById('promoteSearchInput').value = '';
   document.getElementById('promoteClassFilter').value = '';
   document.getElementById('promoteSectionFilter').value = '';
+  window.dropdownSelections['promoteClassFilter'] = '';
+  window.dropdownSelections['promoteSectionFilter'] = '';
   window.selectedPromoteStudents.clear();
 
   const selectAll = document.getElementById('promoteSelectAllCheckbox');
@@ -741,8 +787,9 @@ document.addEventListener('DOMContentLoaded', function() {
     window.loadStudents();
     window.updatePendingBadge();
 
-    // Auto open import modal if ?tab=import
-    if (new URLSearchParams(window.location.search).get('tab') === 'import') {
+    // Handle URL tab parameter for import modal only (tab switching handled by pages/students.js)
+    const urlTab = new URLSearchParams(window.location.search).get('tab');
+    if (urlTab === 'import') {
       window.openImportModal();
     }
   });
@@ -789,6 +836,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
+  // Promote tab filter dropdowns
+  document.getElementById('promoteClassFilter')?.addEventListener('change', window.loadPromoteStudentsTable);
+  document.getElementById('promoteSectionFilter')?.addEventListener('change', window.loadPromoteStudentsTable);
 
   // Edit form submit
   document.getElementById('editForm')?.addEventListener('submit', window.saveStudentEdit);
