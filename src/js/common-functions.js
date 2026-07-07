@@ -95,16 +95,38 @@ window.CommonFunctions = {
     }
   },
 
-  // Setup modal close on backdrop click
-  setupModalClose: function(modalId) {
+  // Setup modal with ESC close, outside click close, and close button support
+  setupModal: function(modalId, closeCallback) {
     const modal = document.getElementById(modalId);
-    if (modal) {
-      modal.addEventListener('click', function(e) {
-        if (e.target === modal) {
-          modal.classList.add('d-none');
-        }
-      });
-    }
+    if (!modal) return;
+    
+    // Prevent duplicate listeners
+    if (modal.dataset.modalInitialized === 'true') return;
+    modal.dataset.modalInitialized = 'true';
+    
+    // Outside click: close when clicking overlay background
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) {
+        if (closeCallback) closeCallback();
+      }
+    });
+    
+    // ESC key: close when Escape key pressed
+    const escHandler = function(e) {
+      if (e.key === 'Escape' && modal.classList.contains('open')) {
+        if (closeCallback) closeCallback();
+      }
+    };
+    document.addEventListener('keydown', escHandler);
+    
+    // Cleanup: remove ESC listener when modal is removed from DOM
+    const observer = new MutationObserver(function() {
+      if (!document.body.contains(modal)) {
+        document.removeEventListener('keydown', escHandler);
+        observer.disconnect();
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
   },
 
   // Debounce function for performance - delegates to shared implementation

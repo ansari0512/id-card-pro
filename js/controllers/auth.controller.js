@@ -123,17 +123,44 @@ window.login = async function(input, password) {
     if (code === 'auth/invalid-login-credentials' || code === 'auth/invalid-credential') {
       try {
         if (inputForLookup.includes('@')) {
-          // Email login: check users collection by email field
-          const usersSnap = await firebase.firestore()
+          // Email login: check users collection by email OR contactEmail
+          // Old schools store authEmail in 'email' field
+          // New schools store contactEmail in 'contactEmail' field
+          // We check both
+          let found = false;
+          
+          // Check old schools by email field
+          const usersByEmail = await firebase.firestore()
             .collection('users')
             .where('email', '==', inputForLookup)
             .limit(1)
             .get();
+          if (!usersByEmail.empty) found = true;
+          
+          // Check new schools by contactEmail field
+          if (!found) {
+            const usersByContactEmail = await firebase.firestore()
+              .collection('users')
+              .where('contactEmail', '==', inputForLookup)
+              .limit(1)
+              .get();
+            if (!usersByContactEmail.empty) found = true;
+          }
+          
+          // Also check schools collection directly for contactEmail
+          if (!found) {
+            const schoolsByEmail = await firebase.firestore()
+              .collection('schools')
+              .where('contactEmail', '==', inputForLookup)
+              .limit(1)
+              .get();
+            if (!schoolsByEmail.empty) found = true;
+          }
 
-          if (usersSnap.empty) {
-            throw new Error('User not found in database');
-          } else {
+          if (found) {
             throw new Error('Invalid Password');
+          } else {
+            throw new Error('User not found in database');
           }
         } else {
           // Login ID login: check schools collection by loginId

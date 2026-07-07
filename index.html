@@ -36,8 +36,9 @@
 
       <form id="loginForm" class="login-form">
         <div class="form-group">
-          <label for="email">Login ID / Email</label>
-          <input type="text" id="email" placeholder="Enter Login ID or Email" required autocomplete="username">
+          <label for="email">Login ID</label>
+          <input type="text" id="email" placeholder="Enter your Login ID (e.g. HF001)" required autocomplete="username">
+          <small class="form-helper-text" style="display:block;margin-top:4px;font-size:12px;">Existing schools can continue signing in with their registered email address.</small>
         </div>
 
         <div class="form-group">
@@ -63,6 +64,7 @@
    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
    <!-- Centralized Firebase Configuration -->
    <script src="src/config/firebase-config.js?v=2.0"></script>

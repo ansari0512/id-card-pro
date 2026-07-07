@@ -58,7 +58,9 @@ window.loadSchools = async function() {
       const active = school.active !== false;
       const safeName = window.sanitize(school.schoolName || 'N/A');
       const safeCity = window.sanitize(school.city || '');
-      const safeEmail = window.sanitize(school.email || '-');
+      // Show Login ID for new schools, fallback to email for old schools
+      const displayLogin = school.loginId || school.email || '-';
+      const safeDisplay = window.sanitize(displayLogin);
       const tr = document.createElement('tr');
 
       // Attach handlers programmatically to avoid inline onclick XSS risks.
@@ -67,7 +69,7 @@ window.loadSchools = async function() {
 
       const td2 = document.createElement('td');
       td2.style.fontSize = '13px';
-      td2.textContent = safeEmail;
+      td2.textContent = safeDisplay;
 
       const td3 = document.createElement('td');
       td3.innerHTML = `<strong id="count_${school.id}">...</strong>`;
@@ -452,6 +454,7 @@ window.editSchool = async function(schoolId) {
     const editError = document.getElementById('editError');
     const editSchoolIdEl = document.getElementById('editSchoolId');
     const editSchoolNameEl = document.getElementById('editSchoolName');
+    const editSchoolLoginIdEl = document.getElementById('editSchoolLoginId');
     const editSchoolEmailEl = document.getElementById('editSchoolEmail');
     const editSchoolCityEl = document.getElementById('editSchoolCity');
 
@@ -469,7 +472,12 @@ window.editSchool = async function(schoolId) {
 
     editSchoolIdEl.value = schoolId;
     editSchoolNameEl.value = data.schoolName || '';
-    editSchoolEmailEl.value = data.email || '';
+    // Show Login ID if available (new schools), otherwise show email (old schools)
+    if (editSchoolLoginIdEl) {
+      editSchoolLoginIdEl.value = data.loginId || (data.email ? 'Email: ' + data.email : '');
+    }
+    // Use contactEmail for new schools, fallback to email for old schools
+    editSchoolEmailEl.value = data.contactEmail || data.email || '';
     if (editSchoolCityEl) {
       editSchoolCityEl.value = data.city || '';
     }
@@ -497,7 +505,8 @@ window.editSchool = async function(schoolId) {
 };
 
 /**
- * Update school details (only schoolName, email, city)
+ * Update school details (schoolName, contactEmail, city)
+ * Login ID is immutable and cannot be changed.
  */
 window.updateSchool = async function(e) {
   if (e && typeof e.preventDefault === 'function') {
@@ -521,13 +530,25 @@ window.updateSchool = async function(e) {
     const city = document.getElementById('editSchoolCity')?.value.trim() || '';
 
     if (!schoolName) throw new Error('School Name is required');
-    if (!email) throw new Error('Email is required');
+    if (!email) throw new Error('Contact Email is required');
 
+    // Build update payload - use contactEmail for new schools, email for old schools
     const updatePayload = {
       schoolName,
-      email,
       city
     };
+    
+    // Check if school has loginId (new school) or email (old school)
+    const schoolDoc = await firebase.firestore().collection('schools').doc(schoolId).get();
+    const existingData = schoolDoc.data() || {};
+    
+    if (existingData.loginId) {
+      // New school: update contactEmail
+      updatePayload.contactEmail = email;
+    } else {
+      // Old school: update email field
+      updatePayload.email = email;
+    }
 
     await firebase.firestore().collection('schools').doc(schoolId).update(updatePayload);
     window.showToast('✅ School updated successfully', 'success');

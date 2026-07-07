@@ -217,9 +217,10 @@ window.initTeacherStaffPage = function() {
 
     document.getElementById('teacherEditForm')?.addEventListener('submit', window.saveTeacherStaffEdit);
 
-    document.getElementById('teacherEditModal')?.addEventListener('click', function(e) {
-      if (e.target === e.currentTarget) window.closeTeacherEditModal();
-    });
+    // Setup modal behavior: ESC + outside click
+    if (window.CommonFunctions && typeof window.CommonFunctions.setupModal === 'function') {
+      window.CommonFunctions.setupModal('teacherEditModal', window.closeTeacherEditModal);
+    }
 
     // Clear filters button
     document.getElementById('clearTeacherFiltersBtn')?.addEventListener('click', function() {

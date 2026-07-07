@@ -62,7 +62,7 @@
       const dataRows = schoolsData.map(({ school, students, classCount }) => [
         school.schoolName || '',
         school.city || '',
-        school.email || '',
+        school.loginId || school.contactEmail || school.email || '',
         school.active !== false ? 'Active' : 'Inactive',
         students.length,
         ...allClasses.map(c => classCount[c] || 0),

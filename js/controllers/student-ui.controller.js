@@ -793,19 +793,13 @@ document.addEventListener('DOMContentLoaded', function() {
   // Edit form submit
   document.getElementById('editForm')?.addEventListener('submit', window.saveStudentEdit);
 
-  // Modal close on overlay click
-  document.getElementById('editModal')?.addEventListener('click', function(e) {
-    if (e.target === e.currentTarget) window.closeEditModal();
-  });
-  document.getElementById('importModal')?.addEventListener('click', function(e) {
-    if (e.target === e.currentTarget) window.closeImportModal();
-  });
-  document.getElementById('photoUploadModal')?.addEventListener('click', function(e) {
-    if (e.target === e.currentTarget) window.closePhotoUploadModal();
-  });
-  document.getElementById('promoteTargetModal')?.addEventListener('click', function(e) {
-    if (e.target === e.currentTarget) window.closePromoteTargetModal();
-  });
+  // Setup modal behavior: ESC + outside click
+  if (window.CommonFunctions && typeof window.CommonFunctions.setupModal === 'function') {
+    window.CommonFunctions.setupModal('editModal', window.closeEditModal);
+    window.CommonFunctions.setupModal('importModal', window.closeImportModal);
+    window.CommonFunctions.setupModal('photoUploadModal', window.closePhotoUploadModal);
+    window.CommonFunctions.setupModal('promoteTargetModal', window.closePromoteTargetModal);
+  }
 });
 
 // File input preview listeners

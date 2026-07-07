@@ -12,7 +12,6 @@
     
     if (editModal) {
       editModal.classList.remove('open');
-      console.log('✅ Edit modal closed');
     }
     if (editError) {
       editError.style.display = 'none';
@@ -31,14 +30,10 @@
       editForm.addEventListener('submit', window.updateSchool);
     }
 
-    // Bind modal overlay backdrop click handler
-    const editModal = document.getElementById('editModal');
-    if (editModal) {
-      editModal.addEventListener('click', function(e) {
-        if (e.target === e.currentTarget) {
-          window.closeEditSchoolModal();
-        }
-      });
+    // Setup modal behavior: ESC + outside click
+    if (window.CommonFunctions && typeof window.CommonFunctions.setupModal === 'function') {
+      window.CommonFunctions.setupModal('addModal', window.closeAddModal);
+      window.CommonFunctions.setupModal('editModal', window.closeEditSchoolModal);
     }
 
     // Admin logout button

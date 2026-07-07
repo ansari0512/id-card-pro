@@ -24,7 +24,15 @@ window.initDashboard = function() {
     }
 
     window.dashboardUser = user;
-    document.getElementById('userEmail').textContent = user.email;
+    
+    // Show school name or loginId instead of auth email
+    firebase.firestore().collection('schools').doc(user.uid).get().then(schoolDoc => {
+      const schoolData = schoolDoc.data() || {};
+      const displayName = schoolData.loginId || schoolData.schoolName || user.email;
+      document.getElementById('userEmail').textContent = displayName;
+    }).catch(() => {
+      document.getElementById('userEmail').textContent = user.email;
+    });
     
     // Use cached stats if available and fresh
     const now = Date.now();
