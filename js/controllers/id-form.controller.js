@@ -109,7 +109,7 @@ window.submitStudentForm = async function(e) {
     const otherInfo = window.sanitize(document.getElementById('otherInfo')?.value.trim() || '');
 
     const address = window.sanitize(document.getElementById('address').value.trim());
-    const dob = document.getElementById('dob').value.trim();
+    const dob = window.normalizeDateValue(document.getElementById('dob').value.trim());
     const photoFile = document.getElementById('photo').files[0];
 
 

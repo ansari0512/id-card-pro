@@ -256,6 +256,7 @@ window.openEditModal = function(docId) {
   document.getElementById('editClass').value = student.class || '';
   document.getElementById('editSection').value = student.section || '';
   document.getElementById('editMobile').value = student.mobile || '';
+  document.getElementById('editDob').value = window.normalizeDateValue(student.dob || '');
   document.getElementById('editAddress').value = student.address || '';
 
   // New fields (backward compatible)

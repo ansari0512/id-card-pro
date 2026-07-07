@@ -198,6 +198,85 @@ window.normalizeClassValue = function(val) {
   return compact;
 };
 
+window.normalizeDateValue = function(value) {
+  if (value == null) return '';
+  const raw = typeof value === 'string' ? value.trim() : String(value).trim();
+  if (!raw) return '';
+
+  const formatDate = function(date) {
+    if (!(date instanceof Date) || isNaN(date.getTime())) return '';
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  const parseDateParts = function(year, month, day) {
+    const y = Number(year);
+    const m = Number(month);
+    const d = Number(day);
+    if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return null;
+    const date = new Date(y, m - 1, d);
+    if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d) return null;
+    return date;
+  };
+
+  const asNumber = Number(raw);
+  const isExcelSerial = Number.isFinite(asNumber) && asNumber > 30 && asNumber < 60000;
+  const parseExcelSerial = function(serial) {
+    const epoch = Date.UTC(1899, 11, 31);
+    const offset = serial > 60 ? serial - 1 : serial;
+    return new Date(epoch + offset * 86400000);
+  };
+
+  if (/^\d+$/.test(raw)) {
+    if (isExcelSerial) {
+      const excelDate = parseExcelSerial(asNumber);
+      const formatted = formatDate(excelDate);
+      if (formatted) return formatted;
+    }
+
+    if (raw.length === 8) {
+      const dmy = parseDateParts(raw.slice(4), raw.slice(2, 4), raw.slice(0, 2));
+      if (dmy) return formatDate(dmy);
+
+      const ymd = parseDateParts(raw.slice(0, 4), raw.slice(4, 6), raw.slice(6));
+      if (ymd) return formatDate(ymd);
+    }
+
+    if (raw.length === 6) {
+      const year = raw.slice(4).length === 2 ? Number(raw.slice(4)) : null;
+      if (year !== null) {
+        const fullYear = year > 30 ? 1900 + year : 2000 + year;
+        const dmy = parseDateParts(fullYear, raw.slice(2, 4), raw.slice(0, 2));
+        if (dmy) return formatDate(dmy);
+      }
+    }
+
+    return raw;
+  }
+
+  const isoMatch = raw.match(/^(\d{4})[\/\.\-\s](\d{1,2})[\/\.\-\s](\d{1,2})$/);
+  if (isoMatch) {
+    const date = parseDateParts(isoMatch[1], isoMatch[2], isoMatch[3]);
+    if (date) return formatDate(date);
+  }
+
+  const dmyMatch = raw.match(/^(\d{1,2})[\/\.\-\s](\d{1,2})[\/\.\-\s](\d{2,4})$/);
+  if (dmyMatch) {
+    const year = dmyMatch[3].length === 2 ? (Number(dmyMatch[3]) > 30 ? 1900 + Number(dmyMatch[3]) : 2000 + Number(dmyMatch[3])) : Number(dmyMatch[3]);
+    const date = parseDateParts(year, dmyMatch[2], dmyMatch[1]);
+    if (date) return formatDate(date);
+  }
+
+  const parsed = new Date(raw);
+  if (!isNaN(parsed.getTime())) {
+    return formatDate(parsed);
+  }
+
+  return raw;
+};
+
 window.getClassQueryVariants = function(val) {
   const raw = String(val == null ? '' : val).trim();
   if (!raw) return [];

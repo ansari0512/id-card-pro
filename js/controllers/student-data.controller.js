@@ -120,6 +120,7 @@ window.saveStudentEdit = async function(e) {
       class: document.getElementById('editClass').value,
       section: document.getElementById('editSection').value,
       mobile,
+      dob: window.normalizeDateValue(document.getElementById('editDob').value.trim()),
       address: document.getElementById('editAddress').value.trim(),
 
       // New fields (backward compatible)
@@ -586,7 +587,7 @@ window.parseImportFile = function(file) {
             return {
               name: normalized.name || normalized.fullname || '',
               father: normalized.fathername || normalized.father || '',
-              dob: normalized.dob || normalized.dateofbirth || '',
+              dob: window.normalizeDateValue(normalized.dob || normalized.dateofbirth || ''),
               class: normalized.class || normalized.classname || '',
               section: normalized.section || '',
               mobile: normalized.mobile || normalized.phone || '',
@@ -677,7 +678,7 @@ window.parseImportFile = function(file) {
             admissionNo: String(cols[1] || '').trim(),
             name: String(cols[2] || '').trim(),
             rollNo: String(cols[3] || '').trim(),
-            dob: String(cols[4] || '').trim(),
+            dob: window.normalizeDateValue(String(cols[4] || '').trim()),
             father: String(cols[5] || '').trim(),
             motherName: String(cols[6] || '').trim(),
             bloodGroup: String(cols[7] || '').trim(),
@@ -745,7 +746,7 @@ window.importCSV = async function() {
       const ref = window.dbPending(user.uid).doc();
       batch.set(ref, {
         id, name: s.name, father: s.father,
-        dob: s.dob || '',
+        dob: window.normalizeDateValue(s.dob || ''),
         class: s.class, section: s.section,
         mobile: s.mobile, address: s.address,
 

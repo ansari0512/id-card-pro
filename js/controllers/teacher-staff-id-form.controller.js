@@ -61,7 +61,7 @@
         name: document.getElementById('tsName').value.trim(),
         designation: document.getElementById('tsDesignation').value.trim(),
         fatherName: document.getElementById('tsFatherName').value.trim(),
-        dob: document.getElementById('tsDob').value.trim(),
+        dob: window.normalizeDateValue(document.getElementById('tsDob').value.trim()),
         mobile: document.getElementById('tsMobile').value.trim(),
       };
 
@@ -98,7 +98,7 @@
         name: window.sanitize(required.name),
         designation: window.sanitize(required.designation),
         fatherName: window.sanitize(required.fatherName),
-        dob: required.dob,
+        dob: window.normalizeDateValue(required.dob),
         bloodGroup: window.sanitize(other.bloodGroup),
         address: window.sanitize(other.address),
         mobile: required.mobile,

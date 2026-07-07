@@ -136,7 +136,7 @@ window.saveTeacherStaffEdit = async function(e) {
       name: window.sanitize(document.getElementById('teacherEditName').value.trim()),
       designation: window.sanitize(document.getElementById('teacherEditDesignation').value.trim()),
       fatherName: window.sanitize(document.getElementById('teacherEditFather').value.trim()),
-      dob: document.getElementById('teacherEditDob').value.trim(),
+      dob: window.normalizeDateValue(document.getElementById('teacherEditDob').value.trim()),
       bloodGroup: window.sanitize(document.getElementById('teacherEditBlood').value.trim()),
       address: window.sanitize(document.getElementById('teacherEditAddress').value.trim()),
       mobile: document.getElementById('teacherEditMobile').value.trim(),
