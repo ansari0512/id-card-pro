@@ -306,6 +306,8 @@ window.deleteSingle = async function(docId) {
   try {
     await window.deleteStudent(docId);
     window.showToast('Student deleted', 'success');
+    window.studentsListCache = null;
+    window.studentsListCacheTime = 0;
     window.loadStudents();
   } catch (err) {
     window.showToast('Delete failed: ' + err.message, 'error');
