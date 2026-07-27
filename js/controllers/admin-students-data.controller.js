@@ -384,18 +384,19 @@ window.adminExportSelectedRecords = async function(records, type) {
   try {
     let headers, rows, filenamePrefix;
     if (type === 'teacher') {
-      headers = ['Teacher ID','Name','Designation','Father Name','DOB','Mobile','Address','School','Added On'];
+      headers = ['Teacher ID','Name','Designation','Father Name','DOB','Mobile','Address','Blood Group','Husband Name','Teacher Code (teacherId)','Other Details','School','Added On'];
       rows = records.map(t => [
         t.id || '', t.name || '', t.designation || '', t.fatherName || '', t.dob || '', t.mobile || '', t.address || '',
+        t.bloodGroup || '', t.husbandName || '', t.teacherId || '', t.otherDetails || '',
         t._schoolName || '',
         t.createdAt ? new Date(t.createdAt).toLocaleDateString('en-IN') : ''
       ]);
       filenamePrefix = 'selected_teachers';
     } else {
-      headers = ['Student ID','Name','Father Name','Class','Section','Mobile','Address','School','Added On'];
+      headers = ['Student ID','Name','Father Name','Mother Name','Mobile','Address','DOB','Class','Section','Addition','Admission No','Roll No','Blood Group','Other Info','School','Added On'];
       rows = records.map(s => [
-        s.id||'', s.name||'', s.father||'', s.class||'',
-        s.section||'', s.mobile||'', s.address||'',
+        s.id||'', s.name||'', s.father||'', s.motherName||'', s.mobile||'', s.address||'', s.dob||'', s.class||'',
+        s.section||'', s.addition||'', s.admissionNo||'', s.rollNo||'', s.bloodGroup||'', s.otherInfo||'',
         s._schoolName || 'School',
         s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-IN') : ''
       ]);
