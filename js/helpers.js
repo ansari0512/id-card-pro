@@ -208,7 +208,7 @@ window.normalizeDateValue = function(value) {
     const yyyy = date.getFullYear();
     const mm = String(date.getMonth() + 1).padStart(2, '0');
     const dd = String(date.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
+    return `${dd} ${mm} ${yyyy}`;
   };
 
   const parseDateParts = function(year, month, day) {
@@ -275,6 +275,42 @@ window.normalizeDateValue = function(value) {
   }
 
   return raw;
+};
+
+/**
+ * Convert "DD MM YYYY" to "YYYY-MM-DD" for HTML <input type="date">
+ */
+window.dobToDateInput = function(dob) {
+  if (!dob) return '';
+  const parts = String(dob).trim().split(/\s+/);
+  if (parts.length === 3 && parts[0].length === 2 && parts[1].length === 2 && parts[2].length === 4) {
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  }
+  // Try parsing as Date for other formats
+  const date = new Date(dob);
+  if (!isNaN(date.getTime())) {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+  return dob;
+};
+
+/**
+ * Convert "YYYY-MM-DD" (from HTML date input) to "DD MM YYYY"
+ */
+window.dateInputToDob = function(dateInputValue) {
+  if (!dateInputValue) return '';
+  const parts = String(dateInputValue).trim().split('-');
+  if (parts.length === 3 && parts[0].length === 4) {
+    // Ensure 2-digit month/day
+    const mm = String(parts[1]).padStart(2, '0').slice(0, 2);
+    const dd = String(parts[2]).padStart(2, '0').slice(0, 2);
+    return `${dd} ${mm} ${parts[0]}`;
+  }
+  // Fallback to normalize
+  return window.normalizeDateValue(dateInputValue);
 };
 
 window.getClassQueryVariants = function(val) {

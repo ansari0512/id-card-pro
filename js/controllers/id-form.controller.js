@@ -14,7 +14,7 @@ window.updateIdPreview = function() {
     const mob = document.getElementById('mobile').value;
     document.getElementById('cardMobile').textContent = mob ? mob.replace(/(\d{5})(\d{5})/, '$1 $2') : '-';
     const dob = document.getElementById('dob').value;
-    document.getElementById('cardDob').textContent = dob || '-';
+    document.getElementById('cardDob').textContent = dob ? window.normalizeDateValue(dob) : '-';
 
     // Optional fields preview (only if preview spans exist)
     const el = (id) => document.getElementById(id);

@@ -120,7 +120,7 @@ window.saveStudentEdit = async function(e) {
       class: document.getElementById('editClass').value,
       section: document.getElementById('editSection').value,
       mobile,
-      dob: window.normalizeDateValue(document.getElementById('editDob').value.trim()),
+      dob: window.dateInputToDob(document.getElementById('editDob').value.trim()),
       address: document.getElementById('editAddress').value.trim(),
 
       // New fields (backward compatible)
@@ -273,12 +273,12 @@ window.exportCSV = async function() {
   } catch(e) {}
 
   const headers = [
-    'Student ID', 'Name', 'Father Name', 'Class', 'Section', 'Mobile', 'Address',
+    'Student ID', 'Name', 'Father Name', 'DOB', 'Class', 'Section', 'Mobile', 'Address',
     'Addition', 'Admission No', 'Roll No', 'Mother Name', 'Blood Group', 'Other Info',
     'Added On'
   ];
   const rows = window.allStudents.map(s => [
-    s.id||'', s.name||'', s.father||'', s.class||'',
+    s.id||'', s.name||'', s.father||'', s.dob||'', s.class||'',
     s.section||'', s.mobile||'', s.address||'',
     s.addition||'', s.admissionNo||'', s.rollNo||'',
     s.motherName||'', s.bloodGroup||'', s.otherInfo||'',
@@ -813,6 +813,7 @@ window.uploadPendingPhoto = async function() {
       schoolId: user.uid,
       name: safeStr(s.name),
       father: safeStr(s.father) || '-',
+      dob: window.normalizeDateValue(s.dob),
       class: window.normalizeClassValue(s.class),
       section: safeStr(s.section) || '-',
       mobile: safeStr(s.mobile) || '0000000000',

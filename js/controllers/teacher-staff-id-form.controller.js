@@ -17,7 +17,7 @@
     setText('tsCardTeacherId', document.getElementById('tsTeacherId')?.value || '-');
 
     const dob = document.getElementById('tsDob')?.value || '';
-    setText('tsCardDob', dob || '-');
+    setText('tsCardDob', dob ? window.normalizeDateValue(dob) : '-');
 
     setText('tsCardBlood', document.getElementById('tsBloodGroup')?.value || '-');
     setText('tsCardAddress', document.getElementById('tsAddress')?.value || '-');
