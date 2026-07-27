@@ -820,7 +820,14 @@ window.uploadPendingPhoto = async function() {
       address: safeStr(s.address),
       photo: photoUrl,
       createdAt: s.createdAt,
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
+      // New fields - must be preserved when moving from pending to complete
+      addition: safeStr(s.addition),
+      admissionNo: safeStr(s.admissionNo),
+      rollNo: safeStr(s.rollNo),
+      motherName: safeStr(s.motherName),
+      bloodGroup: safeStr(s.bloodGroup),
+      otherInfo: safeStr(s.otherInfo)
     };
 
     if (!completeData.name || !completeData.class) {
