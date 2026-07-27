@@ -203,12 +203,14 @@ window.normalizeDateValue = function(value) {
   const raw = typeof value === 'string' ? value.trim() : String(value).trim();
   if (!raw) return '';
 
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
   const formatDate = function(date) {
     if (!(date instanceof Date) || isNaN(date.getTime())) return '';
     const yyyy = date.getFullYear();
-    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const mm = monthNames[date.getMonth()];
     const dd = String(date.getDate()).padStart(2, '0');
-    return `${dd} ${mm} ${yyyy}`;
+    return `${dd}-${mm}-${yyyy}`;
   };
 
   const parseDateParts = function(year, month, day) {
@@ -278,13 +280,19 @@ window.normalizeDateValue = function(value) {
 };
 
 /**
- * Convert "DD MM YYYY" to "YYYY-MM-DD" for HTML <input type="date">
+ * Convert "DD-MMM-YYYY" to "YYYY-MM-DD" for HTML <input type="date">
  */
 window.dobToDateInput = function(dob) {
   if (!dob) return '';
-  const parts = String(dob).trim().split(/\s+/);
-  if (parts.length === 3 && parts[0].length === 2 && parts[1].length === 2 && parts[2].length === 4) {
-    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  // Parse DD-MMM-YYYY format
+  const parts = String(dob).trim().match(/^(\d{2})-([A-Z][a-z]{2})-(\d{4})$/);
+  if (parts) {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthIndex = monthNames.indexOf(parts[2]);
+    if (monthIndex !== -1) {
+      const month = String(monthIndex + 1).padStart(2, '0');
+      return `${parts[3]}-${month}-${parts[1]}`;
+    }
   }
   // Try parsing as Date for other formats
   const date = new Date(dob);
@@ -298,16 +306,17 @@ window.dobToDateInput = function(dob) {
 };
 
 /**
- * Convert "YYYY-MM-DD" (from HTML date input) to "DD MM YYYY"
+ * Convert "YYYY-MM-DD" (from HTML date input) to "DD-MMM-YYYY"
  */
 window.dateInputToDob = function(dateInputValue) {
   if (!dateInputValue) return '';
   const parts = String(dateInputValue).trim().split('-');
   if (parts.length === 3 && parts[0].length === 4) {
-    // Ensure 2-digit month/day
-    const mm = String(parts[1]).padStart(2, '0').slice(0, 2);
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthNum = parseInt(parts[1], 10);
+    const monthName = monthNames[monthNum - 1] || 'Jan';
     const dd = String(parts[2]).padStart(2, '0').slice(0, 2);
-    return `${dd} ${mm} ${parts[0]}`;
+    return `${dd}-${monthName}-${parts[0]}`;
   }
   // Fallback to normalize
   return window.normalizeDateValue(dateInputValue);
