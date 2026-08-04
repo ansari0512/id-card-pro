@@ -84,6 +84,11 @@ window.loadSchools = async function() {
       const td6 = document.createElement('td');
       td6.innerHTML = `<span class="badge ${active ? 'badge-active' : 'badge-inactive'}">${active ? 'Active' : 'Inactive'}</span>`;
 
+      // Card Lock Status column
+      const tdLock = document.createElement('td');
+      const hasLocks = school.lockedClassSections && school.lockedClassSections.length > 0;
+      tdLock.innerHTML = `<span class="badge ${hasLocks ? 'badge-inactive' : 'badge-active'}">${hasLocks ? '🔒 Partial Lock' : '🔓 All Unlocked'}</span>`;
+
        const td7 = document.createElement('td');
        td7.className = 'actions-cell';
        
@@ -114,7 +119,7 @@ window.loadSchools = async function() {
        td7.appendChild(buttonGroup);
 
 
-      tr.append(td1, td2, td3, td4, td5, td6, td7);
+      tr.append(td1, td2, td3, td4, td5, td6, tdLock, td7);
       tbody.appendChild(tr);
     });
 
@@ -573,11 +578,18 @@ window.updateSchool = async function(e) {
  };
 
 // Deleted Cards navigation
-document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', function() {
   const deletedCardsBtn = document.getElementById('deletedCardsBtn');
   if (deletedCardsBtn) {
     deletedCardsBtn.addEventListener('click', function() {
       window.location.href = 'deleted-cards.html';
+    });
+  }
+
+  const lockedCardsBtn = document.getElementById('lockedCardsBtn');
+  if (lockedCardsBtn) {
+    lockedCardsBtn.addEventListener('click', function() {
+      window.location.href = 'locked-cards.html';
     });
   }
 });

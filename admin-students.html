@@ -54,17 +54,19 @@
            </select>
          </div>
         <!-- Row 2: Actions -->
-        <div class="admin-students-actions-row">
-          <label class="action-btn select-all-label">
-            <input type="checkbox" id="selectAllChk" onchange="window.toggleSelectAll()">
-            <span id="selectAllText">Select All</span>
-          </label>
-          <span id="studentCount" class="action-btn student-count-badge">👥 0 Students</span>
-          <button onclick="window.clearAdminFilters()" class="secondary action-btn">Clear Filter</button>
-           <button class="btn-print action-btn" onclick="window.adminBulkPrint()">🖨️ Print</button>
-           <button class="btn-download action-btn" onclick="window.adminBulkDownload()">📦 Download ZIP</button>
-           <button class="btn-csv action-btn" onclick="window.adminExportStudentTeacherWorkbook()">📥 Export Data</button>
-        </div>
+         <div class="admin-students-actions-row">
+           <label class="action-btn select-all-label">
+             <input type="checkbox" id="selectAllChk" onchange="window.toggleSelectAll()">
+             <span id="selectAllText">Select All</span>
+           </label>
+           <span id="studentCount" class="action-btn student-count-badge">👥 0 Students</span>
+           <button onclick="window.clearAdminFilters()" class="secondary action-btn">Clear Filter</button>
+            <button class="btn-print action-btn" onclick="window.adminBulkPrint()">🖨️ Print</button>
+            <button class="btn-lock action-btn" id="lockCardsBtn" onclick="window.lockSelectedCards()">🔒 Lock ID Cards</button>
+            <button class="btn-download action-btn" onclick="window.adminBulkDownload()">📦 Download ZIP</button>
+            <button class="btn-csv action-btn" onclick="window.adminExportStudentTeacherWorkbook()">📥 Export Data</button>
+         </div>
+      </div>
      </div>
 
      <div id="loading" class="text-center mt-3">

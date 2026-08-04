@@ -88,6 +88,23 @@
   accent-color: var(--primary);
 }
 
+/* Lock button styling */
+.btn-lock {
+  background: #e94560;
+  color: #fff;
+  border: 2px solid #e94560;
+  transition: all 0.2s;
+}
+.btn-lock:hover {
+  background: #c0392b;
+  border-color: #c0392b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(233, 69, 96, 0.3);
+}
+.btn-lock:active {
+  transform: translateY(0);
+}
+
 .student-card-selected {
   border: 2px solid var(--primary) !important;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);

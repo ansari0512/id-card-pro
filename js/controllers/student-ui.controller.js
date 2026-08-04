@@ -117,7 +117,31 @@ window.loadStudents = async function() {
 };
 
 /**
+ * Show or hide lock banner based on schoolLockedClassSections
+ */
+window.updateLockBanner = function() {
+  let banner = document.getElementById('lockBanner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'lockBanner';
+    banner.style.cssText = 'background:#f39c12;color:#fff;padding:12px 20px;border-radius:8px;margin-bottom:15px;display:flex;align-items:center;gap:10px;font-size:14px;';
+    const pageHeader = document.querySelector('.page-header');
+    if (pageHeader) {
+      pageHeader.insertAdjacentElement('afterend', banner);
+    }
+  }
+
+  if (window.schoolLockedClassSections && window.schoolLockedClassSections.length > 0) {
+    banner.style.display = 'flex';
+    banner.innerHTML = `<span style="font-size:20px;">⚠️</span><div><strong>Some Cards Locked by Admin</strong><br><small>Locked: ${window.schoolLockedClassSections.join(', ')} — These students cannot be edited or deleted. Contact admin to unlock.</small></div>`;
+  } else {
+    banner.style.display = 'none';
+  }
+};
+
+/**
  * Render student cards with professional design
+ * Locked students get disabled edit/delete buttons
  */
 window.renderStudents = function(students) {
   const grid = document.getElementById('studentsGrid');
@@ -126,11 +150,16 @@ window.renderStudents = function(students) {
   window.updateSelectedCount();
 
   students.forEach(student => {
+    const isLocked = window.isStudentLocked(student);
     const card = document.createElement('div');
-    card.className = 'student-card';
+    card.className = 'student-card' + (isLocked ? ' locked' : '');
+    if (isLocked) {
+      card.style.border = '2px solid #e94560';
+    }
     card.innerHTML = `
       <div class="student-id-header">
         <div class="student-id-text">Student ID: ${student.id || 'N/A'}</div>
+        ${isLocked ? '<span style="background:#e94560;color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;">🔒 LOCKED</span>' : ''}
         <input type="checkbox" class="header-checkbox student-checkbox" data-id="${student.docId || student.id}" id="student-${student.docId || student.id}">
       </div>
       <div class="student-content">
@@ -162,13 +191,10 @@ window.renderStudents = function(students) {
         </div>
         
         <div class="student-actions">
-          <button class="btn-edit" onclick="window.openEditModal('${student.docId || student.id}')" title="Edit Student">
-            ✏️ Edit
-          </button>
-
-          <button class="btn-delete" onclick="window.deleteSingle('${student.docId || student.id}')" title="Delete Student">
-            🗑️ Delete
-          </button>
+          ${isLocked
+            ? '<button class="btn-edit" disabled title="This class/section is locked by admin" style="opacity:0.4;cursor:not-allowed;">✏️ Edit</button><button class="btn-delete" disabled title="This class/section is locked by admin" style="opacity:0.4;cursor:not-allowed;">🗑️ Delete</button>'
+            : '<button class="btn-edit" onclick="window.openEditModal(\'' + (student.docId || student.id) + '\')" title="Edit Student">✏️ Edit</button><button class="btn-delete" onclick="window.deleteSingle(\'' + (student.docId || student.id) + '\')" title="Delete Student">🗑️ Delete</button>'
+          }
         </div>
       </div>
     `;
@@ -786,9 +812,15 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
 
+    // Fetch school lock status before loading students
+    await window.fetchSchoolLockStatus();
+    
     // Load students
     window.loadStudents();
     window.updatePendingBadge();
+
+    // Show lock banner if any class-sections are locked
+    window.updateLockBanner();
 
     // Handle URL tab parameter for import modal only (tab switching handled by pages/students.js)
     const urlTab = new URLSearchParams(window.location.search).get('tab');

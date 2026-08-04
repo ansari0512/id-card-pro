@@ -558,7 +558,6 @@ window.adminBulkDownload = async function() {
 
     var wb = window.XLSX.utils.book_new();
     var wsStudents = window.XLSX.utils.aoa_to_sheet([studentHeaders].concat(studentRows));
-    window.XLSX.utils.book_append_sheet(wb, wsStudents, 'Students');
     var wsTeachers = window.XLSX.utils.aoa_to_sheet([teacherHeaders].concat(teacherRows));
     window.XLSX.utils.book_append_sheet(wb, wsTeachers, 'Teachers');
     var workbookBytes = window.XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
@@ -580,5 +579,112 @@ window.adminBulkDownload = async function() {
     window.showToast('Download failed: ' + err.message, 'error');
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '\uD83D\uDCE6 Download ZIP'; }
+  }
+};
+
+// ================== LOCK ID CARDS FEATURE ==================
+
+/**
+ * Lock ID Cards for selected students — uses same selection method as Print/Download
+ * No modal needed. Uses checkbox selection from the student grid.
+ */
+window.lockSelectedCards = async function() {
+  // Check if any students are selected
+  if (!window.selectedStudentIds || window.selectedStudentIds.size === 0) {
+    window.showToast('Please select students first to lock their cards', 'error');
+    return;
+  }
+
+  // Determine which school is selected
+  let schoolId = window.adminSchoolId;
+  if (window.adminMode === 'all') {
+    schoolId = document.getElementById('schoolFilter')?.value || null;
+  }
+
+  if (!schoolId) {
+    window.showToast('Please select a school first to lock cards', 'error');
+    return;
+  }
+
+  // Get selected students' class-sections
+  const selectedIds = Array.from(window.selectedStudentIds);
+  const selectedStudents = window.adminAllStudents.filter(s => selectedIds.includes(s.id));
+
+  if (selectedStudents.length === 0) {
+    window.showToast('No selected students found in current data', 'error');
+    return;
+  }
+
+  // Build unique class-section strings from selected students
+  const newClassSections = [...new Set(
+    selectedStudents.map(s => String(s.class) + '-' + String(s.section))
+  )];
+
+  const btn = document.getElementById('lockCardsBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Locking...'; }
+
+  try {
+    // Fetch existing locks
+    const schoolDoc = await firebase.firestore().collection('schools').doc(schoolId).get();
+    if (!schoolDoc.exists) {
+      window.showToast('School not found', 'error');
+      return;
+    }
+
+    const existingLocks = schoolDoc.data().lockedClassSections || [];
+
+    // Check which class-sections are already locked
+    const alreadyLocked = newClassSections.filter(cs => existingLocks.includes(cs));
+    const newLocksOnly = newClassSections.filter(cs => !existingLocks.includes(cs));
+
+    if (alreadyLocked.length > 0) {
+      window.showToast('⚠️ ' + alreadyLocked.length + ' class-section(s) are already locked: ' + alreadyLocked.join(', '), 'error');
+      if (newLocksOnly.length === 0) {
+        if (btn) { btn.disabled = false; btn.textContent = '🔒 Lock ID Cards'; }
+        return; // All selected sections already locked, nothing to do
+      }
+    }
+
+    if (!confirm('Lock ' + newLocksOnly.length + ' new class-section(s) for this school?\n\nLocked students cannot be edited or deleted by the school.\n\nClass-sections to lock: ' + newLocksOnly.join(', '))) {
+      if (btn) { btn.disabled = false; btn.textContent = '🔒 Lock ID Cards'; }
+      return;
+    }
+
+    // Only add new locks, don't touch existing ones
+    const mergedLocks = [...new Set([...existingLocks, ...newLocksOnly])];
+
+    const user = firebase.auth().currentUser;
+
+    const updateData = {
+      lockedClassSections: mergedLocks
+    };
+
+    // Only update timestamp if there are new locks
+    if (newLocksOnly.length > 0) {
+      updateData.lockedAt = Date.now();
+      updateData.lockedBy = user ? user.email : 'admin';
+    }
+
+    await firebase.firestore().collection('schools').doc(schoolId).update(updateData);
+
+    const totalLocked = newLocksOnly.length + alreadyLocked.length;
+    window.showToast('🔒 ' + totalLocked + ' class-section(s) locked successfully', 'success');
+
+    // Clear selection
+    window.selectedStudentIds.clear();
+    window.toggleSelectAll();
+
+    // Refresh the school's lock status cache so UI updates immediately
+    const school = window.adminSchoolsList.find(s => s.id === schoolId);
+    if (school) {
+      school.lockedClassSections = mergedLocks;
+    }
+
+    // Refresh the student grid to show lock indicators immediately
+    window.loadAdminStudents();
+  } catch (err) {
+    window.showToast('Failed to lock cards: ' + err.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🔒 Lock ID Cards'; }
   }
 };

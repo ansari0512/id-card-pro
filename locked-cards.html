@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Locked ID Cards - RK Choice Admin</title>
+  <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'dark');</script>
+  <link rel="stylesheet" href="src/styles/main.css?v=2.0">
+  <link rel="stylesheet" href="src/styles/views/_admin-students.css?v=2.0">
+</head>
+<body>
+
+    <header class="topbar no-print">
+      <div class="min-w-0 flex-1">
+        <a href="admin-panel.html" class="logo-link">
+          <div class="logo-icon">🎓</div>
+          <span id="pageTitle" class="font-semibold text-sm whitespace-normal">🔒 Locked ID Cards</span>
+        </a>
+      </div>
+      <div class="topbar-right flex-shrink-0">
+        <a href="admin-panel.html"><button class="secondary">← Back</button></a>
+      </div>
+    </header>
+
+  <button class="theme-toggle no-print" id="themeToggle">🌙</button>
+
+   <main class="container container-pt">
+
+     <!-- Filter + Actions Card -->
+     <div class="card admin-students-card">
+         <!-- Row 1: Filters -->
+         <div class="admin-students-filters-row" style="margin-bottom:0.5rem;">
+           <select id="schoolFilter" title="Select School" onchange="window.onSchoolFilterChange()" class="">
+             <option value="">All Schools</option>
+           </select>
+           <select id="classFilter" title="Select Class" onchange="window.loadLockedCards()" class="">
+             <option value="">All Classes</option>
+           </select>
+           <select id="sectionFilter" title="Select Section" onchange="window.loadLockedCards()" class="">
+             <option value="">All Sections</option>
+           </select>
+         </div>
+         <!-- Row 2: Actions -->
+         <div class="admin-students-actions-row">
+           <label class="action-btn select-all-label">
+             <input type="checkbox" id="selectAllLocked" onchange="window.toggleSelectAllLocked()">
+             <span>Select All</span>
+           </label>
+           <span id="lockedCount" class="action-btn student-count-badge">🔒 0 Locked Students</span>
+           <button onclick="window.clearLockedFilters()" class="secondary action-btn">Clear Filter</button>
+           <button onclick="window.loadLockedCards()" class="secondary action-btn">🔄 Refresh</button>
+           <button class="success action-btn" id="bulkUnlockBtn" onclick="window.bulkUnlock()" style="background:#2ecc71;" disabled>🔓 Unlock Selected</button>
+         </div>
+      </div>
+
+      <div id="loading" class="text-center mt-3">
+       <div class="spinner spinner-large"></div>
+       <p class="text-muted mt-1">Loading locked cards...</p>
+     </div>
+
+      <div id="lockedTableWrapper" class="school-table-wrapper hidden" style="margin-top:15px;">
+        <table class="school-table" id="lockedTable" style="display:table;">
+          <thead>
+            <tr>
+              <th style="width:40px;">&nbsp;</th>
+              <th>School Name</th>
+              <th>Student Name</th>
+              <th>Class</th>
+              <th>Section</th>
+              <th>Lock Date</th>
+            </tr>
+          </thead>
+          <tbody id="lockedTableBody"></tbody>
+        </table>
+      </div>
+
+      <div id="emptyState" class="empty-state hidden">
+        <div class="empty-icon">🔓</div>
+        <h3>No Locked Cards</h3>
+        <p>No schools have locked ID cards. You can lock cards from the school students page.</p>
+      </div>
+
+   </main>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+
+    <!-- Centralized Firebase Configuration -->
+    <script src="src/config/firebase-config.js?v=2.0"></script>
+
+    <!-- Utils -->
+    <script src="js/helpers.js?v=a94822a"></script>
+
+    <!-- Auth Controller -->
+    <script src="js/controllers/auth.controller.js?v=a94822a"></script>
+
+    <!-- Locked Cards Controller -->
+    <script src="js/controllers/locked-cards-data.controller.js?v=2.0"></script>
+
+    <!-- Centralized Theme System -->
+    <script src="src/js/theme.js?v=2.0"></script>
+
+    <!-- Init -->
+    <script>if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',function(){window.initLockedCardsPage();});}else{window.initLockedCardsPage();}</script>
+
+</body>
+</html>

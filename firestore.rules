@@ -53,6 +53,21 @@ service cloud.firestore {
              request.resource.data.class.size() > 0;
     }
 
+    // Check if a specific class-section is locked for a school
+    // lockedClassSections is an array of strings like ["10-A", "10-B", "9-A"]
+    function isClassSectionLocked(schoolId, classSection) {
+      let schoolDoc = get(/databases/$(database)/documents/schools/$(schoolId)).data;
+      return schoolDoc.lockedClassSections is list &&
+             classSection in schoolDoc.lockedClassSections;
+    }
+
+    // Check if school has any locked class-sections
+    function hasLockedClassSections(schoolId) {
+      let schoolDoc = get(/databases/$(database)/documents/schools/$(schoolId)).data;
+      return schoolDoc.lockedClassSections is list &&
+             schoolDoc.lockedClassSections.size() > 0;
+    }
+
     // ── Users ──────────────────────────────────────────────
     match /users/{uid} {
       allow read:  if request.auth != null && request.auth.uid == uid;
@@ -86,13 +101,14 @@ service cloud.firestore {
           );
       }
 
-      // ── Teachers subcollection ──────────────────────────
-      match /teachers/{teacherId} {
-        allow read: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
-        allow create: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId)) && validTeacherData();
-        allow update: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId)) && validTeacherData();
-        allow delete: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
-      }
+        // ── Teachers subcollection ──────────────────────────
+        match /teachers/{teacherId} {
+          allow read: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
+          allow create: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId)) && validTeacherData();
+          // School cannot update/delete if their class-section is locked by admin
+          allow update: if isLoggedIn() && (isAdmin() || (isSchoolOwner(schoolId) && !hasLockedClassSections(schoolId))) && validTeacherData();
+          allow delete: if isLoggedIn() && (isAdmin() || (isSchoolOwner(schoolId) && !hasLockedClassSections(schoolId)));
+        }
 
       // ── Classes subcollection ──────────────────────────
       match /classes/{className} {
@@ -109,12 +125,17 @@ service cloud.firestore {
             request.resource.data.class == className &&
             request.resource.data.schoolId == schoolId;
 
+          // School cannot update if this class-section is locked by admin
+          // Build class-section key from existing data (resource.data) for delete
+          // and from new data (request.resource.data) for update
           allow update: if isLoggedIn() &&
-            (isAdmin() || isSchoolOwner(schoolId)) &&
+            (isAdmin() || (isSchoolOwner(schoolId) && !hasLockedClassSections(schoolId))) &&
             validStudentData() &&
             request.resource.data.schoolId == resource.data.schoolId;
 
-          allow delete: if isLoggedIn() && (isAdmin() || isSchoolOwner(schoolId));
+          // School cannot delete if this class-section is locked by admin
+          allow delete: if isLoggedIn() &&
+            (isAdmin() || (isSchoolOwner(schoolId) && !hasLockedClassSections(schoolId)));
         }
       }
     }

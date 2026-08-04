@@ -166,7 +166,21 @@ window.toggleSelectAll = function() {
 };
 
 /**
- * Render student cards — unchanged
+ * Check if a student is locked (for admin view)
+ */
+window.isStudentLockedForAdmin = function(student) {
+  if (!student) return false;
+  // Use _schoolId if available (View All mode), otherwise use current adminSchoolId (single school mode)
+  const schoolId = student._schoolId || window.adminSchoolId;
+  if (!schoolId) return false;
+  const school = window.adminSchoolsList.find(s => s.id === schoolId);
+  if (!school || !school.lockedClassSections || school.lockedClassSections.length === 0) return false;
+  const classSection = String(student.class) + '-' + String(student.section);
+  return school.lockedClassSections.includes(classSection);
+};
+
+/**
+ * Render student cards with lock indicator
  */
 window.renderAdminStudents = function(students) {
   const grid = document.getElementById('studentsGrid');
@@ -175,14 +189,21 @@ window.renderAdminStudents = function(students) {
   window.selectedStudentIds.clear();
 
   students.forEach(student => {
+    const isLocked = window.isStudentLockedForAdmin(student);
     const schoolBadge = student._schoolName
       ? '<div class="info-row"><span class="info-label">School:</span><span class="info-value" style="color:var(--primary);font-weight:600;">\uD83C\uDFEB ' + student._schoolName + '</span></div>'
       : '';
+    const lockBadge = isLocked
+      ? '<span style="background:#e94560;color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;margin-left:8px;">🔒 LOCKED</span>'
+      : '';
     const card = document.createElement('div');
-    card.className = 'student-card';
+    card.className = 'student-card' + (isLocked ? ' locked' : '');
     card.dataset.id = student.id;
+    if (isLocked) {
+      card.style.border = '2px solid #e94560';
+    }
     var dobVal = window.normalizeDateValue(student.dob);
-    card.innerHTML = '<div class="student-id-header"><div class="student-id-text">Student ID: ' + (student.id || 'N/A') + '</div><input type="checkbox" class="student-select-checkbox" title="Select student" onclick="event.stopPropagation(); window.toggleStudentSelection(\'' + student.id + '\')"></div><div class="student-content"><img class="student-photo" src="' + (student.photo || 'assets/placeholder.png') + '" alt="' + (student.name || '') + '" onerror="this.src=\'assets/placeholder.png\'"><h3 class="student-name">' + (student.name || 'Unknown') + '</h3><div class="student-class">' + (student.class || '-') + ' - ' + (student.section || '-') + '</div><div class="student-info-grid">' + schoolBadge + '<div class="info-row"><span class="info-label">DOB:</span><span class="info-value">' + (dobVal || 'Not provided') + '</span></div><div class="info-row"><span class="info-label">Father:</span><span class="info-value">' + (student.father || 'Not provided') + '</span></div><div class="info-row"><span class="info-label">Mobile:</span><span class="info-value">' + (student.mobile || 'Not provided') + '</span></div><div class="info-row"><span class="info-label">Address:</span><span class="info-value">' + (student.address || 'Not provided') + '</span></div><div class="info-row"><span class="info-label">Added:</span><span class="info-value">' + (student.createdAt ? new Date(student.createdAt).toLocaleDateString('en-IN') : '-') + '</span></div></div><div class="student-actions"><button class="btn-print" onclick="window.printStudent(\'' + student.id + '\', \'' + (student._schoolId || window.adminSchoolId || '') + '\')">\uD83D\uDDA8\uFE0F Print</button></div></div>';
+    card.innerHTML = '<div class="student-id-header"><div class="student-id-text">Student ID: ' + (student.id || 'N/A') + '</div>' + lockBadge + '<input type="checkbox" class="student-select-checkbox" title="Select student" onclick="event.stopPropagation(); window.toggleStudentSelection(\'' + student.id + '\')"></div><div class="student-content"><img class="student-photo" src="' + (student.photo || 'assets/placeholder.png') + '" alt="' + (student.name || '') + '" onerror="this.src=\'assets/placeholder.png\'"><h3 class="student-name">' + (student.name || 'Unknown') + '</h3><div class="student-class">' + (student.class || '-') + ' - ' + (student.section || '-') + '</div><div class="student-info-grid">' + schoolBadge + '<div class="info-row"><span class="info-label">DOB:</span><span class="info-value">' + (dobVal || 'Not provided') + '</span></div><div class="info-row"><span class="info-label">Father:</span><span class="info-value">' + (student.father || 'Not provided') + '</span></div><div class="info-row"><span class="info-label">Mobile:</span><span class="info-value">' + (student.mobile || 'Not provided') + '</span></div><div class="info-row"><span class="info-label">Address:</span><span class="info-value">' + (student.address || 'Not provided') + '</span></div><div class="info-row"><span class="info-label">Added:</span><span class="info-value">' + (student.createdAt ? new Date(student.createdAt).toLocaleDateString('en-IN') : '-') + '</span></div></div><div class="student-actions"><button class="btn-print" onclick="window.printStudent(\'' + student.id + '\', \'' + (student._schoolId || window.adminSchoolId || '') + '\')">\uD83D\uDDA8\uFE0F Print</button></div></div>';
     grid.appendChild(card);
   });
 

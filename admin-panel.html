@@ -94,6 +94,7 @@
           <p>Manage all registered schools and their status</p>
         </div>
         <div class="section-actions">
+          <button id="lockedCardsBtn" class="btn-lock" style="background:#e94560;color:#fff;">🔒 Locked ID Cards</button>
           <button id="refreshSchoolsBtn" class="secondary">🔄 Refresh</button>
           <button id="exportSchoolsBtn" class="btn-csv">📄 Export</button>
         </div>
@@ -106,15 +107,16 @@
        <div class="school-table-wrapper">
          <table class="school-table admin-schools-table-hidden" id="schoolsTable">
            <thead>
-             <tr>
-               <th>School Name</th>
-               <th>Login ID</th>
-               <th>Students</th>
-                <th>Teacher<br>/Staff</th>
-               <th>Added On</th>
-               <th>Status</th>
-               <th>Actions</th>
-             </tr>
+              <tr>
+                <th>School Name</th>
+                <th>Login ID</th>
+                <th>Students</th>
+                 <th>Teacher<br>/Staff</th>
+                <th>Added On</th>
+                <th>Status</th>
+                <th>Card Lock</th>
+                <th>Actions</th>
+              </tr>
            </thead>
            <tbody id="schoolsBody"></tbody>
          </table>

@@ -13,6 +13,37 @@ window.selectedPending = new Set();
 window.allPromoteStudents = [];
 window.selectedPromoteStudents = new Set();
 window.dropdownSelections = {};
+window.schoolLockedClassSections = []; // Array of locked class-section strings like ["10-A", "9-B"]
+
+/**
+ * Check if a student's class-section is locked by admin
+ * Returns true if locked, false otherwise
+ */
+window.isStudentLocked = function(student) {
+  if (!student || !window.schoolLockedClassSections || window.schoolLockedClassSections.length === 0) {
+    return false;
+  }
+  const classSection = String(student.class) + '-' + String(student.section);
+  return window.schoolLockedClassSections.includes(classSection);
+};
+
+/**
+ * Fetch and cache the school's locked class sections
+ */
+window.fetchSchoolLockStatus = async function() {
+  try {
+    const user = firebase.auth().currentUser;
+    if (!user) return;
+    const schoolDoc = await firebase.firestore().collection('schools').doc(user.uid).get();
+    if (schoolDoc.exists) {
+      window.schoolLockedClassSections = schoolDoc.data().lockedClassSections || [];
+    } else {
+      window.schoolLockedClassSections = [];
+    }
+  } catch (e) {
+    window.schoolLockedClassSections = [];
+  }
+};
 
 /**
  * Get students
@@ -54,6 +85,11 @@ window.deleteStudent = async function(studentId, studentClass) {
   const student = window.allStudents.find(s => (s.docId || s.id) === studentId);
   const cls = studentClass || student?.class;
   if (!cls) throw new Error('Student class not found');
+
+  // Check if student's class-section is locked by admin
+  if (student && window.isStudentLocked(student)) {
+    throw new Error('This student\'s class-section is locked by admin. Contact admin to unlock.');
+  }
   
   // Soft delete: move to deleted_students collection
   const deletedRef = firebase.firestore().collection('deleted_students').doc();
@@ -110,6 +146,13 @@ window.saveStudentEdit = async function(e) {
 
   try {
     const docId = document.getElementById('editDocId').value;
+
+    // Check if student's class-section is locked by admin
+    const studentToCheck = window.allStudents.find(s => (s.docId || s.id) === docId);
+    if (studentToCheck && window.isStudentLocked(studentToCheck)) {
+      throw new Error('This student\'s class-section is locked by admin. Contact admin to unlock.');
+    }
+
     const mobile = document.getElementById('editMobile').value.trim();
 
     if (!/^\d{10}$/.test(mobile)) throw new Error('Mobile number must be 10 digits');
@@ -194,6 +237,16 @@ window.bulkDelete = async function() {
     window.showToast('Select at least one student', 'error');
     return;
   }
+
+  // Check if any selected student is locked
+  const selectedStudents = window.allStudents.filter(s => window.selectedStudents.has(s.docId || s.id));
+  const lockedStudents = selectedStudents.filter(s => window.isStudentLocked(s));
+
+  if (lockedStudents.length > 0) {
+    window.showToast(`❌ ${lockedStudents.length} students are locked by admin and cannot be deleted.`, 'error');
+    return;
+  }
+
   if (!confirm(`Delete ${window.selectedStudents.size} selected students? This cannot be undone.`)) return;
 
   const docIds = Array.from(window.selectedStudents);
