@@ -89,7 +89,8 @@ window.loadLockedCards = async function() {
   tableWrapper.classList.add('hidden');
   tableWrapper.style.display = 'none';
   empty.style.display = 'none';
-  if (bulkBtn) bulkBtn.style.display = 'none';
+  // Don't hide the button - keep it visible with disabled state
+  // It will be enabled/disabled by updateSelectedCount()
 
   try {
     const schoolFilter = document.getElementById('schoolFilter').value;
@@ -159,6 +160,9 @@ window.loadLockedCards = async function() {
     window.renderLockedStudentsTable(allLockedStudents);
     tableWrapper.classList.remove('hidden');
     tableWrapper.style.display = 'block';
+    
+    // Initialize button state after table is rendered
+    window.updateSelectedCount();
   } catch (err) {
     loading.style.display = 'none';
     window.showToast('Failed to load locked cards: ' + err.message, 'error');
@@ -228,13 +232,15 @@ window.updateSelectedCount = function() {
 
   if (bulkBtn) {
     bulkBtn.textContent = '🔓 Unlock Selected (' + count + ')';
-    bulkBtn.disabled = count === 0;
+    // Don't use disabled attribute - use visual state only
     if (count > 0) {
       bulkBtn.style.opacity = '1';
       bulkBtn.style.cursor = 'pointer';
+      bulkBtn.removeAttribute('disabled');
     } else {
       bulkBtn.style.opacity = '0.5';
       bulkBtn.style.cursor = 'not-allowed';
+      bulkBtn.setAttribute('disabled', 'disabled');
     }
   }
 

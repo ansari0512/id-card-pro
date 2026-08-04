@@ -133,6 +133,9 @@ window.updateLockBanner = function() {
 
   if (window.schoolLockedClassSections && window.schoolLockedClassSections.length > 0) {
     banner.style.display = 'flex';
+    banner.style.background = '#fef2f2';
+    banner.style.color = '#991b1b';
+    banner.style.border = '1px solid #fecaca';
     banner.innerHTML = `<span style="font-size:20px;">⚠️</span><div><strong>Some Cards Locked by Admin</strong><br><small>Locked: ${window.schoolLockedClassSections.join(', ')} — These students cannot be edited or deleted. Contact admin to unlock.</small></div>`;
   } else {
     banner.style.display = 'none';
