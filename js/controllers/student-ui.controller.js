@@ -98,6 +98,9 @@ window.loadStudents = async function() {
       countEl.style.display = 'inline-flex';
     }
 
+    // Update lock banner after students are loaded (for full vs partial lock detection)
+    window.updateLockBanner();
+
     if (students.length === 0) {
       empty.style.display = 'block';
     } else {
@@ -118,6 +121,8 @@ window.loadStudents = async function() {
 
 /**
  * Show or hide lock banner based on schoolLockedClassSections
+ * Shows "Partial Lock" if only some class-sections are locked
+ * Shows "Full Lock" if ALL students are locked
  */
 window.updateLockBanner = function() {
   let banner = document.getElementById('lockBanner');
@@ -131,14 +136,26 @@ window.updateLockBanner = function() {
     }
   }
 
-  if (window.schoolLockedClassSections && window.schoolLockedClassSections.length > 0) {
-    banner.style.display = 'flex';
-    banner.style.background = '#fef2f2';
-    banner.style.color = '#991b1b';
-    banner.style.border = '1px solid #fecaca';
-    banner.innerHTML = `<span style="font-size:20px;">⚠️</span><div><strong>Some Cards Locked by Admin</strong><br><small>Locked: ${window.schoolLockedClassSections.join(', ')} — These students cannot be edited or deleted. Contact admin to unlock.</small></div>`;
-  } else {
+  const lockedSections = window.schoolLockedClassSections || [];
+  if (lockedSections.length === 0) {
     banner.style.display = 'none';
+    return;
+  }
+
+  // Check if ALL students are locked (full lock) or only some (partial lock)
+  const allStudents = window.allStudents || [];
+  const lockedStudents = allStudents.filter(s => window.isStudentLocked(s));
+  const isFullLock = allStudents.length > 0 && lockedStudents.length === allStudents.length;
+
+  banner.style.display = 'flex';
+  banner.style.background = '#fef2f2';
+  banner.style.color = '#991b1b';
+  banner.style.border = '1px solid #fecaca';
+
+  if (isFullLock) {
+    banner.innerHTML = `<span style="font-size:20px;">🔒</span><div><strong>All Cards Locked by Admin</strong><br><small>All students are locked. Contact admin to unlock.</small></div>`;
+  } else {
+    banner.innerHTML = `<span style="font-size:20px;">⚠️</span><div><strong>Some Cards Locked by Admin</strong><br><small>Locked: ${lockedSections.join(', ')} — These students cannot be edited or deleted. Contact admin to unlock.</small></div>`;
   }
 };
 

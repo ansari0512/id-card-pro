@@ -153,6 +153,7 @@ window.loadLockedCards = async function() {
     loading.style.display = 'none';
 
     if (allLockedStudents.length === 0) {
+      empty.classList.remove('hidden');
       empty.style.display = 'block';
       return;
     }
