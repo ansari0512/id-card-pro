@@ -167,6 +167,7 @@ window.toggleSelectAll = function() {
 
 /**
  * Check if a student is locked (for admin view) — student-ID based
+ * Uses student.id (display ID) consistently, matching what lockSelectedCards stores.
  */
 window.isStudentLockedForAdmin = function(student) {
   if (!student) return false;
@@ -175,9 +176,10 @@ window.isStudentLockedForAdmin = function(student) {
   if (!schoolId) return false;
   const school = window.adminSchoolsList.find(s => s.id === schoolId);
   if (!school) return false;
-  // Check lockedStudentIds (student-level lock)
-  if (school.lockedStudentIds && school.lockedStudentIds.length > 0) {
-    return school.lockedStudentIds.includes(String(student.docId || student.id));
+  const studentId = String(student.id || '');
+  // Check lockedStudentIds (student-level lock) — array stores display student.id values
+  if (school.lockedStudentIds && school.lockedStudentIds.length > 0 && studentId) {
+    if (school.lockedStudentIds.map(String).includes(studentId)) return true;
   }
   // Fallback: check lockedClassSections (legacy class-section lock)
   if (school.lockedClassSections && school.lockedClassSections.length > 0) {

@@ -121,8 +121,8 @@ window.loadLockedCards = async function() {
 
         // Student-level lock (primary) + legacy class-section lock
         const filteredStudents = students.filter(s => {
-          // Student-ID level lock
-          if (lockedStudentIds.length > 0 && lockedStudentIds.includes(String(s.docId || s.id))) return true;
+          // Student-ID level lock — lockedStudentIds stores display student.id values
+          if (lockedStudentIds.length > 0 && lockedStudentIds.includes(String(s.id || ''))) return true;
           // Legacy class-section lock
           if (lockedSections.length > 0) {
             const cs = String(s.class) + '-' + String(s.section);
@@ -347,7 +347,8 @@ window.bulkUnlock = async function() {
     const student = window.lockedStudents[idx];
     if (student) {
       const schoolId = student._schoolId;
-      const studentKey = String(student.docId || student.id);
+      // lockedStudentIds stores display student.id values
+      const studentKey = String(student.id || '');
       if (!unlockBySchool.has(schoolId)) {
         unlockBySchool.set(schoolId, new Set());
       }

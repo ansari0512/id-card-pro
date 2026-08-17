@@ -23,11 +23,12 @@ window.schoolLockedStudentIds = []; // Array of locked student IDs (student-leve
  */
 window.isStudentLocked = function(student) {
   if (!student) return false;
-  const studentId = String(student.docId || student.id || '');
+  // lockedStudentIds stores display student.id values (e.g. "SCH-2026-0001")
+  const studentId = String(student.id || '');
   
   // Student-level lock check (new system)
-  if (window.schoolLockedStudentIds && window.schoolLockedStudentIds.length > 0) {
-    if (studentId && window.schoolLockedStudentIds.includes(studentId)) return true;
+  if (window.schoolLockedStudentIds && window.schoolLockedStudentIds.length > 0 && studentId) {
+    if (window.schoolLockedStudentIds.map(String).includes(studentId)) return true;
   }
   
   // Legacy class-section lock check
