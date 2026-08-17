@@ -121,10 +121,10 @@ window.loadStudents = async function() {
 
 /**
  * Show or hide lock banner based on schoolLockedClassSections
- * Shows "Partial Lock" if only some class-sections are locked
- * Shows "Full Lock" if ALL students are locked
+ * Shows "Full Lock" only when ALL students' class-sections are locked.
+ * Uses a fresh full student fetch to determine full vs partial reliably.
  */
-window.updateLockBanner = function() {
+window.updateLockBanner = async function() {
   let banner = document.getElementById('lockBanner');
   if (!banner) {
     banner = document.createElement('div');
@@ -142,10 +142,28 @@ window.updateLockBanner = function() {
     return;
   }
 
-  // Check if ALL students are locked (full lock) or only some (partial lock)
-  const allStudents = window.allStudents || [];
-  const lockedStudents = allStudents.filter(s => window.isStudentLocked(s));
-  const isFullLock = allStudents.length > 0 && lockedStudents.length === allStudents.length;
+  // Fetch the FULL (unfiltered) student list to reliably detect full vs partial lock.
+  let allStudents = window.allStudents || [];
+  if (allStudents.length === 0) {
+    try {
+      allStudents = await window.getStudents({});
+      window.allStudents = allStudents;
+    } catch (e) {}
+  }
+
+  // Get unique class-sections that exist among ALL students
+  const allClassSections = [...new Set(
+    allStudents.map(s => window.normalizeClassValue(s.class || '') + '-' + String(s.section || '').trim().toUpperCase())
+  )].filter(Boolean);
+
+  // Normalize locked sections for comparison
+  const normalizedLocks = lockedSections.map(cs =>
+    window.normalizeClassValue(String(cs).split('-')[0] || '') + '-' + String(String(cs).split('-')[1] || '').trim().toUpperCase()
+  );
+
+  // Full lock = every existing class-section is locked
+  const isFullLock = allClassSections.length > 0 &&
+    allClassSections.every(cs => normalizedLocks.includes(cs));
 
   banner.style.display = 'flex';
   banner.style.background = '#fef2f2';

@@ -23,8 +23,9 @@ window.isStudentLocked = function(student) {
   if (!student || !window.schoolLockedClassSections || window.schoolLockedClassSections.length === 0) {
     return false;
   }
-  const classSection = String(student.class) + '-' + String(student.section);
-  return window.schoolLockedClassSections.includes(classSection);
+  // Normalize class/section for reliable matching (e.g. "Class 10" → "10", " a " → "A")
+  const classSection = window.normalizeClassValue(student.class || '') + '-' + String(student.section || '').trim().toUpperCase();
+  return window.schoolLockedClassSections.some(cs => String(cs).trim().toUpperCase() === classSection.toUpperCase());
 };
 
 /**
