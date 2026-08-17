@@ -559,6 +559,7 @@ window.adminBulkDownload = async function() {
     var wb = window.XLSX.utils.book_new();
     var wsStudents = window.XLSX.utils.aoa_to_sheet([studentHeaders].concat(studentRows));
     var wsTeachers = window.XLSX.utils.aoa_to_sheet([teacherHeaders].concat(teacherRows));
+    window.XLSX.utils.book_append_sheet(wb, wsStudents, 'Students');
     window.XLSX.utils.book_append_sheet(wb, wsTeachers, 'Teachers');
     var workbookBytes = window.XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
     zip.file('rkchoice_data_' + dateStr + '.xlsx', workbookBytes);
