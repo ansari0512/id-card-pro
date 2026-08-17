@@ -586,8 +586,8 @@ window.adminBulkDownload = async function() {
 // ================== LOCK ID CARDS FEATURE ==================
 
 /**
- * Lock ID Cards for selected students — uses same selection method as Print/Download
- * No modal needed. Uses checkbox selection from the student grid.
+ * Lock ID Cards for selected students — student-level locking.
+ * Only the selected students are locked, NOT the whole class-section.
  */
 window.lockSelectedCards = async function() {
   // Check if any students are selected
@@ -607,7 +607,7 @@ window.lockSelectedCards = async function() {
     return;
   }
 
-  // Get selected students' class-sections
+  // Get selected students
   const selectedIds = Array.from(window.selectedStudentIds);
   const selectedStudents = window.adminAllStudents.filter(s => selectedIds.includes(s.id));
 
@@ -616,60 +616,57 @@ window.lockSelectedCards = async function() {
     return;
   }
 
-  // Build unique class-section strings from selected students
-  const newClassSections = [...new Set(
-    selectedStudents.map(s => String(s.class) + '-' + String(s.section))
-  )];
-
   const btn = document.getElementById('lockCardsBtn');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Locking...'; }
 
   try {
-    // Fetch existing locks
+    // Fetch existing locked student IDs
     const schoolDoc = await firebase.firestore().collection('schools').doc(schoolId).get();
     if (!schoolDoc.exists) {
       window.showToast('School not found', 'error');
       return;
     }
 
-    const existingLocks = schoolDoc.data().lockedClassSections || [];
+    const existingLocks = schoolDoc.data().lockedStudentIds || [];
 
-    // Check which class-sections are already locked
-    const alreadyLocked = newClassSections.filter(cs => existingLocks.includes(cs));
-    const newLocksOnly = newClassSections.filter(cs => !existingLocks.includes(cs));
+    // Check which selected students are already locked (by ID)
+    const alreadyLockedIds = selectedIds.filter(id => existingLocks.includes(id));
+    const newLockIds = selectedIds.filter(id => !existingLocks.includes(id));
 
-    if (alreadyLocked.length > 0) {
-      window.showToast('⚠️ ' + alreadyLocked.length + ' class-section(s) are already locked: ' + alreadyLocked.join(', '), 'error');
-      if (newLocksOnly.length === 0) {
+    if (alreadyLockedIds.length > 0) {
+      const alreadyNames = selectedStudents.filter(s => alreadyLockedIds.includes(s.id)).map(s => s.name).join(', ');
+      window.showToast('⚠️ ' + alreadyLockedIds.length + ' student(s) are already locked: ' + alreadyNames, 'error');
+      if (newLockIds.length === 0) {
         if (btn) { btn.disabled = false; btn.textContent = '🔒 Lock ID Cards'; }
-        return; // All selected sections already locked, nothing to do
+        return; // All selected students already locked, nothing to do
       }
     }
 
-    if (!confirm('Lock ' + newLocksOnly.length + ' new class-section(s) for this school?\n\nLocked students cannot be edited or deleted by the school.\n\nClass-sections to lock: ' + newLocksOnly.join(', '))) {
+    const newNames = selectedStudents.filter(s => newLockIds.includes(s.id)).map(s => s.name).join(', ');
+    if (!confirm('Lock ' + newLockIds.length + ' selected student(s)?\n\nLocked students cannot be edited or deleted by the school.\n\nStudents: ' + newNames)) {
       if (btn) { btn.disabled = false; btn.textContent = '🔒 Lock ID Cards'; }
       return;
     }
 
-    // Only add new locks, don't touch existing ones
-    const mergedLocks = [...new Set([...existingLocks, ...newLocksOnly])];
+    // Merge new locks with existing
+    const mergedLocks = [...new Set([...existingLocks, ...newLockIds])];
 
     const user = firebase.auth().currentUser;
 
     const updateData = {
-      lockedClassSections: mergedLocks
+      lockedStudentIds: mergedLocks
     };
 
     // Only update timestamp if there are new locks
-    if (newLocksOnly.length > 0) {
+    if (newLockIds.length > 0) {
       updateData.lockedAt = Date.now();
       updateData.lockedBy = user ? user.email : 'admin';
     }
 
     await firebase.firestore().collection('schools').doc(schoolId).update(updateData);
 
-    const totalLocked = newLocksOnly.length + alreadyLocked.length;
-    window.showToast('🔒 ' + totalLocked + ' class-section(s) locked successfully', 'success');
+    const totalLocked = newLockIds.length + alreadyLockedIds.length;
+    window.showToast('🔒 ' + totalLocked + ' student(s) locked successfully', 'success');
 
     // Clear selection
     window.selectedStudentIds.clear();
@@ -678,7 +675,7 @@ window.lockSelectedCards = async function() {
     // Refresh the school's lock status cache so UI updates immediately
     const school = window.adminSchoolsList.find(s => s.id === schoolId);
     if (school) {
-      school.lockedClassSections = mergedLocks;
+      school.lockedStudentIds = mergedLocks;
     }
 
     // Refresh the student grid to show lock indicators immediately

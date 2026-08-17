@@ -166,7 +166,7 @@ window.toggleSelectAll = function() {
 };
 
 /**
- * Check if a student is locked (for admin view)
+ * Check if a student is locked (for admin view) — student-ID based
  */
 window.isStudentLockedForAdmin = function(student) {
   if (!student) return false;
@@ -174,9 +174,17 @@ window.isStudentLockedForAdmin = function(student) {
   const schoolId = student._schoolId || window.adminSchoolId;
   if (!schoolId) return false;
   const school = window.adminSchoolsList.find(s => s.id === schoolId);
-  if (!school || !school.lockedClassSections || school.lockedClassSections.length === 0) return false;
-  const classSection = String(student.class) + '-' + String(student.section);
-  return school.lockedClassSections.includes(classSection);
+  if (!school) return false;
+  // Check lockedStudentIds (student-level lock)
+  if (school.lockedStudentIds && school.lockedStudentIds.length > 0) {
+    return school.lockedStudentIds.includes(String(student.docId || student.id));
+  }
+  // Fallback: check lockedClassSections (legacy class-section lock)
+  if (school.lockedClassSections && school.lockedClassSections.length > 0) {
+    const classSection = String(student.class) + '-' + String(student.section);
+    return school.lockedClassSections.includes(classSection);
+  }
+  return false;
 };
 
 /**

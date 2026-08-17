@@ -13,23 +13,35 @@ window.selectedPending = new Set();
 window.allPromoteStudents = [];
 window.selectedPromoteStudents = new Set();
 window.dropdownSelections = {};
-window.schoolLockedClassSections = []; // Array of locked class-section strings like ["10-A", "9-B"]
+window.schoolLockedClassSections = []; // Array of locked class-section strings like ["10-A", "9-B"] (legacy class-section lock)
+window.schoolLockedStudentIds = []; // Array of locked student IDs (student-level lock)
 
 /**
  * Check if a student's class-section is locked by admin
  * Returns true if locked, false otherwise
+ * Priority: student-level lock (lockedStudentIds) first, then class-section lock (lockedClassSections legacy)
  */
 window.isStudentLocked = function(student) {
-  if (!student || !window.schoolLockedClassSections || window.schoolLockedClassSections.length === 0) {
-    return false;
+  if (!student) return false;
+  const studentId = String(student.docId || student.id || '');
+  
+  // Student-level lock check (new system)
+  if (window.schoolLockedStudentIds && window.schoolLockedStudentIds.length > 0) {
+    if (studentId && window.schoolLockedStudentIds.includes(studentId)) return true;
   }
-  // Normalize class/section for reliable matching (e.g. "Class 10" → "10", " a " → "A")
-  const classSection = window.normalizeClassValue(student.class || '') + '-' + String(student.section || '').trim().toUpperCase();
-  return window.schoolLockedClassSections.some(cs => String(cs).trim().toUpperCase() === classSection.toUpperCase());
+  
+  // Legacy class-section lock check
+  if (window.schoolLockedClassSections && window.schoolLockedClassSections.length > 0) {
+    // Normalize class/section for reliable matching (e.g. "Class 10" → "10", " a " → "A")
+    const classSection = window.normalizeClassValue(student.class || '') + '-' + String(student.section || '').trim().toUpperCase();
+    return window.schoolLockedClassSections.some(cs => String(cs).trim().toUpperCase() === classSection.toUpperCase());
+  }
+  
+  return false;
 };
 
 /**
- * Fetch and cache the school's locked class sections
+ * Fetch and cache the school's locked students + locked class sections
  */
 window.fetchSchoolLockStatus = async function() {
   try {
@@ -37,11 +49,14 @@ window.fetchSchoolLockStatus = async function() {
     if (!user) return;
     const schoolDoc = await firebase.firestore().collection('schools').doc(user.uid).get();
     if (schoolDoc.exists) {
+      window.schoolLockedStudentIds = schoolDoc.data().lockedStudentIds || [];
       window.schoolLockedClassSections = schoolDoc.data().lockedClassSections || [];
     } else {
+      window.schoolLockedStudentIds = [];
       window.schoolLockedClassSections = [];
     }
   } catch (e) {
+    window.schoolLockedStudentIds = [];
     window.schoolLockedClassSections = [];
   }
 };
