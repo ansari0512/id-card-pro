@@ -120,8 +120,8 @@ window.loadStudents = async function() {
 };
 
 /**
- * Show or hide lock banner based on schoolLockedClassSections
- * Shows "Full Lock" only when ALL students' class-sections are locked.
+ * Show or hide lock banner based on schoolLockedStudentIds
+ * Shows "Full Lock" only when ALL students are locked.
  * Uses a fresh full student fetch to determine full vs partial reliably.
  */
 window.updateLockBanner = async function() {
@@ -136,8 +136,8 @@ window.updateLockBanner = async function() {
     }
   }
 
-  const lockedSections = window.schoolLockedClassSections || [];
-  if (lockedSections.length === 0) {
+  const lockedStudentIds = (window.schoolLockedStudentIds || []).map(String);
+  if (lockedStudentIds.length === 0) {
     banner.style.display = 'none';
     return;
   }
@@ -151,19 +151,9 @@ window.updateLockBanner = async function() {
     } catch (e) {}
   }
 
-  // Get unique class-sections that exist among ALL students
-  const allClassSections = [...new Set(
-    allStudents.map(s => window.normalizeClassValue(s.class || '') + '-' + String(s.section || '').trim().toUpperCase())
-  )].filter(Boolean);
-
-  // Normalize locked sections for comparison
-  const normalizedLocks = lockedSections.map(cs =>
-    window.normalizeClassValue(String(cs).split('-')[0] || '') + '-' + String(String(cs).split('-')[1] || '').trim().toUpperCase()
-  );
-
-  // Full lock = every existing class-section is locked
-  const isFullLock = allClassSections.length > 0 &&
-    allClassSections.every(cs => normalizedLocks.includes(cs));
+  // Full lock = every existing student is locked
+  const isFullLock = allStudents.length > 0 &&
+    allStudents.every(s => lockedStudentIds.includes(String(s.id || '')));
 
   banner.style.display = 'flex';
   banner.style.background = '#fef2f2';
@@ -173,7 +163,7 @@ window.updateLockBanner = async function() {
   if (isFullLock) {
     banner.innerHTML = `<span style="font-size:20px;">🔒</span><div><strong>All Cards Locked by Admin</strong><br><small>All students are locked. Contact admin to unlock.</small></div>`;
   } else {
-    banner.innerHTML = `<span style="font-size:20px;">⚠️</span><div><strong>Some Cards Locked by Admin</strong><br><small>Locked: ${lockedSections.join(', ')} — These students cannot be edited or deleted. Contact admin to unlock.</small></div>`;
+    banner.innerHTML = `<span style="font-size:20px;">⚠️</span><div><strong>Some Cards Locked by Admin</strong><br><small>${lockedStudentIds.length} student(s) are locked. These students cannot be edited or deleted. Contact admin to unlock.</small></div>`;
   }
 };
 
@@ -230,7 +220,7 @@ window.renderStudents = function(students) {
         
         <div class="student-actions">
           ${isLocked
-            ? '<button class="btn-edit" disabled title="This class/section is locked by admin" style="opacity:0.4;cursor:not-allowed;">✏️ Edit</button><button class="btn-delete" disabled title="This class/section is locked by admin" style="opacity:0.4;cursor:not-allowed;">🗑️ Delete</button>'
+            ? '<button class="btn-edit" disabled title="This student is locked by admin" style="opacity:0.4;cursor:not-allowed;">✏️ Edit</button><button class="btn-delete" disabled title="This student is locked by admin" style="opacity:0.4;cursor:not-allowed;">🗑️ Delete</button>'
             : '<button class="btn-edit" onclick="window.openEditModal(\'' + (student.docId || student.id) + '\')" title="Edit Student">✏️ Edit</button><button class="btn-delete" onclick="window.deleteSingle(\'' + (student.docId || student.id) + '\')" title="Delete Student">🗑️ Delete</button>'
           }
         </div>
@@ -857,7 +847,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.loadStudents();
     window.updatePendingBadge();
 
-    // Show lock banner if any class-sections are locked
+    // Show lock banner if any students are locked
     window.updateLockBanner();
 
     // Handle URL tab parameter for import modal only (tab switching handled by pages/students.js)

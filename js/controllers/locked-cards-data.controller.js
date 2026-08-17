@@ -23,7 +23,7 @@ window.initLockedCardsPage = function() {
 };
 
 /**
- * Populate school dropdown — only schools that have lockedClassSections or lockedStudentIds
+ * Populate school dropdown — only schools that have lockedStudentIds
  */
 window.loadSchoolsDropdownForLocks = async function() {
   try {
@@ -33,11 +33,10 @@ window.loadSchoolsDropdownForLocks = async function() {
     const select = document.getElementById('schoolFilter');
     select.innerHTML = '<option value="">All Schools</option>';
 
-    // Show schools that have lockedClassSections OR lockedStudentIds
+    // Show schools that have lockedStudentIds
     window.lockedSchoolsList.forEach(school => {
-      const hasSectionLocks = school.lockedClassSections && school.lockedClassSections.length > 0;
       const hasStudentLocks = school.lockedStudentIds && school.lockedStudentIds.length > 0;
-      if (hasSectionLocks || hasStudentLocks) {
+      if (hasStudentLocks) {
         const opt = document.createElement('option');
         opt.value = school.id;
         opt.textContent = school.schoolName || school.email || school.id;
@@ -50,31 +49,13 @@ window.loadSchoolsDropdownForLocks = async function() {
 };
 
 /**
- * Handle school filter change — populate class dropdown
+ * Handle school filter change — reset class/section dropdowns
  */
 window.onSchoolFilterChange = function() {
   const classFilter = document.getElementById('classFilter');
   const sectionFilter = document.getElementById('sectionFilter');
   classFilter.innerHTML = '<option value="">All Classes</option>';
   sectionFilter.innerHTML = '<option value="">All Sections</option>';
-
-  const schoolId = document.getElementById('schoolFilter').value;
-  if (schoolId) {
-    const school = window.lockedSchoolsList.find(s => s.id === schoolId);
-    if (school && school.lockedClassSections) {
-      const classes = [...new Set(
-        school.lockedClassSections.map(cs => cs.split('-')[0])
-      )].sort();
-
-      classes.forEach(cls => {
-        const opt = document.createElement('option');
-        opt.value = cls;
-        opt.textContent = cls === 'Nursery' ? 'Nursery' : cls === 'LKG' ? 'LKG' : cls === 'UKG' ? 'UKG' : cls === 'KG' ? 'KG' : 'Class ' + cls;
-        classFilter.appendChild(opt);
-      });
-    }
-  }
-
   window.loadLockedCards();
 };
 
@@ -100,8 +81,7 @@ window.loadLockedCards = async function() {
     const sectionFilter = document.getElementById('sectionFilter').value;
 
     let schools = window.lockedSchoolsList.filter(s =>
-      (s.lockedClassSections && s.lockedClassSections.length > 0) ||
-      (s.lockedStudentIds && s.lockedStudentIds.length > 0)
+      s.lockedStudentIds && s.lockedStudentIds.length > 0
     );
 
     if (schoolFilter) {
@@ -111,7 +91,6 @@ window.loadLockedCards = async function() {
     const allLockedStudents = [];
 
     for (const school of schools) {
-      const lockedSections = school.lockedClassSections || [];
       const lockedStudentIds = (school.lockedStudentIds || []).map(String);
       const lockDate = school.lockedAt ? new Date(school.lockedAt).toLocaleDateString('en-IN') : '-';
       const lockedBy = school.lockedBy || '-';
@@ -119,17 +98,10 @@ window.loadLockedCards = async function() {
       try {
         const students = await window.dbGetAllStudents(school.id);
 
-        // Student-level lock (primary) + legacy class-section lock
-        const filteredStudents = students.filter(s => {
-          // Student-ID level lock — lockedStudentIds stores display student.id values
-          if (lockedStudentIds.length > 0 && lockedStudentIds.includes(String(s.id || ''))) return true;
-          // Legacy class-section lock
-          if (lockedSections.length > 0) {
-            const cs = String(s.class) + '-' + String(s.section);
-            if (lockedSections.includes(cs)) return true;
-          }
-          return false;
-        });
+        // Student-ID level lock — lockedStudentIds stores display student.id values
+        const filteredStudents = students.filter(s =>
+          lockedStudentIds.includes(String(s.id || ''))
+        );
 
         let classFiltered = filteredStudents;
         if (classFilter) {
@@ -296,10 +268,10 @@ window.clearLockedFilters = function() {
 };
 
 /**
- * Unlock a single student's class-section
+ * Unlock a single student
  */
-window.unlockSingleStudent = async function(schoolId, classSection) {
-  if (!confirm('Unlock class-section "' + classSection + '"?\n\nThe school will be able to edit and delete students in this class-section again.')) return;
+window.unlockSingleStudent = async function(schoolId, studentId) {
+  if (!confirm('Unlock this student?\n\nThe school will be able to edit and delete this student again.')) return;
 
   try {
     const school = window.lockedSchoolsList.find(s => s.id === schoolId);
@@ -308,11 +280,11 @@ window.unlockSingleStudent = async function(schoolId, classSection) {
       return;
     }
 
-    const currentLocks = school.lockedClassSections || [];
-    const updatedLocks = currentLocks.filter(cs => cs !== classSection);
+    const currentLocks = (school.lockedStudentIds || []).map(String);
+    const updatedLocks = currentLocks.filter(id => id !== String(studentId));
 
     const updateData = {
-      lockedClassSections: updatedLocks
+      lockedStudentIds: updatedLocks
     };
 
     if (updatedLocks.length === 0) {
@@ -321,9 +293,9 @@ window.unlockSingleStudent = async function(schoolId, classSection) {
     }
 
     await firebase.firestore().collection('schools').doc(schoolId).update(updateData);
-    school.lockedClassSections = updatedLocks;
+    school.lockedStudentIds = updatedLocks;
 
-    window.showToast('🔓 Class-section ' + classSection + ' unlocked', 'success');
+    window.showToast('🔓 Student unlocked', 'success');
     window.loadLockedCards();
   } catch (err) {
     window.showToast('Failed to unlock: ' + err.message, 'error');
@@ -332,7 +304,6 @@ window.unlockSingleStudent = async function(schoolId, classSection) {
 
 /**
  * Bulk unlock selected students — removes student IDs from lockedStudentIds
- * and removes class-sections from lockedClassSections (with student-level granularity)
  */
 window.bulkUnlock = async function() {
   if (window.selectedLockedIds.size === 0) {
@@ -369,23 +340,14 @@ window.bulkUnlock = async function() {
       const currentStudentLocks = (school.lockedStudentIds || []).map(String);
       const updatedStudentLocks = currentStudentLocks.filter(id => !studentIds.has(id));
 
-      // Also remove from legacy lockedClassSections if that class-section has NO other locked students
-      // We need to check remaining locked students after removal
-      const remainingLockedStudentIds = updatedStudentLocks;
-
       const updateData = {
         lockedStudentIds: updatedStudentLocks
       };
 
       // If no lockedStudentIds remain, remove lockedAt/lockedBy metadata
       if (updatedStudentLocks.length === 0) {
-        // Also clean up legacy class-section locks that were created by previous system
-        // Only if there are also no lockedClassSections to keep
-        const currentSectionLocks = school.lockedClassSections || [];
-        if (currentSectionLocks.length === 0) {
-          updateData.lockedAt = firebase.firestore.FieldValue.delete();
-          updateData.lockedBy = firebase.firestore.FieldValue.delete();
-        }
+        updateData.lockedAt = firebase.firestore.FieldValue.delete();
+        updateData.lockedBy = firebase.firestore.FieldValue.delete();
       }
 
       await firebase.firestore().collection('schools').doc(schoolId).update(updateData);

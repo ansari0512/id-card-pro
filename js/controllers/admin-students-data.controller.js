@@ -587,7 +587,7 @@ window.adminBulkDownload = async function() {
 
 /**
  * Lock ID Cards for selected students — student-level locking.
- * Only the selected students are locked, NOT the whole class-section.
+ * Only the selected students are locked (student-level lock).
  */
 window.lockSelectedCards = async function() {
   // Check if any students are selected

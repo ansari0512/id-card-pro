@@ -84,10 +84,9 @@ window.loadSchools = async function() {
       const td6 = document.createElement('td');
       td6.innerHTML = `<span class="badge ${active ? 'badge-active' : 'badge-inactive'}">${active ? 'Active' : 'Inactive'}</span>`;
 
-      // Card Lock Status column
+      // Card Lock Status column — student-level lock only
       const tdLock = document.createElement('td');
-      const hasLocks = school.lockedClassSections && school.lockedClassSections.length > 0;
-      tdLock.innerHTML = `<span class="badge ${hasLocks ? 'badge-inactive' : 'badge-active'}">${hasLocks ? '🔒 Partial Lock' : '🔓 All Unlocked'}</span>`;
+      tdLock.innerHTML = `<span class="badge badge-active" id="lockStatus_${school.id}">🔓 All Unlocked</span>`;
 
        const td7 = document.createElement('td');
        td7.className = 'actions-cell';
@@ -158,6 +157,24 @@ window.loadSchools = async function() {
       ]);
       return { students: studentsResult, teachers: teachersResult };
     }));
+
+    // Update lock status for each school based on locked count vs total students
+    schools.forEach((school, idx) => {
+      const lockEl = document.getElementById('lockStatus_' + school.id);
+      if (!lockEl) return;
+      const lockedCount = (school.lockedStudentIds || []).length;
+      const totalStudents = counts[idx] ? counts[idx].students : 0;
+      if (lockedCount === 0) {
+        lockEl.className = 'badge badge-active';
+        lockEl.textContent = '🔓 All Unlocked';
+      } else if (totalStudents > 0 && lockedCount >= totalStudents) {
+        lockEl.className = 'badge badge-inactive';
+        lockEl.textContent = '🔒 All Locked (' + lockedCount + ')';
+      } else {
+        lockEl.className = 'badge badge-inactive';
+        lockEl.textContent = '🔒 Some Locked (' + lockedCount + '/' + totalStudents + ')';
+      }
+    });
 
     const total = counts.reduce((sum, c) => sum + c.students, 0);
     const totalTeachers = counts.reduce((sum, c) => sum + c.teachers, 0);
@@ -327,10 +344,11 @@ window.toggleStatus = async function(schoolId, currentActive) {
 };
 
 /**
- * Soft delete school - moves school + students + teachers to deleted collections
+ * Soft delete school - moves school + students + teachers + pending students to deleted collections
+ * Also deletes counters, user doc, and photos
  */
 window.deleteSchool = async function(schoolId, schoolName) {
-  if (!confirm(`Are you sure you want to delete "${schoolName}"?\n\nSchool, all students, and teachers will be moved to deleted items. You can restore them later from Deleted Cards.`)) return;
+  if (!confirm(`Are you sure you want to delete "${schoolName}"?\n\nSchool, all students, teachers, and pending students will be moved to deleted items. You can restore them later from Deleted Cards.`)) return;
 
   try {
     const user = firebase.auth().currentUser;
@@ -351,7 +369,14 @@ window.deleteSchool = async function(schoolId, schoolName) {
     // 3. Get all teachers/staff
     const teachers = await window.dbGetAllTeacherStaff(schoolId);
 
-    // 4. Move school to deleted_schools
+    // 4. Get all pending students
+    let pendingStudents = [];
+    try {
+      const pendingSnap = await firebase.firestore().collection('schools').doc(schoolId).collection('pending_students').get();
+      pendingStudents = pendingSnap.docs.map(d => ({ docId: d.id, ...d.data() }));
+    } catch(e) {}
+
+    // 5. Move school to deleted_schools
     await firebase.firestore().collection('deleted_schools').doc(schoolId).set({
       ...schoolData,
       schoolId: schoolId,
@@ -361,7 +386,7 @@ window.deleteSchool = async function(schoolId, schoolName) {
       deleteReason: 'Deleted by admin'
     });
 
-    // 5. Move all students to deleted_students
+    // 6. Move all students to deleted_students
     const studentBatch = firebase.firestore().batch();
     let batchCount = 0;
     const BATCH_LIMIT = 500;
@@ -396,7 +421,7 @@ window.deleteSchool = async function(schoolId, schoolName) {
       await studentBatch.commit();
     }
 
-    // 6. Move all teachers to deleted_teachers
+    // 7. Move all teachers to deleted_teachers
     const teacherBatch = firebase.firestore().batch();
     batchCount = 0;
 
@@ -429,7 +454,69 @@ window.deleteSchool = async function(schoolId, schoolName) {
       await teacherBatch.commit();
     }
 
-    // 7. Delete original school document
+    // 8. Move all pending students to deleted_pending_students
+    const pendingBatch = firebase.firestore().batch();
+    batchCount = 0;
+
+    for (const pending of pendingStudents) {
+      const pendingRef = firebase.firestore().collection('schools').doc(schoolId).collection('pending_students').doc(pending.docId);
+      const deletedPendingRef = firebase.firestore().collection('deleted_pending_students').doc(pending.docId);
+
+      const deletedPendingData = {
+        ...pending,
+        schoolId: schoolId,
+        schoolName: schoolName,
+        originalDocId: pending.docId,
+        originalPath: `schools/${schoolId}/pending_students/${pending.docId}`,
+        deletedAt: now,
+        deletedBy: deletedByEmail,
+        deletedByRole: 'admin',
+        deleteReason: 'School deleted by admin'
+      };
+
+      pendingBatch.set(deletedPendingRef, deletedPendingData);
+      pendingBatch.delete(pendingRef);
+      batchCount += 2;
+
+      if (batchCount >= BATCH_LIMIT) {
+        await pendingBatch.commit();
+        batchCount = 0;
+      }
+    }
+    if (batchCount > 0) {
+      await pendingBatch.commit();
+    }
+
+    // 9. Delete counters subcollection
+    try {
+      const countersSnap = await firebase.firestore().collection('schools').doc(schoolId).collection('counters').get();
+      const counterBatch = firebase.firestore().batch();
+      countersSnap.docs.forEach(doc => counterBatch.delete(doc.ref));
+      await counterBatch.commit();
+    } catch(e) {}
+
+    // 10. Delete user doc (auth account)
+    try {
+      await firebase.firestore().collection('users').doc(schoolId).delete();
+    } catch(e) {}
+
+    // 11. Delete student photos from storage
+    try {
+      await Promise.all(students
+        .filter(s => s.photo)
+        .map(s => window.deletePhoto(s.photo).catch(() => {}))
+      );
+    } catch(e) {}
+
+    // 12. Delete teacher photos from storage
+    try {
+      await Promise.all(teachers
+        .filter(t => t.photo)
+        .map(t => window.deletePhoto(t.photo).catch(() => {}))
+      );
+    } catch(e) {}
+
+    // 13. Delete original school document
     await firebase.firestore().collection('schools').doc(schoolId).delete();
 
     window.showToast(`School "${schoolName}" moved to deleted items`, 'success');

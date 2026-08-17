@@ -181,11 +181,6 @@ window.isStudentLockedForAdmin = function(student) {
   if (school.lockedStudentIds && school.lockedStudentIds.length > 0 && studentId) {
     if (school.lockedStudentIds.map(String).includes(studentId)) return true;
   }
-  // Fallback: check lockedClassSections (legacy class-section lock)
-  if (school.lockedClassSections && school.lockedClassSections.length > 0) {
-    const classSection = String(student.class) + '-' + String(student.section);
-    return school.lockedClassSections.includes(classSection);
-  }
   return false;
 };
 

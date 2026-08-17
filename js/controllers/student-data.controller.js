@@ -13,36 +13,24 @@ window.selectedPending = new Set();
 window.allPromoteStudents = [];
 window.selectedPromoteStudents = new Set();
 window.dropdownSelections = {};
-window.schoolLockedClassSections = []; // Array of locked class-section strings like ["10-A", "9-B"] (legacy class-section lock)
 window.schoolLockedStudentIds = []; // Array of locked student IDs (student-level lock)
 
 /**
- * Check if a student's class-section is locked by admin
+ * Check if a student is locked by admin
  * Returns true if locked, false otherwise
- * Priority: student-level lock (lockedStudentIds) first, then class-section lock (lockedClassSections legacy)
+ * Student-level lock: lockedStudentIds stores display student.id values (e.g. "SCH-2026-0001")
  */
 window.isStudentLocked = function(student) {
   if (!student) return false;
-  // lockedStudentIds stores display student.id values (e.g. "SCH-2026-0001")
   const studentId = String(student.id || '');
-  
-  // Student-level lock check (new system)
   if (window.schoolLockedStudentIds && window.schoolLockedStudentIds.length > 0 && studentId) {
     if (window.schoolLockedStudentIds.map(String).includes(studentId)) return true;
   }
-  
-  // Legacy class-section lock check
-  if (window.schoolLockedClassSections && window.schoolLockedClassSections.length > 0) {
-    // Normalize class/section for reliable matching (e.g. "Class 10" → "10", " a " → "A")
-    const classSection = window.normalizeClassValue(student.class || '') + '-' + String(student.section || '').trim().toUpperCase();
-    return window.schoolLockedClassSections.some(cs => String(cs).trim().toUpperCase() === classSection.toUpperCase());
-  }
-  
   return false;
 };
 
 /**
- * Fetch and cache the school's locked students + locked class sections
+ * Fetch and cache the school's locked students
  */
 window.fetchSchoolLockStatus = async function() {
   try {
@@ -51,14 +39,11 @@ window.fetchSchoolLockStatus = async function() {
     const schoolDoc = await firebase.firestore().collection('schools').doc(user.uid).get();
     if (schoolDoc.exists) {
       window.schoolLockedStudentIds = schoolDoc.data().lockedStudentIds || [];
-      window.schoolLockedClassSections = schoolDoc.data().lockedClassSections || [];
     } else {
       window.schoolLockedStudentIds = [];
-      window.schoolLockedClassSections = [];
     }
   } catch (e) {
     window.schoolLockedStudentIds = [];
-    window.schoolLockedClassSections = [];
   }
 };
 
@@ -103,9 +88,9 @@ window.deleteStudent = async function(studentId, studentClass) {
   const cls = studentClass || student?.class;
   if (!cls) throw new Error('Student class not found');
 
-  // Check if student's class-section is locked by admin
+  // Check if student is locked by admin
   if (student && window.isStudentLocked(student)) {
-    throw new Error('This student\'s class-section is locked by admin. Contact admin to unlock.');
+    throw new Error('This student is locked by admin. Contact admin to unlock.');
   }
   
   // Soft delete: move to deleted_students collection
@@ -164,10 +149,10 @@ window.saveStudentEdit = async function(e) {
   try {
     const docId = document.getElementById('editDocId').value;
 
-    // Check if student's class-section is locked by admin
+    // Check if student is locked by admin
     const studentToCheck = window.allStudents.find(s => (s.docId || s.id) === docId);
     if (studentToCheck && window.isStudentLocked(studentToCheck)) {
-      throw new Error('This student\'s class-section is locked by admin. Contact admin to unlock.');
+      throw new Error('This student is locked by admin. Contact admin to unlock.');
     }
 
     const mobile = document.getElementById('editMobile').value.trim();
